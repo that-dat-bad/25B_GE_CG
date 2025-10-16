@@ -2,13 +2,13 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
-#include"./engine/base/WinApp.h"
+#include"../../engine/base/WinApp.h"
 #include <array>
 #include <dxcapi.h>
 #pragma comment(lib, "dxcompiler.lib")
-#include "../external/imgui/imgui.h"
-#include "../external/imgui/imgui_impl_dx12.h"
-#include "../external/imgui/imgui_impl_win32.h"
+#include "../../../external/imgui/imgui.h"
+#include "../../../external/imgui/imgui_impl_dx12.h"
+#include "../../../external/imgui/imgui_impl_win32.h"
 
 class DirectXCommon
 {
