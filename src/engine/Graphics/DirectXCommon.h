@@ -9,6 +9,8 @@
 #include "../../../external/imgui/imgui.h"
 #include "../../../external/imgui/imgui_impl_dx12.h"
 #include "../../../external/imgui/imgui_impl_win32.h"
+#include "../../../external/DirectXTex/DirectXTex.h"
+#include<string>
 
 class DirectXCommon
 {
@@ -29,6 +31,11 @@ public:
 
 	//描画後処理
 	void PostDraw();
+
+	// DirectXCommon.h
+	Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(const std::wstring& filePath, const wchar_t* profile);
+
+
 
 
 	//--ゲッター--
@@ -140,7 +147,27 @@ private:
 	//ImGuiの初期化
 	void InitializeImGui();
 
+
+
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata);
+
+	[[nodiscard]]
+	Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
+
+	DirectX::ScratchImage LoadTexture(const std::string& filePath); {
+		DirectX::ScratchImage image{};
+		std::wstring filePathW = ConvertString(filePath);
+		HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+		assert(SUCCEEDED(hr));
+		DirectX::ScratchImage mipImages{};
+		hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
+		assert(SUCCEEDED(hr));
+		return mipImages;
+	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVCPUDescriptorHandle(uint32_t index);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
