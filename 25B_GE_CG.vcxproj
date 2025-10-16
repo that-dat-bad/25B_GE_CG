@@ -180,6 +180,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\Graphics\DirectXCommon.h" />
     <ClInclude Include="src\engine\io\Input.h" />
     <ClInclude Include="src\engine\base\StringUtility.h" />
+    <ClInclude Include="src\engine\base\Math\Vector2.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="external\imgui\imgui.cpp" />
@@ -206,6 +207,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\engine\base\StringUtility.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Development|x64'">stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="src\engine\base\Math\Vector2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="external\imgui\LICENSE.txt" />
