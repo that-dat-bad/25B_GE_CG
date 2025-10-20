@@ -571,7 +571,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		DirectX::ScratchImage mipImages = dxCommon->LoadTexture(path);
 		const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
 		Microsoft::WRL::ComPtr<ID3D12Resource> textureResource = dxCommon->CreateTextureResource(device, metadata);
-
+		dxCommon->UploadTextureData(textureResource.Get(), mipImages);
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
 		if (metadata.format == DXGI_FORMAT_R8G8B8A8_UNORM) {
 			srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
