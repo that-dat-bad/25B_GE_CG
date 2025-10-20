@@ -172,6 +172,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="external\imgui\imstb_rectpack.h" />
     <ClInclude Include="external\imgui\imstb_textedit.h" />
     <ClInclude Include="external\imgui\imstb_truetype.h" />
+    <ClInclude Include="src\engine\base\AssetType.h" />
     <ClInclude Include="src\engine\base\logger.h" />
     <ClInclude Include="src\engine\base\Math\Matrix4x4.h" />
     <ClInclude Include="src\engine\base\Math\Vector3.h" />

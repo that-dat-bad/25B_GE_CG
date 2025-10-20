@@ -193,13 +193,6 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) {
 }
 
 
-
-
-
-
-
-
-
 // 複数のマテリアルを読み込むためのマップ
 std::map<std::string, MaterialData> LoadMaterialTemplates(const std::string& directoryPath, const std::string& filename) {
 	std::map<std::string, MaterialData> materials;
@@ -226,7 +219,7 @@ std::map<std::string, MaterialData> LoadMaterialTemplates(const std::string& dir
 }
 
 // OBJファイルを読み込み、複数のメッシュとして解析する関数
-ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename, ID3D12Device* device) {
+ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon) {
 	ModelData modeldata;
 	modeldata.name = filename;
 	std::vector<Vector4> positions;
@@ -250,7 +243,7 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 				// 以前のメッシュを保存
 				if (!currentMesh.vertices.empty()) {
 					// メッシュの頂点バッファを作成
-					currentMesh.vertexBuffer = CreateBufferResource(device, sizeof(VertexData) * currentMesh.vertices.size());
+					currentMesh.vertexBuffer = dxCommon->CreateBufferResource(sizeof(VertexData) * currentMesh.vertices.size());
 					VertexData* mappedData = nullptr;
 					currentMesh.vertexBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
 					std::memcpy(mappedData, currentMesh.vertices.data(), sizeof(VertexData) * currentMesh.vertices.size());
@@ -261,14 +254,14 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 					currentMesh.vertexBufferView.StrideInBytes = sizeof(VertexData);
 
 					// マテリアルとWVPのリソースを作成
-					currentMesh.materialResource = CreateBufferResource(device, sizeof(Material));
+					currentMesh.materialResource = dxCommon->CreateBufferResource(sizeof(Material));
 					currentMesh.materialResource->Map(0, nullptr, reinterpret_cast<void**>(&currentMesh.materialData));
 					currentMesh.materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f }; // デフォルト色
 					currentMesh.materialData->enableLighting = 1;
 					currentMesh.materialData->shininess = 0.0f;
 					currentMesh.materialData->uvTransform = Identity4x4(); // UV変換を単位行列に初期化
 
-					currentMesh.wvpResource = CreateBufferResource(device, sizeof(TransformationMatrix));
+					currentMesh.wvpResource = dxCommon->CreateBufferResource(sizeof(TransformationMatrix));
 					currentMesh.wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&currentMesh.wvpData));
 					currentMesh.transform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} }; // デフォルト変換
 					currentMesh.uvTransform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} }; // UV変換の初期化
@@ -350,7 +343,7 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 	}
 	// ファイルの終わりに残った最後のメッシュを保存
 	if (!currentMesh.vertices.empty()) {
-		currentMesh.vertexBuffer = CreateBufferResource(device, sizeof(VertexData) * currentMesh.vertices.size());
+		currentMesh.vertexBuffer = dxCommon->CreateBufferResource(sizeof(VertexData) * currentMesh.vertices.size());
 		VertexData* mappedData = nullptr;
 		currentMesh.vertexBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
 		std::memcpy(mappedData, currentMesh.vertices.data(), sizeof(VertexData) * currentMesh.vertices.size());
@@ -360,14 +353,14 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 		currentMesh.vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * currentMesh.vertices.size());
 		currentMesh.vertexBufferView.StrideInBytes = sizeof(VertexData);
 
-		currentMesh.materialResource = CreateBufferResource(device, sizeof(Material));
+		currentMesh.materialResource = dxCommon->CreateBufferResource(sizeof(Material));
 		currentMesh.materialResource->Map(0, nullptr, reinterpret_cast<void**>(&currentMesh.materialData));
 		currentMesh.materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f }; // デフォルト色
 		currentMesh.materialData->enableLighting = 1;
 		currentMesh.materialData->shininess = 0.0f;
 		currentMesh.materialData->uvTransform = Identity4x4(); // UV変換を単位行列に初期化
 
-		currentMesh.wvpResource = CreateBufferResource(device, sizeof(TransformationMatrix));
+		currentMesh.wvpResource = dxCommon->CreateBufferResource(sizeof(TransformationMatrix));
 		currentMesh.wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&currentMesh.wvpData));
 		currentMesh.transform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} }; // デフォルト変換
 		currentMesh.uvTransform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} }; // UV変換の初期化
@@ -565,7 +558,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	// ImGui用に1つ予約
 	uint32_t srvIndex = 1;
 
-	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources;
+
 
 	// 初回コマンドリストの準備（テクスチャアップロード用）
 	hr = dxCommon->GetCommandAllocator()->Reset();
@@ -575,10 +568,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 
 	for (const auto& path : texturePaths) {
-		DirectX::ScratchImage mipImages = LoadTexture(path);
+		DirectX::ScratchImage mipImages = dxCommon->LoadTexture(path);
 		const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
-		Microsoft::WRL::ComPtr<ID3D12Resource> textureResource = CreateTextureResource(device, metadata);
-		intermediateResources.push_back(UploadTextureData(textureResource.Get(), mipImages, device, commandList));
+		Microsoft::WRL::ComPtr<ID3D12Resource> textureResource = dxCommon->CreateTextureResource(device, metadata);
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
 		if (metadata.format == DXGI_FORMAT_R8G8B8A8_UNORM) {
@@ -593,8 +585,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		TextureAsset newAsset;
 		newAsset.name = path;
 		newAsset.resource = textureResource;
-		newAsset.cpuHandle = GetCPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, srvIndex);
-		newAsset.gpuHandle = GetGPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, srvIndex);
+		newAsset.cpuHandle = dxCommon->GetCPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, srvIndex);
+		newAsset.gpuHandle = dxCommon->GetGPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, srvIndex);
 		newAsset.metadata = metadata;
 		device->CreateShaderResourceView(newAsset.resource.Get(), &srvDesc, newAsset.cpuHandle);
 		textureAssets.push_back(newAsset);
@@ -608,7 +600,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		"plane.obj",
 	};
 	for (const auto& filename : modelPaths) {
-		ModelData modelData = LoadObjFile("assets/models", filename, device);
+		ModelData modelData = LoadObjFile("assets/models", filename, dxCommon);
 		ModelAsset newAsset;
 		newAsset.modelData = modelData;
 		modelAssets.push_back(newAsset);
@@ -631,8 +623,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	// スプライトの初期化
 	Transform transformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 	Transform uvTransformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
-	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResourceSprite = CreateBufferResource(device, sizeof(VertexData) * 6);
-	Microsoft::WRL::ComPtr<ID3D12Resource> indexResourceSprite = CreateBufferResource(device, sizeof(uint32_t) * 6);
+	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResourceSprite = dxCommon->CreateBufferResource(sizeof(VertexData) * 6);
+	Microsoft::WRL::ComPtr<ID3D12Resource> indexResourceSprite = dxCommon->CreateBufferResource(sizeof(uint32_t) * 6);
 	uint32_t* indexDataSprite = nullptr;
 	indexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&indexDataSprite));
 	indexDataSprite[0] = 0; indexDataSprite[1] = 1; indexDataSprite[2] = 2;
@@ -656,7 +648,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	indexBufferViewSprite.BufferLocation = indexResourceSprite->GetGPUVirtualAddress();
 	indexBufferViewSprite.SizeInBytes = sizeof(uint32_t) * 6;
 	indexBufferViewSprite.Format = DXGI_FORMAT_R32_UINT;
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceSprite = CreateBufferResource(device, sizeof(Material));
+	Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceSprite = dxCommon->CreateBufferResource( sizeof(Material));
 	Material* materialDataSprite = nullptr;
 	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
 	materialDataSprite->color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -664,14 +656,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	materialDataSprite->shininess = 0.0f;
 	materialDataSprite->uvTransform = Identity4x4();
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResourceSprite = CreateBufferResource(device, sizeof(TransformationMatrix));
+	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResourceSprite = dxCommon->CreateBufferResource(sizeof(TransformationMatrix));
 	TransformationMatrix* wvpDataSprite = nullptr;
 	wvpResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&wvpDataSprite));
 	int spriteTextureIndex = 0;
 	bool isSpriteVisible = false;
 
 	// ライトの初期化
-	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = CreateBufferResource(device, sizeof(DirectionalLight));
+	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = dxCommon->CreateBufferResource(sizeof(DirectionalLight));
 	DirectionalLight* directionalLightData = nullptr;
 	directionalLightResource->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
 	directionalLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -679,7 +671,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	directionalLightData->intensity = 1.0f;
 
 	// ライティング設定の初期化
-	Microsoft::WRL::ComPtr<ID3D12Resource> lightingSettingsResource = CreateBufferResource(device, sizeof(LightingSettings));
+	Microsoft::WRL::ComPtr<ID3D12Resource> lightingSettingsResource = dxCommon->CreateBufferResource(sizeof(LightingSettings));
 	LightingSettings* lightingSettingsData = nullptr;
 	lightingSettingsResource->Map(0, nullptr, reinterpret_cast<void**>(&lightingSettingsData));
 	lightingSettingsData->lightingModel = 0;
@@ -745,7 +737,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 				gameObjects[0].transform.rotate.x += static_cast<float>(gamepadState.Gamepad.sThumbRY) / SHRT_MAX * rotationSpeed;
 			}
 		}
-
+		//g_debugCamera.Update(keys_, mouseState);
 		// ImGuiウィンドウ
 		ImGui::Begin("Settings");
 		{

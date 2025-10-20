@@ -12,6 +12,7 @@
 #include "../../../external/DirectXTex/DirectXTex.h"
 #include<string>
 
+
 class DirectXCommon
 {
 public:
@@ -32,7 +33,6 @@ public:
 	//描画後処理
 	void PostDraw();
 
-	// DirectXCommon.h
 	Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(const std::wstring& filePath, const wchar_t* profile);
 
 
@@ -67,7 +67,30 @@ public:
 	//セッター
 	void IncrementFenceValue() { fenceValue_++; }
 
+
+
+
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
+	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
+	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
+	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata);
+	void UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
+
 private:
+
+	// 読み込んだテクスチャアセット
+	struct TextureAsset {
+		std::string name;
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
+		// テクスチャのメタデータを保持するためのフィールドを追加
+		DirectX::TexMetadata metadata;
+	};
+
+
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_ = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Device> device_ = nullptr;
@@ -107,6 +130,7 @@ private:
 
 	D3D12_VIEWPORT viewport_{};
 
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources_;
 
 
 	WinApp* winApp_ = nullptr;
@@ -151,27 +175,18 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata);
 
-	[[nodiscard]]
-	Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
 
-	DirectX::ScratchImage LoadTexture(const std::string& filePath); {
-		DirectX::ScratchImage image{};
-		std::wstring filePathW = ConvertString(filePath);
-		HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
-		assert(SUCCEEDED(hr));
-		DirectX::ScratchImage mipImages{};
-		hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
-		assert(SUCCEEDED(hr));
-		return mipImages;
-	}
+
+
+
+
+
+
+
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVCPUDescriptorHandle(uint32_t index);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
 
-	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
-	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
 };
