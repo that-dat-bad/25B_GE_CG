@@ -11,7 +11,7 @@
 #include "../../../external/imgui/imgui_impl_win32.h"
 #include "../../../external/DirectXTex/DirectXTex.h"
 #include<string>
-
+#include<chrono>
 
 class DirectXCommon
 {
@@ -132,6 +132,8 @@ private:
 
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources_;
 
+	//記録時間(FPS固定用	)
+	std::chrono::steady_clock::time_point reference_;
 
 	WinApp* winApp_ = nullptr;
 
@@ -170,6 +172,13 @@ private:
 
 	//ImGuiの初期化
 	void InitializeImGui();
+
+
+	//FPS固定初期化
+	void InitializeFixFPS();
+
+	//FPS固定更新
+	void UpdateFixFPS();
 
 
 
