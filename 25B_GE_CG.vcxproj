@@ -19,7 +19,7 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{ee106aaa-09f4-411e-9d96-111892be505d}</ProjectGuid>
     <RootNamespace>My25BGECG</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -88,8 +88,7 @@
       <AdditionalOptions>/ignore:4049 /ignore:4098 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
-copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"</Command>
+      <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -164,6 +163,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Image Include="assets\textures\uvChecker.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\engine\Debug\D3DResourceLeakChecker.h" />
     <ClInclude Include="external\imgui\imconfig.h" />
     <ClInclude Include="external\imgui\imgui.h" />
     <ClInclude Include="external\imgui\imgui_impl_dx12.h" />
@@ -172,14 +172,19 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="external\imgui\imstb_rectpack.h" />
     <ClInclude Include="external\imgui\imstb_textedit.h" />
     <ClInclude Include="external\imgui\imstb_truetype.h" />
+    <ClInclude Include="src\engine\base\AssetType.h" />
+    <ClInclude Include="src\engine\base\logger.h" />
     <ClInclude Include="src\engine\base\Math\Matrix4x4.h" />
     <ClInclude Include="src\engine\base\Math\Vector3.h" />
     <ClInclude Include="src\engine\base\WinApp.h" />
     <ClInclude Include="src\engine\Graphics\DebugCamera.h" />
     <ClInclude Include="src\engine\Graphics\DirectXCommon.h" />
     <ClInclude Include="src\engine\io\Input.h" />
+    <ClInclude Include="src\engine\base\StringUtility.h" />
+    <ClInclude Include="src\engine\base\Math\Vector2.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\engine\Debug\D3DResourceLeakChecker.cpp" />
     <ClCompile Include="external\imgui\imgui.cpp" />
     <ClCompile Include="external\imgui\imgui_demo.cpp" />
     <ClCompile Include="external\imgui\imgui_draw.cpp" />
@@ -187,6 +192,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="external\imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="external\imgui\imgui_tables.cpp" />
     <ClCompile Include="external\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\engine\base\logger.cpp">
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Development|x64'">stdafx.h</PrecompiledHeaderFile>
+    </ClCompile>
     <ClCompile Include="src\engine\base\Math\Matrix4x4.cpp" />
     <ClCompile Include="src\engine\base\Math\Vector3.cpp" />
     <ClCompile Include="src\engine\base\WinApp.cpp" />
@@ -198,6 +206,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</WholeProgramOptimization>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Development|x64'">_WINDOWS;_UNICODE;UNICODE</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="src\engine\base\StringUtility.cpp">
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Development|x64'">stdafx.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="src\engine\base\Math\Vector2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="external\imgui\LICENSE.txt" />
