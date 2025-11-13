@@ -24,8 +24,9 @@ using namespace logger;
 #include"../engine/base/StringUtility.h"
 using namespace StringUtility;
 
-// DirectXCommonクラスをインクルード
 #include"../engine/Graphics/DirectXCommon.h"
+#include"../engine/Graphics/SpriteCommon.h"
+#include"../engine/Graphics/Sprite.h"
 
 // debug用のヘッダ
 #include <DbgHelp.h>
@@ -422,7 +423,7 @@ void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData) {
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
-
+#pragma region 基盤の初期化処理
 	WinApp* winApp = new WinApp();
 	winApp->Initialize();
 	SetUnhandledExceptionFilter(ExportDump);
@@ -431,15 +432,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	input = new Input();
 	input->Initialize(hInstance, winApp->GetHwnd());
 
-	// DirectXCommonのインスタンスを生成し、初期化
+	// DirectXCommonの初期化
 	DirectXCommon* dxCommon = new DirectXCommon();
 	dxCommon->Initialize(winApp);
+
+	//Sprite共通部の初期化
+	SpriteCommon* spriteCommon = new SpriteCommon();
+	spriteCommon->Initialize(dxCommon);
 
 	// DirectXCommonから必要なオブジェクトを取得
 	ID3D12Device* device = dxCommon->GetDevice();
 	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
 	ID3D12CommandQueue* commandQueue = dxCommon->GetCommandQueue();
-
+#pragma endregion
 
 
 	// RootSignature
@@ -621,6 +626,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	int selectedMeshIndex = 0;
 
 	// スプライトの初期化
+	Sprite* sprite = new Sprite();
+	sprite->Initialize();
+
 	Transform transformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 	Transform uvTransformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResourceSprite = dxCommon->CreateBufferResource(sizeof(VertexData) * 6);
@@ -901,8 +909,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		}
 
 		// --- 描画処理 ---
-		// 描画前処理
+		// directXの描画前処理
 		dxCommon->PreDraw();
+
+		//spriteの描画前処理
+		spriteCommon->SetupCommonState();
 
 		// ここからアプリケーション固有の描画コマンド
 		commandList->SetPipelineState(graphicsPipelineState.Get());
@@ -977,6 +988,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	delete dxCommon;
 	delete input;
 	delete winApp;
+	delete spriteCommon;
+	delete sprite;
 
 	return 0;
 }
