@@ -1,6 +1,6 @@
 #include "DebugCamera.h"
-#include "../base/Math/Matrix4x4.h"
-#include "../base/Math/Vector3.h"
+#include "../base/Math/MyMath.h"
+using namespace MyMath;
 #include<cmath>
 
 

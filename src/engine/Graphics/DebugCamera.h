@@ -1,7 +1,7 @@
 #pragma once
-#include "../base/Math/Matrix4x4.h"
+#include "../base/Math/MyMath.h"
+using namespace MyMath;
 #include <dinput.h>    
-#include"../base/Math/Vector2.h"
 
 
 class DebugCamera {

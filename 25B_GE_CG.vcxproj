@@ -180,6 +180,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Image Include="assets\textures\uvChecker.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\engine\base\Math\MyMath.h" />
     <ClInclude Include="src\engine\Graphics\Sprite.h" />
     <ClInclude Include="src\engine\Graphics\SpriteCommon.h" />
     <ClInclude Include="src\engine\Debug\D3DResourceLeakChecker.h" />
@@ -201,6 +202,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\io\Input.h" />
     <ClInclude Include="src\engine\base\StringUtility.h" />
     <ClInclude Include="src\engine\base\Math\Vector2.h" />
+    <ClInclude Include="src\engine\base\Math\Vector4.h" />
+    <ClInclude Include="src\engine\base\Math\Transform.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\engine\Graphics\Sprite.cpp" />
@@ -231,6 +234,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Development|x64'">stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="src\engine\base\Math\Vector2.cpp" />
+    <ClCompile Include="src\engine\base\Math\Vector4.cpp" />
+    <ClCompile Include="src\engine\base\Math\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="external\imgui\LICENSE.txt" />

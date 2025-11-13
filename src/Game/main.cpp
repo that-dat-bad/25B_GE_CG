@@ -8,9 +8,6 @@
 #include <strsafe.h>
 #include <dxcapi.h>
 #include <vector>
-#include "../engine/base/Math/Matrix4x4.h"
-#include "../engine/base/Math/Vector3.h"
-#include "../engine/base/Math/Vector2.h"
 #include <math.h>
 #define _USE_MATH_DEFINES
 #include <fstream>
@@ -27,6 +24,9 @@ using namespace StringUtility;
 #include"../engine/Graphics/DirectXCommon.h"
 #include"../engine/Graphics/SpriteCommon.h"
 #include"../engine/Graphics/Sprite.h"
+
+#include"../engine/base/Math/MyMath.h"
+using namespace MyMath;
 
 // debug用のヘッダ
 #include <DbgHelp.h>
@@ -55,7 +55,7 @@ using namespace StringUtility;
 #pragma comment(lib, "xinput.lib")
 
 // 構造体の定義
-struct Vector4 { float x, y, z, w; };
+
 
 struct Transform {
 	Vector3 scale;
@@ -629,8 +629,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	Sprite* sprite = new Sprite();
 	sprite->Initialize();
 
-	Transform transformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
-	Transform uvTransformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResourceSprite = dxCommon->CreateBufferResource(sizeof(VertexData) * 6);
 	Microsoft::WRL::ComPtr<ID3D12Resource> indexResourceSprite = dxCommon->CreateBufferResource(sizeof(uint32_t) * 6);
 	uint32_t* indexDataSprite = nullptr;
