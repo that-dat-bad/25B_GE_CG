@@ -57,12 +57,6 @@ using namespace MyMath;
 // 構造体の定義
 
 
-struct Transform {
-	Vector3 scale;
-	Vector3 rotate;
-	Vector3 translate;
-};
-
 struct VertexData {
 	Vector4 position;
 	Vector2 texcoord;
@@ -601,8 +595,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	// モデル読み込み
 	std::vector<ModelAsset> modelAssets;
 	std::vector<std::string> modelPaths = {
-		"sphere.obj",
-		"plane.obj",
+		//"sphere.obj",
+		//"plane.obj",
 	};
 	for (const auto& filename : modelPaths) {
 		ModelData modelData = LoadObjFile("assets/models", filename, dxCommon);
@@ -627,44 +621,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 	// スプライトの初期化
 	Sprite* sprite = new Sprite();
-	sprite->Initialize();
+	sprite->Initialize(spriteCommon, dxCommon);
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResourceSprite = dxCommon->CreateBufferResource(sizeof(VertexData) * 6);
-	Microsoft::WRL::ComPtr<ID3D12Resource> indexResourceSprite = dxCommon->CreateBufferResource(sizeof(uint32_t) * 6);
-	uint32_t* indexDataSprite = nullptr;
-	indexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&indexDataSprite));
-	indexDataSprite[0] = 0; indexDataSprite[1] = 1; indexDataSprite[2] = 2;
-	indexDataSprite[3] = 1; indexDataSprite[4] = 3; indexDataSprite[5] = 2;
-	indexResourceSprite->Unmap(0, nullptr);
-	VertexData* vertexDataSprite = nullptr;
-	vertexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSprite));
-	float initialSpriteWidth = static_cast<float>(textureAssets[0].metadata.width);
-	float initialSpriteHeight = static_cast<float>(textureAssets[0].metadata.height);
-
-	vertexDataSprite[0].position = { 0.0f, initialSpriteHeight, 0.0f, 1.0f };   vertexDataSprite[0].texcoord = { 0.0f, 1.0f };
-	vertexDataSprite[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };      vertexDataSprite[1].texcoord = { 0.0f, 0.0f };
-	vertexDataSprite[2].position = { initialSpriteWidth, initialSpriteHeight, 0.0f, 1.0f };  vertexDataSprite[2].texcoord = { 1.0f, 1.0f };
-	vertexDataSprite[3].position = { initialSpriteWidth, 0.0f, 0.0f, 1.0f };    vertexDataSprite[3].texcoord = { 1.0f, 0.0f };
-	vertexResourceSprite->Unmap(0, nullptr);
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite{};
-	vertexBufferViewSprite.BufferLocation = vertexResourceSprite->GetGPUVirtualAddress();
-	vertexBufferViewSprite.SizeInBytes = sizeof(VertexData) * 4;
-	vertexBufferViewSprite.StrideInBytes = sizeof(VertexData);
-	D3D12_INDEX_BUFFER_VIEW indexBufferViewSprite{};
-	indexBufferViewSprite.BufferLocation = indexResourceSprite->GetGPUVirtualAddress();
-	indexBufferViewSprite.SizeInBytes = sizeof(uint32_t) * 6;
-	indexBufferViewSprite.Format = DXGI_FORMAT_R32_UINT;
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceSprite = dxCommon->CreateBufferResource( sizeof(Material));
-	Material* materialDataSprite = nullptr;
-	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
-	materialDataSprite->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	materialDataSprite->enableLighting = 0;
-	materialDataSprite->shininess = 0.0f;
-	materialDataSprite->uvTransform = Identity4x4();
-
-	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResourceSprite = dxCommon->CreateBufferResource(sizeof(TransformationMatrix));
-	TransformationMatrix* wvpDataSprite = nullptr;
-	wvpResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&wvpDataSprite));
+	
 	int spriteTextureIndex = 0;
 	bool isSpriteVisible = false;
 
@@ -785,21 +744,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 			ImGui::SeparatorText("Sprite Settings");
 			ImGui::Checkbox("Show Sprite", &isSpriteVisible);
 			if (isSpriteVisible) {
+				// 1. テクスチャ選択
 				std::vector<const char*> textureNames;
 				for (const auto& asset : textureAssets) { textureNames.push_back(asset.name.c_str()); }
 				ImGui::Combo("Sprite Texture", &spriteTextureIndex, textureNames.data(), static_cast<int>(textureNames.size()));
-				ImGui::DragFloat3("Sprite Pos", &transformSprite.translate.x, 1.0f);
-				ImGui::DragFloat3("Sprite UV Scale", &uvTransformSprite.scale.x, 0.01f, 0.01f, 10.0f);
-				ImGui::SliderAngle("Sprite UV Rotate Z", &uvTransformSprite.rotate.z);
-				ImGui::DragFloat3("Sprite UV Translate", &uvTransformSprite.translate.x, 0.01f);
-				float currentSpriteWidth = static_cast<float>(textureAssets[spriteTextureIndex].metadata.width);
-				float currentSpriteHeight = static_cast<float>(textureAssets[spriteTextureIndex].metadata.height);
-				vertexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSprite));
-				vertexDataSprite[0].position = { 0.0f, currentSpriteHeight, 0.0f, 1.0f };   vertexDataSprite[0].texcoord = { 0.0f, 1.0f };
-				vertexDataSprite[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };      vertexDataSprite[1].texcoord = { 0.0f, 0.0f };
-				vertexDataSprite[2].position = { currentSpriteWidth, currentSpriteHeight, 0.0f, 1.0f };  vertexDataSprite[2].texcoord = { 1.0f, 1.0f };
-				vertexDataSprite[3].position = { currentSpriteWidth, 0.0f, 0.0f, 1.0f };    vertexDataSprite[3].texcoord = { 1.0f, 0.0f };
-				vertexResourceSprite->Unmap(0, nullptr);
 			}
 			ImGui::SeparatorText("Object Settings");
 			for (int i = 0; i < gameObjects.size(); ++i) {
@@ -895,30 +843,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		}
 
 		if (isSpriteVisible) {
-			Matrix4x4 worldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
-			Matrix4x4 viewMatrixSprite = Identity4x4();
-			Matrix4x4 projectionMatrixSprite = makeOrthographicmMatrix(0.0f, 0.0f, float(winApp->kClientWidth), float(winApp->kClientHeight), 0.0f, 100.0f);
-			wvpDataSprite->World = worldMatrixSprite;
-			wvpDataSprite->WVP = Multiply(worldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
-			materialDataSprite->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-			materialDataSprite->enableLighting = 0;
-			materialDataSprite->shininess = 0.0f;
-			materialDataSprite->uvTransform = MakeAffineMatrix(uvTransformSprite.scale, uvTransformSprite.rotate, uvTransformSprite.translate);
+			sprite->Update();
 		}
 
 		// --- 描画処理 ---
 		// directXの描画前処理
 		dxCommon->PreDraw();
 
-		//spriteの描画前処理
-		spriteCommon->SetupCommonState();
+
 
 		// ここからアプリケーション固有の描画コマンド
 		commandList->SetPipelineState(graphicsPipelineState.Get());
 		commandList->SetGraphicsRootSignature(rootSignature.Get());
 		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap };
+		ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon->GetSRVDescriptorHeap() };
 		commandList->SetDescriptorHeaps(1, descriptorHeaps);
 		commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 		commandList->SetGraphicsRootConstantBufferView(4, lightingSettingsResource->GetGPUVirtualAddress());
@@ -951,12 +890,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 		// スプライト描画
 		if (isSpriteVisible) {
-			commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
-			commandList->SetGraphicsRootConstantBufferView(1, wvpResourceSprite->GetGPUVirtualAddress());
-			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
-			commandList->IASetIndexBuffer(&indexBufferViewSprite);
-			commandList->SetGraphicsRootDescriptorTable(2, textureAssets[spriteTextureIndex].gpuHandle);
-			commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+			//spriteの描画前処理
+			spriteCommon->SetupCommonState();
+			sprite->Draw(dxCommon, textureAssets[spriteTextureIndex].gpuHandle);
 		}
 
 		// ImGui描画

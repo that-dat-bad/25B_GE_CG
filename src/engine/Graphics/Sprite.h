@@ -15,6 +15,7 @@ public:
 
 	void Update();
 
+	void Draw(DirectXCommon* dxCommon, D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle);
 private:
 
 	SpriteCommon* spriteCommon_ = nullptr;
@@ -40,28 +41,14 @@ private:
 
 	//---マテリアルデータ---//
 	struct Material {
+		Matrix4x4 WVP;
 		Vector4 color;
-		int32_t enableLighting;
-		float shininess;
-		float padding[3];
-		Matrix4x4 uvTransform; // UV変換行列
 	};
 
 	//バッファリソース
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
 	Material* materialData_ = nullptr;
 
-
-	//---座標変換行列---//
-	struct TransformationMatrix {
-		Matrix4x4 WVP;
-		Matrix4x4 World;
-	};
-
-	//バッファリソース
-	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource_ = nullptr;
-	//バッファリソース内のデータを指すポインタ
-	TransformationMatrix* transformationMatrixData_ = nullptr;
 
 	Transform transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 };
