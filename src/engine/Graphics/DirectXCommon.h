@@ -18,10 +18,9 @@ class DirectXCommon
 public:
 
 	static const uint32_t kRtvHeapDescriptorNum_ = 2; // ダブルバッファ用
-	static const uint32_t kSrvHeapDescriptorNum_ = 100; // SRVの最大数
 	static const uint32_t kDsvHeapDescriptorNum_ = 1; // 深度バッファ用
 	static const uint32_t kSwapChainBufferCount_ = 2;
-
+	static const uint32_t kMaxSRVCount_;//最大SRV数(最大テクスチャ枚数)
 
 
 	// 初期化
@@ -74,21 +73,12 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
 	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
 	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
-	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata);
-	void UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
+	Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
 
 private:
 
-	// 読み込んだテクスチャアセット
-	struct TextureAsset {
-		std::string name;
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
-		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
-		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
-		// テクスチャのメタデータを保持するためのフィールドを追加
-		DirectX::TexMetadata metadata;
-	};
+
 
 
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_ = nullptr;
@@ -130,7 +120,6 @@ private:
 
 	D3D12_VIEWPORT viewport_{};
 
-	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources_;
 
 	//記録時間(FPS固定用	)
 	std::chrono::steady_clock::time_point reference_;

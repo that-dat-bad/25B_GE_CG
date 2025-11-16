@@ -14,6 +14,8 @@
 using namespace logger;
 using namespace StringUtility;
 
+const uint32_t DirectXCommon::kMaxSRVCount_ = 512;
+
 void DirectXCommon::Initialize(WinApp* winApp) {
 	//FPS固定初期化
 	InitializeFixFPS();
@@ -250,7 +252,7 @@ void DirectXCommon::CreateDescriptorHeaps()
 	//RTV
 	rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, kRtvHeapDescriptorNum_, false);
 	//SRV
-	srvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kSrvHeapDescriptorNum_, true);
+	srvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kMaxSRVCount_, true);
 	//DSV
 	dsvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, kDsvHeapDescriptorNum_, false);
 }
@@ -490,13 +492,30 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateTextureResource(ID3D
 }
 
 
-void DirectXCommon::UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages) {
+Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages)
+{
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
-	DirectX::PrepareUpload(device_.Get(), mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subresources);
-	uint64_t intermediateSize = GetRequiredIntermediateSize(texture, 0, UINT(subresources.size()));
+	DirectX::TexMetadata metadata = mipImages.GetMetadata();
+	const DirectX::Image* images = mipImages.GetImages();
+	subresources.resize(metadata.mipLevels * metadata.arraySize);
+
+	for (size_t i = 0; i < subresources.size(); ++i) {
+		subresources[i].pData = images[i].pixels;
+		subresources[i].RowPitch = (LONG_PTR)images[i].rowPitch;
+		subresources[i].SlicePitch = (LONG_PTR)images[i].slicePitch;
+	}
+
+	// 必要なサイズを計算
+	UINT64 intermediateSize = GetRequiredIntermediateSize(texture, 0, UINT(subresources.size()));
+
+	// 中間リソースの作成
 	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = CreateBufferResource(intermediateSize);
+
+	// データ転送命令を積む
 	UpdateSubresources(commandList_.Get(), texture, intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
-	D3D12_RESOURCE_BARRIER barrier{};
+
+	// バリアの設定（書き込み可能 -> 読み取り専用）
+	D3D12_RESOURCE_BARRIER barrier = {};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	barrier.Transition.pResource = texture;
@@ -504,17 +523,9 @@ void DirectXCommon::UploadTextureData(ID3D12Resource* texture, const DirectX::Sc
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
 	commandList_->ResourceBarrier(1, &barrier);
-	intermediateResources_.push_back(intermediateResource);
+
+	// 中間リソースを返す
+	return intermediateResource;
 }
 
 
-DirectX::ScratchImage DirectXCommon::LoadTexture(const std::string& filePath) {
-	DirectX::ScratchImage image{};
-	std::wstring filePathW = ConvertString(filePath);
-	HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
-	assert(SUCCEEDED(hr));
-	DirectX::ScratchImage mipImages{};
-	hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
-	assert(SUCCEEDED(hr));
-	return mipImages;
-}
