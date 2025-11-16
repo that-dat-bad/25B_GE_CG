@@ -46,7 +46,6 @@ void Sprite::Update()
     float width = 100.0f;
     float height = 100.0f;
 
-    // アンカーポイント(左上)からのオフセットなどが本来必要ですが単純化します
     vertexData_[0].position = { 0.0f, height, 0.0f, 1.0f }; // 左下
     vertexData_[0].texcoord = { 0.0f, 1.0f };
     vertexData_[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };   // 左上
@@ -60,7 +59,6 @@ void Sprite::Update()
     // 2. 行列計算
     Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
     Matrix4x4 viewMatrix = Identity4x4();
-    // 画面サイズは一旦固定(1280, 720)か、SpriteCommonから貰うのが理想
     Matrix4x4 projectionMatrix = makeOrthographicmMatrix(0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 100.0f);
 
     Matrix4x4 wvpMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));

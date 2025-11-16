@@ -16,6 +16,21 @@ public:
 	void Update();
 
 	void Draw(DirectXCommon* dxCommon, D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle);
+
+
+	//--アクセッサ--//
+	//---セッター---//
+	void SetPosition(const Vector2& pos) { transform_.translate = { pos.x, pos.y, 0.0f }; }
+	void SetRotation(float rot) { transform_.rotate.z = rot; }
+	void SetSize(const Vector2& size) { transform_.scale = { size.x, size.y, 1.0f }; }
+	void SetColor(const Vector4& color) { materialData_->color = color; }
+
+	//---ゲッター---//
+	Vector2 GetPosition() const { return { transform_.translate.x, transform_.translate.y }; }
+	float GetRotation() const { return transform_.rotate.z; }
+	Vector2 GetSize() const { return { transform_.scale.x, transform_.scale.y }; }
+	Vector4 GetColor() const { return materialData_->color; }
+
 private:
 
 	SpriteCommon* spriteCommon_ = nullptr;

@@ -620,10 +620,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	int selectedMeshIndex = 0;
 
 	// スプライトの初期化
-	Sprite* sprite = new Sprite();
-	sprite->Initialize(spriteCommon, dxCommon);
+	//Sprite* sprite = new Sprite();
+	//sprite->Initialize(spriteCommon, dxCommon);
 
-	
+	std::vector<Sprite*> sprites;
+	const int kSpriteCount = 5; // 5枚描画してみる
+
+	for (int i = 0; i < kSpriteCount; ++i) {
+		Sprite* newSprite = new Sprite();
+		newSprite->Initialize(spriteCommon, dxCommon);
+
+		// 横に並ぶように初期位置をずらす
+		Vector2 pos = { 100.0f + (i * 150.0f), 200.0f };
+		newSprite->SetPosition(pos);
+
+		sprites.push_back(newSprite);
+	}
+	int currentSpriteIndex = 0;
 	int spriteTextureIndex = 0;
 	bool isSpriteVisible = false;
 
@@ -744,10 +757,52 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 			ImGui::SeparatorText("Sprite Settings");
 			ImGui::Checkbox("Show Sprite", &isSpriteVisible);
 			if (isSpriteVisible) {
-				// 1. テクスチャ選択
+				// 1. テクスチャ選択 (共通)
 				std::vector<const char*> textureNames;
 				for (const auto& asset : textureAssets) { textureNames.push_back(asset.name.c_str()); }
 				ImGui::Combo("Sprite Texture", &spriteTextureIndex, textureNames.data(), static_cast<int>(textureNames.size()));
+
+				ImGui::Separator();
+
+				//操作するスプライトを選択
+				ImGui::SliderInt("Select Sprite No", &currentSpriteIndex, 0, int(sprites.size()) - 1);
+
+				// 選ばれたスプライトを取得
+				Sprite* targetSprite = sprites[currentSpriteIndex];
+
+				ImGui::Text("Editing Sprite: %d", currentSpriteIndex);
+
+				// --------------------------------------------------
+				// 2. 座標 (Translate)
+				// --------------------------------------------------
+				Vector2 pos = targetSprite->GetPosition();
+				if (ImGui::DragFloat2("Position", &pos.x, 1.0f)) {
+					targetSprite->SetPosition(pos);
+				}
+
+				// --------------------------------------------------
+				// 3. 回転 (Rotate)
+				// --------------------------------------------------
+				float rot = targetSprite->GetRotation();
+				if (ImGui::SliderAngle("Rotation", &rot)) {
+					targetSprite->SetRotation(rot);
+				}
+
+				// --------------------------------------------------
+				// 4. サイズ (Scale)
+				// --------------------------------------------------
+				Vector2 size = targetSprite->GetSize();
+				if (ImGui::DragFloat2("Size", &size.x, 1.0f)) {
+					targetSprite->SetSize(size);
+				}
+
+				// --------------------------------------------------
+				// 5. 色 (Color)
+				// --------------------------------------------------
+				Vector4 color = targetSprite->GetColor();
+				if (ImGui::ColorEdit4("Color", &color.x)) {
+					targetSprite->SetColor(color);
+				}
 			}
 			ImGui::SeparatorText("Object Settings");
 			for (int i = 0; i < gameObjects.size(); ++i) {
@@ -843,7 +898,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		}
 
 		if (isSpriteVisible) {
-			sprite->Update();
+			/*sprite->Update();*/
+			for (Sprite* sprite : sprites) {
+				sprite->Update();
+			}
 		}
 
 		// --- 描画処理 ---
@@ -892,7 +950,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		if (isSpriteVisible) {
 			//spriteの描画前処理
 			spriteCommon->SetupCommonState();
-			sprite->Draw(dxCommon, textureAssets[spriteTextureIndex].gpuHandle);
+			//sprite->Draw(dxCommon, textureAssets[spriteTextureIndex].gpuHandle);
+			for (Sprite* sprite : sprites) {
+				sprite->Draw(dxCommon, textureAssets[spriteTextureIndex].gpuHandle);
+			}
 		}
 
 		// ImGui描画
@@ -923,7 +984,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	delete input;
 	delete winApp;
 	delete spriteCommon;
-	delete sprite;
+	for (Sprite* sprite : sprites) {
+		delete sprite;
+	}
 
 	return 0;
 }
