@@ -141,3 +141,11 @@ uint32_t TextureManager::GetTextureIndexByFilePath(const std::string& filePath)
 	assert(0);
 	return 0;
 }
+
+const DirectX::TexMetadata& TextureManager::GetMetaData(uint32_t textureIndex)
+{
+	//範囲外指定違反チェック
+	assert(textureIndex < textureDatas_.size());
+	TextureData& textureData = textureDatas_[textureIndex];
+	return textureData.metadata;
+}

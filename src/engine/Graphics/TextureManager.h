@@ -30,7 +30,12 @@ public:
 
 	uint32_t GetTextureIndexByFilePath(const std::string& filePath);
 
+	const DirectX::TexMetadata& GetMetaData(uint32_t textureIndex);
+
 private:
+
+
+
 	static TextureManager* instance_;
 	TextureManager() = default;
 	~TextureManager() = default;

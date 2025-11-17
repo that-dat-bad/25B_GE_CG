@@ -3,6 +3,8 @@
 #include"DirectXCommon.h"
 #include"../base/Math/MyMath.h"
 #include"TextureManager.h"
+#include"../../../external/DirectXTex/DirectXTex.h"
+
 void Sprite::Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon, std::string textureFilePath)
 {
 	spriteCommon_ = spriteCommon;
@@ -23,6 +25,8 @@ void Sprite::Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon, std
 	vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
 	float initialSpriteWidth = 100.0f;
 	float initialSpriteHeight = 100.0f;
+	transform_.scale.x = initialSpriteWidth;
+	transform_.scale.y = initialSpriteHeight;
 
 	//IndexResourceにデータを書き込むためのアドレスを取得してindexDataに割り当てる
 	uint32_t* indexDataLocal = nullptr;
@@ -39,23 +43,48 @@ void Sprite::Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon, std
 	materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	materialData_->WVP = Identity4x4();
 	textureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
+	anchorPoint_ = { 0.5f, 0.5f };
 
 }
 
 void Sprite::Update()
 {
 
-	float width = 100.0f;
-	float height = 100.0f;
 
-	vertexData_[0].position = { 0.0f, height, 0.0f, 1.0f }; // 左下
-	vertexData_[0].texcoord = { 0.0f, 1.0f };
-	vertexData_[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };   // 左上
-	vertexData_[1].texcoord = { 0.0f, 0.0f };
-	vertexData_[2].position = { width, height, 0.0f, 1.0f };// 右下
-	vertexData_[2].texcoord = { 1.0f, 1.0f };
-	vertexData_[3].position = { width, 0.0f, 0.0f, 1.0f };  // 右上
-	vertexData_[3].texcoord = { 1.0f, 0.0f };
+	float left = 0.0f - anchorPoint_.x;
+	float right = 1.0f - anchorPoint_.x;
+	float top = 0.0f - anchorPoint_.y;
+	float bottom = 1.0f - anchorPoint_.y;
+
+	const DirectX::TexMetadata& metaData = TextureManager::GetInstance()->GetMetaData(textureIndex_);
+
+	float texLeft = textureLeftTop_.x / static_cast<float>(metaData.width);
+	float texRight = (textureLeftTop_.x + textureSize_.x) / static_cast<float>(metaData.width);
+	float texTop = textureLeftTop_.y / static_cast<float>(metaData.height);
+	float texBottom = (textureLeftTop_.y + textureSize_.y) / static_cast<float>(metaData.height);
+
+	//左右反転
+	if (isFlipX_)
+	{
+		left = -left;
+		right = -right;
+	}
+
+	//上下反転
+	if (isFlipY_)
+	{
+		top = -top;
+		bottom = -bottom;
+	}
+
+	vertexData_[0].position = { left, bottom, 0.0f, 1.0f }; // 左下
+	vertexData_[0].texcoord = { texLeft,texBottom };
+	vertexData_[1].position = { left, top, 0.0f, 1.0f };   // 左上
+	vertexData_[1].texcoord = { texLeft, texTop };
+	vertexData_[2].position = { right, bottom, 0.0f, 1.0f };// 右下
+	vertexData_[2].texcoord = { texRight, texBottom };
+	vertexData_[3].position = { right, top, 0.0f, 1.0f };  // 右上
+	vertexData_[3].texcoord = { texRight, texTop };
 
 
 	// 2. 行列計算
