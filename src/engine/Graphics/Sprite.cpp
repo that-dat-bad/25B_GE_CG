@@ -25,8 +25,8 @@ void Sprite::Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon, std
 	vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
 	float initialSpriteWidth = 100.0f;
 	float initialSpriteHeight = 100.0f;
-	transform_.scale.x = initialSpriteWidth;
-	transform_.scale.y = initialSpriteHeight;
+	size_.x = initialSpriteWidth;
+	size_.y = initialSpriteHeight;
 
 	//IndexResourceにデータを書き込むためのアドレスを取得してindexDataに割り当てる
 	uint32_t* indexDataLocal = nullptr;
@@ -44,7 +44,7 @@ void Sprite::Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon, std
 	materialData_->WVP = Identity4x4();
 	textureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
 	anchorPoint_ = { 0.5f, 0.5f };
-
+	AdjustTextureSize();
 }
 
 void Sprite::Update()
@@ -86,9 +86,14 @@ void Sprite::Update()
 	vertexData_[3].position = { right, top, 0.0f, 1.0f };  // 右上
 	vertexData_[3].texcoord = { texRight, texTop };
 
-
+	Vector3 finalScale = {
+		size_.x * transform_.scale.x,
+		size_.y * transform_.scale.y,
+		1.0f
+	};
 	// 2. 行列計算
-	Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+	//Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+	Matrix4x4 worldMatrix = MakeAffineMatrix(finalScale, transform_.rotate, transform_.translate);
 	Matrix4x4 viewMatrix = Identity4x4();
 	Matrix4x4 projectionMatrix = makeOrthographicmMatrix(0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 100.0f);
 
@@ -125,4 +130,14 @@ void Sprite::Draw(DirectXCommon* dxCommon, D3D12_GPU_DESCRIPTOR_HANDLE textureSr
 void Sprite::ChangeTexture(std::string textureFilePath)
 {
 	textureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
+}
+
+void Sprite::AdjustTextureSize()
+{
+	//テクスチャメタデータを取得
+	const DirectX::TexMetadata& metadata = TextureManager::GetInstance()->GetMetaData(textureIndex_);
+	textureSize_.x = static_cast<float>(metadata.width);
+	textureSize_.y = static_cast<float>(metadata.height);
+	//画像サイズをテクスチャサイズに合わせる
+	size_ = textureSize_;
 }

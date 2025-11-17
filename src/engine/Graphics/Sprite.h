@@ -20,11 +20,14 @@ public:
 
 	void ChangeTexture(std::string textureFilePath);
 
+
+
 	//--アクセッサ--//
 	//---セッター---//
 	void SetPosition(const Vector2& pos) { transform_.translate = { pos.x, pos.y, 0.0f }; }
 	void SetRotation(float rot) { transform_.rotate.z = rot; }
-	void SetSize(const Vector2& size) { transform_.scale = { size.x, size.y, 1.0f }; }
+	void SetScale(const Vector2& scale) { transform_.scale = { scale.x, scale.y, 1.0f }; }
+	void SetSize(const Vector2& size) { size_ = size; }
 	void SetColor(const Vector4& color) { materialData_->color = color; }
 	void SetAnchorPoint(const Vector2& anchorPoint) { anchorPoint_ = anchorPoint; }
 	void SetFlipX(bool isFlip) { isFlipX_ = isFlip; }
@@ -35,7 +38,7 @@ public:
 	//---ゲッター---//
 	Vector2 GetPosition() const { return { transform_.translate.x, transform_.translate.y }; }
 	float GetRotation() const { return transform_.rotate.z; }
-	Vector2 GetSize() const { return { transform_.scale.x, transform_.scale.y }; }
+	Vector2 GetSize() const { return size_; }
 	Vector4 GetColor() const { return materialData_->color; }
 	const Vector2& GetAnchorPoint() const { return anchorPoint_; }
 	bool GetFlipX() const { return isFlipX_; }
@@ -46,7 +49,8 @@ public:
 private:
 
 	SpriteCommon* spriteCommon_ = nullptr;
-
+	//テクスチャサイズをイメージに合わせる
+	void AdjustTextureSize();
 
 	//---頂点データ---//
 	struct VertexData {
@@ -88,5 +92,6 @@ private:
 	Vector2 textureLeftTop_ = { 0.0f, 0.0f };
 	//テクスチャ切り出しサイズ
 	Vector2 textureSize_ = { 100.0f,100.0f };
+	Vector2 size_ = { 100.0f,100.0f };
 };
 
