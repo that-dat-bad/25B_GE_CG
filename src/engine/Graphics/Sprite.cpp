@@ -2,7 +2,8 @@
 #include"SpriteCommon.h"
 #include"DirectXCommon.h"
 #include"../base/Math/MyMath.h"
-void Sprite::Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon)
+#include"TextureManager.h"
+void Sprite::Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon, std::string textureFilePath)
 {
 	spriteCommon_ = spriteCommon;
 
@@ -36,55 +37,63 @@ void Sprite::Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon)
 	//マテリアルリソースにデータを書き込むためのアドレスを取得してmaterialDataに割り当てる
 	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
 	materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    materialData_->WVP = Identity4x4();
+	materialData_->WVP = Identity4x4();
+	textureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
 
 }
 
 void Sprite::Update()
 {
 
-    float width = 100.0f;
-    float height = 100.0f;
+	float width = 100.0f;
+	float height = 100.0f;
 
-    vertexData_[0].position = { 0.0f, height, 0.0f, 1.0f }; // 左下
-    vertexData_[0].texcoord = { 0.0f, 1.0f };
-    vertexData_[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };   // 左上
-    vertexData_[1].texcoord = { 0.0f, 0.0f };
-    vertexData_[2].position = { width, height, 0.0f, 1.0f };// 右下
-    vertexData_[2].texcoord = { 1.0f, 1.0f };
-    vertexData_[3].position = { width, 0.0f, 0.0f, 1.0f };  // 右上
-    vertexData_[3].texcoord = { 1.0f, 0.0f };
+	vertexData_[0].position = { 0.0f, height, 0.0f, 1.0f }; // 左下
+	vertexData_[0].texcoord = { 0.0f, 1.0f };
+	vertexData_[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };   // 左上
+	vertexData_[1].texcoord = { 0.0f, 0.0f };
+	vertexData_[2].position = { width, height, 0.0f, 1.0f };// 右下
+	vertexData_[2].texcoord = { 1.0f, 1.0f };
+	vertexData_[3].position = { width, 0.0f, 0.0f, 1.0f };  // 右上
+	vertexData_[3].texcoord = { 1.0f, 0.0f };
 
 
-    // 2. 行列計算
-    Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-    Matrix4x4 viewMatrix = Identity4x4();
-    Matrix4x4 projectionMatrix = makeOrthographicmMatrix(0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 100.0f);
+	// 2. 行列計算
+	Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+	Matrix4x4 viewMatrix = Identity4x4();
+	Matrix4x4 projectionMatrix = makeOrthographicmMatrix(0.0f, 0.0f, 1280.0f, 720.0f, 0.0f, 100.0f);
 
-    Matrix4x4 wvpMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+	Matrix4x4 wvpMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 
-    // 3. マテリアルへの書き込み
-    materialData_->WVP = wvpMatrix;
+	// 3. マテリアルへの書き込み
+	materialData_->WVP = wvpMatrix;
 
 }
 
 void Sprite::Draw(DirectXCommon* dxCommon, D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle)
 {
-    ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
+	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
 
-    // 1. 頂点バッファの設定
-    commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
+	// 1. 頂点バッファの設定
+	commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
 
-    // 2. インデックスバッファの設定
-    commandList->IASetIndexBuffer(&indexBufferView);
+	// 2. インデックスバッファの設定
+	commandList->IASetIndexBuffer(&indexBufferView);
 
-    // 3. マテリアル(定数バッファ)の設定
-    // [0]: マテリアル(WVP+Color)  [1]: テクスチャ
-    commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
+	// 3. マテリアル(定数バッファ)の設定
+	// [0]: マテリアル(WVP+Color)  [1]: テクスチャ
+	commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
 
-    // 4. テクスチャの設定
-    commandList->SetGraphicsRootDescriptorTable(1, textureSrvHandle);
+	// 4. テクスチャの設定
+	//commandList->SetGraphicsRootDescriptorTable(1, textureSrvHandle);
+	commandList->SetGraphicsRootDescriptorTable(1,TextureManager::GetInstance()->GetSrvHandleGPU(textureIndex_));
+	
 
-    // 5. 描画コマンド
-    commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+	// 5. 描画コマンド
+	commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+}
+
+void Sprite::ChangeTexture(std::string textureFilePath)
+{
+	textureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
 }

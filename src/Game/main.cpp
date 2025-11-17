@@ -605,7 +605,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 	for (int i = 0; i < kSpriteCount; ++i) {
 		Sprite* newSprite = new Sprite();
-		newSprite->Initialize(spriteCommon, dxCommon);
+		if (i == 0 || i == 2 || i == 4) { // 1, 3, 5枚目 (インデックス 0, 2, 4)
+			newSprite->Initialize(spriteCommon, dxCommon, "assets/textures/monsterBall.png");
+
+		} else { // 2, 4枚目 (インデックス 1, 3)
+			newSprite->Initialize(spriteCommon, dxCommon, "assets/textures/uvchecker.png");
+
+		}
+		//newSprite->Initialize(spriteCommon, dxCommon, "assets/textures/monsterBall.png");
 
 		// 横に並ぶように初期位置をずらす
 		Vector2 pos = { 100.0f + (i * 150.0f), 200.0f };
@@ -903,32 +910,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		commandList->SetGraphicsRootConstantBufferView(4, lightingSettingsResource->GetGPUVirtualAddress());
 
 		// 3Dオブジェクト描画
-		for (auto& gameObject : gameObjects) {
-			if (gameObject.modelAssetIndex >= 0 && gameObject.modelAssetIndex < modelAssets.size()) {
-				ModelData& currentModel = modelAssets[gameObject.modelAssetIndex].modelData;
-				for (auto& mesh : currentModel.meshes) {
-					commandList->SetGraphicsRootConstantBufferView(0, mesh.materialResource->GetGPUVirtualAddress());
-					commandList->SetGraphicsRootConstantBufferView(1, mesh.wvpResource->GetGPUVirtualAddress());
-					commandList->IASetVertexBuffers(0, 1, &mesh.vertexBufferView);
+		//for (auto& gameObject : gameObjects) {
+		//	if (gameObject.modelAssetIndex >= 0 && gameObject.modelAssetIndex < modelAssets.size()) {
+		//		ModelData& currentModel = modelAssets[gameObject.modelAssetIndex].modelData;
+		//		for (auto& mesh : currentModel.meshes) {
+		//			commandList->SetGraphicsRootConstantBufferView(0, mesh.materialResource->GetGPUVirtualAddress());
+		//			commandList->SetGraphicsRootConstantBufferView(1, mesh.wvpResource->GetGPUVirtualAddress());
+		//			commandList->IASetVertexBuffers(0, 1, &mesh.vertexBufferView);
 
-					if (mesh.hasUV && !mesh.material.textureFilePath.empty()) {
-						// TextureManagerから直接ハンドルをもらう
-						D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle =
-							TextureManager::GetInstance()->GetSrvHandleGPU(mesh.material.textureFilePath);
+		//			if (mesh.hasUV && !mesh.material.textureFilePath.empty()) {
+		//				// TextureManagerから直接ハンドルをもらう
+		//				D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle =
+		//					TextureManager::GetInstance()->GetSrvHandleGPU(mesh.material.textureFilePath);
 
-						commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandle);
-					}
-					else {
-						// UVがない場合は、とりあえず0番目を使う
-						D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle =
-							TextureManager::GetInstance()->GetSrvHandleGPU(texturePaths[0]);
+		//				commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandle);
+		//			}
+		//			else {
+		//				// UVがない場合は、とりあえず0番目を使う
+		//				D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle =
+		//					TextureManager::GetInstance()->GetSrvHandleGPU(texturePaths[0]);
 
-						commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandle);
-					}
-					commandList->DrawInstanced(UINT(mesh.vertices.size()), 1, 0, 0);
-				}
-			}
-		}
+		//				commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandle);
+		//			}
+		//			commandList->DrawInstanced(UINT(mesh.vertices.size()), 1, 0, 0);
+		//		}
+		//	}
+		//}
 
 		// スプライト描画
 		if (isSpriteVisible) {
@@ -941,7 +948,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 				// TextureManagerからハンドルを取得
 				D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle =
-					TextureManager::GetInstance()->GetSrvHandleGPU(path);
+					TextureManager::GetInstance()->GetSrvHandleGPU(spriteTextureIndex);
 
 				// 描画
 				sprite->Draw(dxCommon, textureSrvHandle);

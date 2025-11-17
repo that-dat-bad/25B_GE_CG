@@ -4,7 +4,7 @@
 #include <filesystem> 
 
 TextureManager* TextureManager::instance_ = nullptr;
- uint32_t TextureManager::kSRVIndexTop = 1;
+uint32_t TextureManager::kSRVIndexTop = 1;
 
 std::wstring ConvertString(const std::string& str) {
 	if (str.empty()) return std::wstring();
@@ -59,8 +59,7 @@ void TextureManager::LoadTexture(const std::string& filePath)
 	DirectX::ScratchImage mipImages;
 	if (DirectX::IsCompressed(image.GetMetadata().format)) {
 		mipImages = std::move(image);
-	}
-	else {
+	} else {
 		hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
 		assert(SUCCEEDED(hr));
 	}
@@ -101,21 +100,12 @@ void TextureManager::LoadTexture(const std::string& filePath)
 	dxCommon_->GetDevice()->CreateShaderResourceView(textureData.resource.Get(), &srvDesc, textureData.srvHandleCPU);
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetSrvHandleGPU(const std::string& filePath)
+D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetSrvHandleGPU(uint32_t textureIndex)
 {
-	// 線形探索で探す
-	auto it = std::find_if(
-		textureDatas_.begin(),
-		textureDatas_.end(),
-		[&](TextureData& textureData) { return textureData.filePath == filePath; }
-	);
-
-	if (it != textureDatas_.end()) {
-		return it->srvHandleGPU;
-	}
-
-	assert(false && "Texture not found.");
-	return D3D12_GPU_DESCRIPTOR_HANDLE{};
+	//範囲外指定違反チェック
+	assert(textureIndex < textureDatas_.size());
+	TextureData& textureData = textureDatas_[textureIndex];
+	return textureDatas_[textureIndex].srvHandleGPU;
 }
 
 const DirectX::TexMetadata& TextureManager::GetMetaData(const std::string& filePath)
@@ -134,4 +124,20 @@ const DirectX::TexMetadata& TextureManager::GetMetaData(const std::string& fileP
 	assert(false && "Texture not found.");
 	static DirectX::TexMetadata dummy{};
 	return dummy;
+}
+
+uint32_t TextureManager::GetTextureIndexByFilePath(const std::string& filePath)
+{
+	auto it = std::find_if(
+		textureDatas_.begin(),
+		textureDatas_.end(),
+		[&](TextureData& textureData) { return textureData.filePath == filePath; }
+	);
+	if (it != textureDatas_.end())
+	{
+		uint32_t textureIndex = static_cast<uint32_t>(std::distance(textureDatas_.begin(), it));
+		return textureIndex;
+	}
+	assert(0);
+	return 0;
 }

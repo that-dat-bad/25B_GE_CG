@@ -4,6 +4,7 @@ using namespace MyMath;
 #include <d3d12.h>
 #include <cstdint>
 #include <wrl/client.h>
+#include<string>
 
 class SpriteCommon;
 class DirectXCommon;
@@ -11,12 +12,13 @@ class DirectXCommon;
 class Sprite
 {
 public:
-	void Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon);
+	void Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon,std::string textureFilePath);
 
 	void Update();
 
 	void Draw(DirectXCommon* dxCommon, D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle);
 
+	void ChangeTexture(std::string textureFilePath);
 
 	//--アクセッサ--//
 	//---セッター---//
@@ -66,5 +68,7 @@ private:
 
 
 	Transform transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+
+	uint32_t textureIndex_ = 0;
 };
 

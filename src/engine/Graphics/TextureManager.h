@@ -23,11 +23,12 @@ public:
 	void LoadTexture(const std::string& filePath);
 
 	// SRVハンドル(GPU)を取得
-	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(const std::string& filePath);
+	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(uint32_t textureIndex);
 
 	// メタデータを取得
 	const DirectX::TexMetadata& GetMetaData(const std::string& filePath);
 
+	uint32_t GetTextureIndexByFilePath(const std::string& filePath);
 
 private:
 	static TextureManager* instance_;
