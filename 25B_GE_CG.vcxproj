@@ -180,6 +180,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Image Include="assets\textures\uvChecker.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\engine\Graphics\Object3dCommon.h" />
+    <ClInclude Include="src\engine\Graphics\Object3d.h" />
     <ClInclude Include="src\engine\base\Math\MyMath.h" />
     <ClInclude Include="src\engine\Graphics\Sprite.h" />
     <ClInclude Include="src\engine\Graphics\SpriteCommon.h" />
@@ -207,6 +209,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\Graphics\TextureManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\engine\Graphics\Object3dCommon.cpp" />
+    <ClCompile Include="src\engine\Graphics\Object3d.cpp" />
     <ClCompile Include="src\engine\Graphics\Sprite.cpp" />
     <ClCompile Include="src\engine\Graphics\SpriteCommon.cpp" />
     <ClCompile Include="src\engine\Debug\D3DResourceLeakChecker.cpp" />

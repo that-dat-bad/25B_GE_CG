@@ -117,6 +117,12 @@
     <ClInclude Include="src\engine\Graphics\TextureManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="src\engine\Graphics\Object3d.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\Graphics\Object3dCommon.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="external\imgui\imgui.cpp">
@@ -186,6 +192,12 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="src\engine\Graphics\TextureManager.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\Graphics\Object3d.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\Graphics\Object3dCommon.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
