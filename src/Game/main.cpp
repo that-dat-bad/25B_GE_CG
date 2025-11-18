@@ -191,189 +191,7 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) {
 }
 
 
-//// 複数のマテリアルを読み込むためのマップ
-//std::map<std::string, MaterialData> LoadMaterialTemplates(const std::string& directoryPath, const std::string& filename) {
-//	std::map<std::string, MaterialData> materials;
-//	std::string currentMaterialName;
-//	std::string line;
-//	std::ifstream file(directoryPath + "/" + filename);
-//	assert(file.is_open());
-//
-//	while (std::getline(file, line)) {
-//		std::istringstream s(line);
-//		std::string identifier;
-//		s >> identifier;
-//
-//		if (identifier == "newmtl") {
-//			s >> currentMaterialName;
-//			materials[currentMaterialName].name = currentMaterialName;
-//		}
-//		else if (identifier == "map_Kd" && !currentMaterialName.empty()) {
-//			std::string textureFileName;
-//			s >> textureFileName;
-//			materials[currentMaterialName].textureFilePath = directoryPath + "/" + textureFileName;
-//		}
-//	}
-//	return materials;
-//}
-//
-//// OBJファイルを読み込み、複数のメッシュとして解析する関数
-//ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon) {
-//	ModelData modeldata;
-//	modeldata.name = filename;
-//	std::vector<Vector4> positions;
-//	std::vector<Vector3> normals;
-//	std::vector<Vector2> texcoords;
-//	std::string line;
-//	std::ifstream file(directoryPath + "/" + filename);
-//	assert(file.is_open());
-//
-//	std::map<std::string, MaterialData> loadedMaterials;
-//	MeshObject currentMesh;
-//	bool firstMesh = true;
-//
-//	while (std::getline(file, line)) {
-//		std::string identifier;
-//		std::istringstream s(line);
-//		s >> identifier;
-//
-//		if (identifier == "o" || identifier == "g") { // 新しいオブジェクトまたはグループの開始
-//			if (!firstMesh) {
-//				// 以前のメッシュを保存
-//				if (!currentMesh.vertices.empty()) {
-//					// メッシュの頂点バッファを作成
-//					currentMesh.vertexBuffer = dxCommon->CreateBufferResource(sizeof(VertexData) * currentMesh.vertices.size());
-//					VertexData* mappedData = nullptr;
-//					currentMesh.vertexBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
-//					std::memcpy(mappedData, currentMesh.vertices.data(), sizeof(VertexData) * currentMesh.vertices.size());
-//					currentMesh.vertexBuffer->Unmap(0, nullptr);
-//
-//					currentMesh.vertexBufferView.BufferLocation = currentMesh.vertexBuffer->GetGPUVirtualAddress();
-//					currentMesh.vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * currentMesh.vertices.size());
-//					currentMesh.vertexBufferView.StrideInBytes = sizeof(VertexData);
-//
-//					// マテリアルとWVPのリソースを作成
-//					currentMesh.materialResource = dxCommon->CreateBufferResource(sizeof(Material));
-//					currentMesh.materialResource->Map(0, nullptr, reinterpret_cast<void**>(&currentMesh.materialData));
-//					currentMesh.materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f }; // デフォルト色
-//					currentMesh.materialData->enableLighting = 1;
-//					currentMesh.materialData->shininess = 0.0f;
-//					currentMesh.materialData->uvTransform = Identity4x4(); // UV変換を単位行列に初期化
-//
-//					currentMesh.wvpResource = dxCommon->CreateBufferResource(sizeof(TransformationMatrix));
-//					currentMesh.wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&currentMesh.wvpData));
-//					currentMesh.transform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} }; // デフォルト変換
-//					currentMesh.uvTransform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} }; // UV変換の初期化
-//
-//					modeldata.meshes.push_back(currentMesh);
-//				}
-//			}
-//			firstMesh = false;
-//			currentMesh = MeshObject(); // 新しいメッシュを初期化
-//			s >> currentMesh.name; // メッシュ名を設定
-//			currentMesh.transform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} }; // デフォルト変換
-//			currentMesh.uvTransform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} }; // UV変換の初期化
-//			currentMesh.hasUV = false; // 初期化
-//		}
-//		else if (identifier == "v") {
-//			Vector4 position;
-//			s >> position.x >> position.y >> position.z;
-//			position.w = 1.0f;
-//			// 座標系の変換
-//			position.x *= -1.0f;
-//			positions.push_back(position);
-//		}
-//		else if (identifier == "vt") {
-//			Vector2 texcoord;
-//			s >> texcoord.x >> texcoord.y;
-//			// V方向の反転
-//			texcoord.y = 1.0f - texcoord.y;
-//			texcoords.push_back(texcoord);
-//			currentMesh.hasUV = true; // このメッシュはUVを持つ
-//		}
-//		else if (identifier == "vn") {
-//			Vector3 normal;
-//			s >> normal.x >> normal.y >> normal.z;
-//			// 座標系の変換
-//			normal.x *= -1.0f;
-//			normals.push_back(normal);
-//		}
-//		else if (identifier == "f") {
-//			VertexData faceVertices[3];
-//			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
-//				std::string vertexDefinition;
-//				s >> vertexDefinition;
-//
-//				uint32_t elementIndices[3] = { 0, 0, 0 };
-//
-//				size_t first_slash = vertexDefinition.find('/');
-//				elementIndices[0] = std::stoi(vertexDefinition.substr(0, first_slash));
-//
-//				if (first_slash != std::string::npos) {
-//					if (vertexDefinition[first_slash + 1] != '/') {
-//						size_t second_slash = vertexDefinition.find('/', first_slash + 1);
-//						elementIndices[1] = std::stoi(vertexDefinition.substr(first_slash + 1, second_slash - (first_slash + 1)));
-//					}
-//					size_t second_slash = vertexDefinition.find('/', first_slash + 1);
-//					if (second_slash != std::string::npos) {
-//						elementIndices[2] = std::stoi(vertexDefinition.substr(second_slash + 1));
-//					}
-//				}
-//
-//				Vector4 position = positions[elementIndices[0] - 1];
-//				Vector2 texcoord = { 0.0f, 0.0f };
-//				if (elementIndices[1] != 0 && currentMesh.hasUV) { // currentMesh.hasUV を使用
-//					texcoord = texcoords[elementIndices[1] - 1];
-//				}
-//				Vector3 normal = (elementIndices[2] > 0 && !normals.empty()) ? normals[elementIndices[2] - 1] : Vector3{ 0.0f, 0.0f, 1.0f };
-//
-//				faceVertices[faceVertex] = { position, texcoord, normal };
-//			}
-//			currentMesh.vertices.push_back(faceVertices[0]);
-//			currentMesh.vertices.push_back(faceVertices[2]);
-//			currentMesh.vertices.push_back(faceVertices[1]);
-//		}
-//		else if (identifier == "mtllib") {
-//			std::string materialFileName;
-//			s >> materialFileName;
-//			loadedMaterials = LoadMaterialTemplates(directoryPath, materialFileName);
-//		}
-//		else if (identifier == "usemtl") {
-//			std::string materialName;
-//			s >> materialName;
-//			if (loadedMaterials.count(materialName)) {
-//				currentMesh.material = loadedMaterials[materialName];
-//			}
-//		}
-//	}
-//	// ファイルの終わりに残った最後のメッシュを保存
-//	if (!currentMesh.vertices.empty()) {
-//		currentMesh.vertexBuffer = dxCommon->CreateBufferResource(sizeof(VertexData) * currentMesh.vertices.size());
-//		VertexData* mappedData = nullptr;
-//		currentMesh.vertexBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mappedData));
-//		std::memcpy(mappedData, currentMesh.vertices.data(), sizeof(VertexData) * currentMesh.vertices.size());
-//		currentMesh.vertexBuffer->Unmap(0, nullptr);
-//
-//		currentMesh.vertexBufferView.BufferLocation = currentMesh.vertexBuffer->GetGPUVirtualAddress();
-//		currentMesh.vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * currentMesh.vertices.size());
-//		currentMesh.vertexBufferView.StrideInBytes = sizeof(VertexData);
-//
-//		currentMesh.materialResource = dxCommon->CreateBufferResource(sizeof(Material));
-//		currentMesh.materialResource->Map(0, nullptr, reinterpret_cast<void**>(&currentMesh.materialData));
-//		currentMesh.materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f }; // デフォルト色
-//		currentMesh.materialData->enableLighting = 1;
-//		currentMesh.materialData->shininess = 0.0f;
-//		currentMesh.materialData->uvTransform = Identity4x4(); // UV変換を単位行列に初期化
-//
-//		currentMesh.wvpResource = dxCommon->CreateBufferResource(sizeof(TransformationMatrix));
-//		currentMesh.wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&currentMesh.wvpData));
-//		currentMesh.transform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} }; // デフォルト変換
-//		currentMesh.uvTransform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} }; // UV変換の初期化
-//
-//		modeldata.meshes.push_back(currentMesh);
-//	}
-//	return modeldata;
-//}
+
 
 
 SoundData SoundLoadWave(const char* filename) {
@@ -581,12 +399,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		//"sphere.obj",
 		//"plane.obj",
 	};
-	for (const auto& filename : modelPaths) {
-		ModelData modelData = LoadObjFile("assets/models", filename, dxCommon);
-		ModelAsset newAsset;
-		newAsset.modelData = modelData;
-		modelAssets.push_back(newAsset);
-	}
+	//for (const auto& filename : modelPaths) {
+	//	ModelData modelData = LoadObjFile("assets/models", filename, dxCommon);
+	//	ModelAsset newAsset;
+	//	newAsset.modelData = modelData;
+	//	modelAssets.push_back(newAsset);
+	//}
 
 	// ゲームオブジェクトの初期化
 	std::vector<GameObject> gameObjects;
@@ -628,7 +446,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	}
 
 	Object3d* object3d = new Object3d();
-	object3d->Initialize();
+	object3d->Initialize(object3dCommon);
 
 	int currentSpriteIndex = 0;
 	int spriteTextureIndex = 0;
@@ -872,7 +690,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 			}
 			ImGui::End();
 		}
-
+		object3d->Update();
 		// 更新処理
 		const Matrix4x4& viewMatrix = g_debugCamera.GetViewMatrix();
 		Matrix4x4 projectionMatrix = MakePerspectiveMatrix(0.45f, float(winApp->kClientWidth) / float(winApp->kClientHeight), 0.1f, 100.0f);
@@ -950,6 +768,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		object3dCommon->SetupCommonState();
 		commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 		commandList->SetGraphicsRootConstantBufferView(4, lightingSettingsResource->GetGPUVirtualAddress());
+		object3d->Draw();
 		// スプライト描画
 		if (isSpriteVisible) {
 			//spriteの描画前処理

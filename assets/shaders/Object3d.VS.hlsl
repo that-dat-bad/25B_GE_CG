@@ -22,7 +22,7 @@ struct TransformationMatrix
     matrix World; // World
 };
 
-ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b1);
+ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
 
 VertexOutput main(VertexInput input)
 {
