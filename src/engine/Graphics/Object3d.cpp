@@ -14,11 +14,27 @@ void Object3d::Initialize(Object3dCommon* object3dCommon)
 	//vertexResource(vertexBuffer)を作る
 	vertexBuffer_ = dxCommon->CreateBufferResource(sizeof(VertexData) * 4);
 	//VertexBufferViewの作成
-	vertexBufferView.BufferLocation = vertexBuffer_->GetGPUVirtualAddress();
-	vertexBufferView.SizeInBytes = sizeof(VertexData) * 4;
-	vertexBufferView.StrideInBytes = sizeof(VertexData);
+	vertexBufferView_.BufferLocation = vertexBuffer_->GetGPUVirtualAddress();
+	vertexBufferView_.SizeInBytes = sizeof(VertexData) * 4;
+	vertexBufferView_.StrideInBytes = sizeof(VertexData);
 	//VertexResourceにデータを書き込むためのアドレスを取得してvertexDataに割り当てる
 	vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
+	//マテリアルリソースの作成
+	materialResource_ = dxCommon->CreateBufferResource(sizeof(Material));
+	//MaterialDataの割り当て
+	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
+	//マテリアルデータの初期化
+	materialData_->color = { 1.0f,1.0f,1.0f,1.0f };
+	materialData_->enableLighting = false;
+	materialData_->uvTransform = Identity4x4();
+	//座標変換行列リソースの作成
+	transformationMatrixResource_ = dxCommon->CreateBufferResource(sizeof(TransformationMatrix));
+	//TransformationMatrixの割り当て
+	transformationMatrixResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData_));
+
+	transformationMatrixData_->WVP = Identity4x4();
+	transformationMatrixData_->World = Identity4x4();
+
 
 }
 

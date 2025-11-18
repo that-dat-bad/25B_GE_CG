@@ -29,6 +29,10 @@ private:
 		float padding[2];
 		Matrix4x4 uvTransform; // UV変換行列
 	};
+	struct TransformationMatrix {
+		Matrix4x4 WVP;
+		Matrix4x4 World;
+	};
 public:
 	void Initialize(Object3dCommon* object3dCommon);
 	//.mtlファイルの読み取り
@@ -52,5 +56,15 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
 	//バッファリソース内のデータを指すポインタ
 	Material* materialData_ = nullptr;
+	//--マテリアル--//
+	//バッファリソース
+	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
+	//バッファリソース内のデータを指すポインタ
+	Material* materialData_ = nullptr;
+	//--座標変換行列--//
+	//バッファリソース
+	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource_ = nullptr;
+	//バッファリソース内のデータを指すポインタ
+	TransformationMatrix* transformationMatrixData_ = nullptr;
 };
 
