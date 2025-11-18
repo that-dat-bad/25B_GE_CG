@@ -10,34 +10,17 @@ void Object3d::Initialize(Object3dCommon* object3dCommon, DirectXCommon* dxCommo
 {
 	object3dCommon_ = object3dCommon;
 	dxCommon_ = dxCommon;
-	//モデル読み込み
-	modelData_ = LoadObjFile("Resources/Models", "model.obj");
 
-	////vertexResource(vertexBuffer)を作る
-	//vertexBuffer_ = dxCommon->CreateBufferResource(sizeof(VertexData) * 4);
-	////VertexBufferViewの作成
-	//vertexBufferView_.BufferLocation = vertexBuffer_->GetGPUVirtualAddress();
-	//vertexBufferView_.SizeInBytes = sizeof(VertexData) * 4;
-	//vertexBufferView_.StrideInBytes = sizeof(VertexData);
-	////VertexResourceにデータを書き込むためのアドレスを取得してvertexDataに割り当てる
-	//vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
 
-	////マテリアルリソースの作成
-	//materialResource_ = dxCommon->CreateBufferResource(sizeof(Material));
-	////マテリアルリソースにデータを書き込むためのアドレスを取得してmaterialDataに割り当てる
-	//materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
 
-	//materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	//materialData_->enableLighting = false;
-	//materialData_->uvTransform = Identity4x4();
 
-	////座標変換行列リソースの作成
-	//transformationMatrixResource_ = dxCommon->CreateBufferResource(sizeof(TransformationMatrix));
-	////座標変換行列リソースにデータを書き込むためのアドレスを取得してtransformationMatrixDataに割り当てる
-	//transformationMatrixResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData_));
+	//座標変換行列リソースの作成
+	transformationMatrixResource_ = dxCommon->CreateBufferResource(sizeof(TransformationMatrix));
+	//座標変換行列リソースにデータを書き込むためのアドレスを取得してtransformationMatrixDataに割り当てる
+	transformationMatrixResource_->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData_));
 
-	//transformationMatrixData_->WVP = Identity4x4();
-	//transformationMatrixData_->World = Identity4x4();
+	transformationMatrixData_->WVP = Identity4x4();
+	transformationMatrixData_->World = Identity4x4();
 
 	//平行光源リソースの作成
 	directionalLightResource_ = dxCommon->CreateBufferResource(sizeof(DirectionalLight));
@@ -48,10 +31,7 @@ void Object3d::Initialize(Object3dCommon* object3dCommon, DirectXCommon* dxCommo
 	directionalLightData_->direction = { 0.0f, -1.0f, 0.0f };
 	directionalLightData_->intensity = 1.0f;
 
-	//.objの参照しているテクスチャファイルの読み込み
-	TextureManager::GetInstance()->LoadTexture(modelData_.material.textureFilePath);
-	//読み込んだテクスチャの番号を取得
-	modelData_.material.textureIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath(modelData_.material.textureFilePath);
+
 	
 	transform_ = { {1.0f,1.0f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 	cameraTransform__ = { {1.0f,1.0f,1.0f},{0.3f,0.0f,0.0f},{0.0f,-4.0f,-10.0f} };
@@ -245,4 +225,43 @@ Object3d::ModelData Object3d::LoadObjFile(const std::string& directoryPath, cons
 		modeldata.meshes.push_back(currentMesh);
 	}
 	return modeldata;
+}
+
+void Object3d::Draw(DirectXCommon* dxCommon)
+{
+	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
+
+	// 5. 平行光源CBufferの場所を設定 (Slot 3)
+	// ※ Object3dCommon::SetupCommonState() が先に呼ばれ、
+	//    ルートシグネチャが設定されていることが前提です。
+	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource_->GetGPUVirtualAddress());
+
+	// ※ LightingSettings(Slot 4)も main 側で設定されている前提
+
+	// --- 全てのメッシュを描画 ---
+	for (MeshObject& mesh : modelData_.meshes) {
+
+		// 1. VertexBufferViewを設定
+		commandList->IASetVertexBuffers(0, 1, &mesh.vertexBufferView);
+
+		// 2. マテリアルCBufferの場所を設定 (Slot 0)
+		commandList->SetGraphicsRootConstantBufferView(0, mesh.materialResource->GetGPUVirtualAddress());
+
+		// 3. 座標変換行列CBufferの場所を設定 (Slot 1)
+		commandList->SetGraphicsRootConstantBufferView(1, mesh.wvpResource->GetGPUVirtualAddress());
+
+		// 4. SRVのDescriptorTableの先頭を設定 (Slot 2)
+
+		if (mesh.hasUV) {
+			commandList->SetGraphicsRootDescriptorTable(2,
+				TextureManager::GetInstance()->GetSrvHandleGPU(mesh.material.textureIndex));
+		} else {
+			// UVが無い場合はデフォルトテクスチャ (例: 0番) を使う
+			commandList->SetGraphicsRootDescriptorTable(2,
+				TextureManager::GetInstance()->GetSrvHandleGPU(0));
+		}
+
+		// 6. 描画！ (DrawCall/ドローコール)
+		commandList->DrawInstanced(static_cast<UINT>(mesh.vertices.size()), 1, 0, 0);
+	}
 }
