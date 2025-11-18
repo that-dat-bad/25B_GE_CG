@@ -4,6 +4,7 @@
 #include<string>
 #include<vector>
 #include "../base/Math/MyMath.h"
+#include"DirectXCommon.h"
 using namespace MyMath;
 class Object3dCommon;
 class Object3d
@@ -17,6 +18,7 @@ private:
 	struct MaterialData
 	{
 		std::string textureFilePath;
+		uint32_t textureIndex;
 	};
 	struct ModelData
 	{
@@ -33,6 +35,11 @@ private:
 		Matrix4x4 WVP;
 		Matrix4x4 World;
 	};
+	struct DirectionalLight {
+		Vector4 color;
+		Vector3 direction;
+		float intensity;
+	};
 public:
 	void Initialize(Object3dCommon* object3dCommon);
 	//.mtlファイルの読み取り
@@ -43,6 +50,9 @@ private:
 	Object3dCommon* object3dCommon_ = nullptr;
 	//objファイルのデータ
 	ModelData modelData_;
+	
+	Transform transform_;
+	Transform cameraTransform_;
 
 	//--頂点データ--//
 	//バッファリソース
@@ -66,5 +76,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource_ = nullptr;
 	//バッファリソース内のデータを指すポインタ
 	TransformationMatrix* transformationMatrixData_ = nullptr;
+	//--平行光源--//
+	//バッファリソース
+	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource_ = nullptr;
+	//バッファリソース内のデータを指すポインタ
+	DirectionalLight* directionalLightData_ = nullptr;
 };
 

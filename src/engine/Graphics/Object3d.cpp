@@ -4,6 +4,7 @@
 #include<fstream>
 #include<sstream>
 #include<cassert>
+#include"TextureManager.h"
 
 void Object3d::Initialize(Object3dCommon* object3dCommon)
 {
@@ -35,6 +36,20 @@ void Object3d::Initialize(Object3dCommon* object3dCommon)
 	transformationMatrixData_->WVP = Identity4x4();
 	transformationMatrixData_->World = Identity4x4();
 
+	//平行光源リソースの作成
+	directionalLightResource_ = dxCommon->CreateBufferResource(sizeof(DirectionalLight));
+	//DirectionalLightの割り当て
+	directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData_));
+	directionalLightData_->color = { 1.0f,1.0f,1.0f,1.0f };
+	directionalLightData_->direction = { 0.0f,-1.0f,0.0f };
+	directionalLightData_->intensity = 1.0f;
+	//.objの参照しているテクスチャファイル読み込み
+	TextureManager::GetInstance()->LoadTexture(modelData_.material.textureFilePath);
+	//読み込んだテクスチャの番号を取得
+	TextureManager::GetInstance()->GetTextureIndexByFilePath(modelData_.material.textureFilePath);
+
+	transform_ = { {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
+	cameraTransform_ = { {1.0f,1.0f,1.0f},{0.3f,0.0f,0.0f},{0.0f,0.4f,-10.0f} };
 
 }
 
