@@ -10,6 +10,16 @@ void Object3d::Initialize(Object3dCommon* object3dCommon)
 	object3dCommon_ = object3dCommon;
 	//モデル読み込み
 	modelData_ = LoadObjFile("assets/models", "plane.obj");
+
+	//vertexResource(vertexBuffer)を作る
+	vertexBuffer_ = dxCommon->CreateBufferResource(sizeof(VertexData) * 4);
+	//VertexBufferViewの作成
+	vertexBufferView.BufferLocation = vertexBuffer_->GetGPUVirtualAddress();
+	vertexBufferView.SizeInBytes = sizeof(VertexData) * 4;
+	vertexBufferView.StrideInBytes = sizeof(VertexData);
+	//VertexResourceにデータを書き込むためのアドレスを取得してvertexDataに割り当てる
+	vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
+
 }
 
 Object3d::MaterialData Object3d::LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename)

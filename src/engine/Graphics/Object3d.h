@@ -4,6 +4,7 @@
 #include<string>
 #include<vector>
 #include "../base/Math/MyMath.h"
+using namespace MyMath;
 class Object3dCommon;
 class Object3d
 {
@@ -22,6 +23,12 @@ private:
 		std::vector<VertexData> vertices;
 		MaterialData material;
 	};
+	struct Material {
+		Vector4 color;
+		int32_t enableLighting;
+		float padding[2];
+		Matrix4x4 uvTransform; // UV変換行列
+	};
 public:
 	void Initialize(Object3dCommon* object3dCommon);
 	//.mtlファイルの読み取り
@@ -32,5 +39,18 @@ private:
 	Object3dCommon* object3dCommon_ = nullptr;
 	//objファイルのデータ
 	ModelData modelData_;
+
+	//--頂点データ--//
+	//バッファリソース
+	Microsoft::WRL::ComPtr<ID3D12Resource> vertexBuffer_ = nullptr;
+	//バッファリソース内のデータを指すポインタ
+	VertexData* vertexData_ = nullptr;
+	//バッファリソースの使い道を補足するバッファビュー
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferView_;
+	//--マテリアル--//
+	//バッファリソース
+	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
+	//バッファリソース内のデータを指すポインタ
+	Material* materialData_ = nullptr;
 };
 
