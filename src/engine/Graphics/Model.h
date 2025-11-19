@@ -9,7 +9,7 @@ class ModelCommon;
 class Model
 {
 public:
-	void Initialize(ModelCommon* modelCommon);
+	void Initialize(ModelCommon* modelCommon,const std::string& directorypath,const std::string& filename);
 	void Draw();
 	struct VertexData {
 		Vector4 position;

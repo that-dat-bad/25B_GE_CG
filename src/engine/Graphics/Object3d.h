@@ -38,6 +38,7 @@ public: // メンバ関数
 	void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
 	void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
 	void SetModel(Model* model) { model_ = model; }
+	void SetModel(const std::string& filePath);
 
 	// ゲッター
 	Vector3 GetScale() const { return transform_.scale; }

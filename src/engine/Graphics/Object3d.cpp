@@ -6,6 +6,7 @@
 #include <sstream>
 #include <cassert>
 #include"Model.h"
+#include"ModelManager.h"
 
 
 void Object3d::Initialize(Object3dCommon* object3dCommon)
@@ -79,4 +80,9 @@ void Object3d::Draw()
 	{
 		model_->Draw();
 	}
+}
+
+void Object3d::SetModel(const std::string& filePath)
+{
+	model_ = ModelManager::GetInstance()->FindModel(filePath);
 }

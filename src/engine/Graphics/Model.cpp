@@ -6,14 +6,14 @@
 #include<map>
 #include<fstream>
 #include<sstream>
-void Model::Initialize(ModelCommon* modelCommon)
+void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename)
 {
 	
 	modelCommon_ = modelCommon;
 	DirectXCommon* dxCommon = modelCommon_->GetDirectXCommon();
 
 	// 1. モデル読み込み
-	modelData_ = LoadObjFile("assets/models", "axis.obj");
+	modelData_ = LoadObjFile(directorypath, filename);
 
 	// 2. 頂点データの初期化 (GPUリソース作成)
 

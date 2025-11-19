@@ -29,6 +29,7 @@ using namespace StringUtility;
 #include"../engine/Graphics/Object3d.h"
 #include"../engine/Graphics/ModelCommon.h"
 #include"../engine/Graphics/Model.h"
+#include"../engine/Graphics/ModelManager.h"
 #include"../engine/base/Math/MyMath.h"
 using namespace MyMath;
 
@@ -274,6 +275,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	ModelCommon* modelCommon = new ModelCommon();
 	modelCommon->Initialize(dxCommon);
 
+	//3Dモデルマネージャーの初期化
+	ModelManager::GetInstance()->Initialize(dxCommon);
+
 	// DirectXCommonから必要なオブジェクトを取得
 	ID3D12Device* device = dxCommon->GetDevice();
 	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
@@ -284,107 +288,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(hr));
 #pragma endregion
 
-
-	//// RootSignature
-	//D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
-	//descriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-
-	//D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
-	//descriptorRange[0].BaseShaderRegister = 0;
-	//descriptorRange[0].NumDescriptors = 1;
-	//descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	//descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-
-	//D3D12_ROOT_PARAMETER rootParameters[5] = {};
-	//rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	//rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	//rootParameters[0].Descriptor.ShaderRegister = 0; // for Material
-	//rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	//rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-	//rootParameters[1].Descriptor.ShaderRegister = 1; // for WVP
-	//rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	//rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	//rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;
-	//rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
-	//rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	//rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	//rootParameters[3].Descriptor.ShaderRegister = 1; // for DirectionalLight
-	//rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	//rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	//rootParameters[4].Descriptor.ShaderRegister = 2; // for LightingSettings
-
-	//D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
-	//staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-	//staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	//staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	//staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	//staticSamplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-	//staticSamplers[0].MaxLOD = D3D12_FLOAT32_MAX;
-	//staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	//descriptionRootSignature.pStaticSamplers = staticSamplers;
-	//descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
-
-	//descriptionRootSignature.pParameters = rootParameters;
-	//descriptionRootSignature.NumParameters = _countof(rootParameters);
-
-	//Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob = nullptr;
-	//Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
-	//hr = D3D12SerializeRootSignature(&descriptionRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
-	//if (FAILED(hr)) {
-	//	Log(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
-	//	assert(false);
-	//}
-	//Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = nullptr;
-	//hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
-	//assert(SUCCEEDED(hr));
-
-	// PSO
-	//D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
-	//inputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	//inputElementDescs[1] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	//inputElementDescs[2] = { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-
-	//D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
-	//graphicsPipelineStateDesc.pRootSignature = rootSignature.Get();
-	//graphicsPipelineStateDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
-
-	//Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = dxCommon->CompileShader(L"./assets/shaders/Object3D.VS.hlsl", L"vs_6_0");
-	//Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = dxCommon->CompileShader(L"./assets/shaders/Object3D.PS.hlsl", L"ps_6_0");
-	//graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
-	//graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
-
-	//D3D12_BLEND_DESC blendDesc{};
-	//blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-	//blendDesc.RenderTarget[0].BlendEnable = TRUE;
-	//blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	//blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-	//blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-	//blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-	//blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	//blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-	//graphicsPipelineStateDesc.BlendState = blendDesc;
-
-	//D3D12_RASTERIZER_DESC rasterizerDesc{};
-	//rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-	//rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-	//graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;
-
-	//D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
-	//depthStencilDesc.DepthEnable = true;
-	//depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	//depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-	//graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
-	//graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-
-	//graphicsPipelineStateDesc.NumRenderTargets = 1;
-	//graphicsPipelineStateDesc.RTVFormats[0] = dxCommon->GetRTVFormat();
-	//graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	//graphicsPipelineStateDesc.SampleDesc.Count = 1;
-	//graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-
-	//Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState = nullptr;
-	//hr = device->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineState));
-	//assert(SUCCEEDED(hr));
 
 
 	std::vector<std::string> texturePaths = {
@@ -451,7 +354,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	}
 
 	Model* model = new Model();
-	model->Initialize(modelCommon);
+	model->Initialize(modelCommon, "assets/models", "axis.obj");
 	Object3d* object3d = new Object3d();
 	object3d->Initialize(object3dCommon);
 	object3d->SetModel(model);
@@ -550,8 +453,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 						}
 					}
 				}
-			}
-			else {
+			} else {
 				for (auto& gameObject : gameObjects) {
 					if (gameObject.modelAssetIndex >= 0 && gameObject.modelAssetIndex < modelAssets.size()) {
 						for (auto& mesh : modelAssets[gameObject.modelAssetIndex].modelData.meshes) {
@@ -567,8 +469,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 				modelAssets[gameObjects[0].modelAssetIndex].modelData.meshes[0].materialData->enableLighting != 0) {
 				ImGui::SliderFloat3("Light Direction", &directionalLightData->direction.x, -1.0f, 1.0f);
 				directionalLightData->direction = Normalize(directionalLightData->direction);
-			}
-			else {
+			} else {
 				ImGui::Text("Light Direction: N/A (Lighting Disabled)");
 			}
 			ImGui::SeparatorText("Audio Settings");
@@ -684,14 +585,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 							ImGui::DragFloat3("Mesh UV Scale", &selectedMesh.uvTransform.scale.x, 0.01f, 0.01f, 10.0f);
 							ImGui::SliderAngle("Mesh UV Rotate Z", &selectedMesh.uvTransform.rotate.z);
 							ImGui::DragFloat3("Mesh UV Translate", &selectedMesh.uvTransform.translate.x, 0.01f);
-						}
-						else {
+						} else {
 							ImGui::Text("Mesh Texture: N/A (No UVs)");
 							ImGui::Text("Mesh UV Transform: N/A (No UVs)");
 						}
 					}
-				}
-				else {
+				} else {
 					ImGui::Text("No meshes in this model.");
 				}
 			}
@@ -713,8 +612,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 					mesh.wvpData->WVP = Multiply(finalWorldMatrix, Multiply(viewMatrix, projectionMatrix));
 					if (mesh.hasUV) {
 						mesh.materialData->uvTransform = MakeAffineMatrix(mesh.uvTransform.scale, mesh.uvTransform.rotate, mesh.uvTransform.translate);
-					}
-					else {
+					} else {
 						mesh.materialData->uvTransform = Identity4x4();
 					}
 				}
@@ -734,42 +632,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 
 
-		// ここからアプリケーション固有の描画コマンド
-		//commandList->SetPipelineState(graphicsPipelineState.Get());
-		//commandList->SetGraphicsRootSignature(rootSignature.Get());
-		//commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 		ID3D12DescriptorHeap* descriptorHeaps[] = { dxCommon->GetSRVDescriptorHeap() };
 		commandList->SetDescriptorHeaps(1, descriptorHeaps);
 
-
-		// 3Dオブジェクト描画
-		//for (auto& gameObject : gameObjects) {
-		//	if (gameObject.modelAssetIndex >= 0 && gameObject.modelAssetIndex < modelAssets.size()) {
-		//		ModelData& currentModel = modelAssets[gameObject.modelAssetIndex].modelData;
-		//		for (auto& mesh : currentModel.meshes) {
-		//			commandList->SetGraphicsRootConstantBufferView(0, mesh.materialResource->GetGPUVirtualAddress());
-		//			commandList->SetGraphicsRootConstantBufferView(1, mesh.wvpResource->GetGPUVirtualAddress());
-		//			commandList->IASetVertexBuffers(0, 1, &mesh.vertexBufferView);
-
-		//			if (mesh.hasUV && !mesh.material.textureFilePath.empty()) {
-		//				// TextureManagerから直接ハンドルをもらう
-		//				D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle =
-		//					TextureManager::GetInstance()->GetSrvHandleGPU(mesh.material.textureFilePath);
-
-		//				commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandle);
-		//			}
-		//			else {
-		//				// UVがない場合は、とりあえず0番目を使う
-		//				D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle =
-		//					TextureManager::GetInstance()->GetSrvHandleGPU(texturePaths[0]);
-
-		//				commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandle);
-		//			}
-		//			commandList->DrawInstanced(UINT(mesh.vertices.size()), 1, 0, 0);
-		//		}
-		//	}
-		//}
 
 
 		object3dCommon->SetupCommonState();
@@ -819,7 +684,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 	CloseHandle(dxCommon->GetFenceEvent());
 	CoUninitialize();
-
+	ModelManager::GetInstance()->Finalize();
 	delete dxCommon;
 	TextureManager::GetInstance()->Finalize();
 	delete input;

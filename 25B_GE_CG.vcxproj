@@ -180,6 +180,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Image Include="assets\textures\uvChecker.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\engine\Graphics\ModelManager.h" />
     <ClInclude Include="src\engine\Graphics\Model.h" />
     <ClInclude Include="src\engine\Graphics\ModelCommon.h" />
     <ClInclude Include="src\engine\Graphics\Object3dCommon.h" />
@@ -211,6 +212,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\Graphics\TextureManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\engine\Graphics\ModelManager.cpp" />
     <ClCompile Include="src\engine\Graphics\Model.cpp" />
     <ClCompile Include="src\engine\Graphics\ModelCommon.cpp" />
     <ClCompile Include="src\engine\Graphics\Object3dCommon.cpp" />
