@@ -27,7 +27,8 @@ using namespace StringUtility;
 #include"../engine/Graphics/TextureManager.h"
 #include"../engine/Graphics/Object3dCommon.h"
 #include"../engine/Graphics/Object3d.h"
-
+#include"../engine/Graphics/ModelCommon.h"
+#include"../engine/Graphics/Model.h"
 #include"../engine/base/Math/MyMath.h"
 using namespace MyMath;
 
@@ -269,6 +270,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	Object3dCommon* object3dCommon = new Object3dCommon();
 	object3dCommon->Initialize(dxCommon);
 
+	//Model共通部の初期化
+	ModelCommon* modelCommon = new ModelCommon();
+	modelCommon->Initialize(dxCommon);
+
 	// DirectXCommonから必要なオブジェクトを取得
 	ID3D12Device* device = dxCommon->GetDevice();
 	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
@@ -445,9 +450,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		sprites.push_back(newSprite);
 	}
 
+	Model* model = new Model();
+	model->Initialize(modelCommon);
 	Object3d* object3d = new Object3d();
 	object3d->Initialize(object3dCommon);
-
+	object3d->SetModel(model);
 	int currentSpriteIndex = 0;
 	int spriteTextureIndex = 0;
 	bool isSpriteVisible = false;
