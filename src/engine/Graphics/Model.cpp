@@ -8,7 +8,7 @@
 #include<sstream>
 void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename)
 {
-	
+
 	modelCommon_ = modelCommon;
 	DirectXCommon* dxCommon = modelCommon_->GetDirectXCommon();
 
@@ -109,8 +109,22 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 	std::vector<Vector3> normals;
 	std::vector<Vector2> texcoords;
 	std::string line;
-	std::ifstream file(directoryPath + "/" + filename);
+
+	std::string fullPath = filename;
+	if (!directoryPath.empty()) {
+		fullPath = directoryPath + "/" + filename;
+	}
+	std::ifstream file(fullPath);
 	assert(file.is_open());
+	std::string baseDirectory;
+	size_t pos = fullPath.find_last_of('/');
+	if (pos != std::string::npos) {
+		baseDirectory = fullPath.substr(0, pos);
+	} else {
+		baseDirectory = ""; // ルート直下の場合
+	}
+	//std::ifstream file(directoryPath + "/" + filename);
+	//assert(file.is_open());
 
 	while (std::getline(file, line)) {
 		std::string identifier;
@@ -169,7 +183,8 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 			std::string materialFileName;
 			s >> materialFileName;
 			// マテリアル読み込み
-			modelData.material = LoadMaterialTemplate(directoryPath, materialFileName);
+			//modelData.material = LoadMaterialTemplate(directoryPath, materialFileName);
+			modelData.material = LoadMaterialTemplate(baseDirectory, materialFileName);
 		}
 	}
 

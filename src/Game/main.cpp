@@ -272,8 +272,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	object3dCommon->Initialize(dxCommon);
 
 	//Model共通部の初期化
-	ModelCommon* modelCommon = new ModelCommon();
-	modelCommon->Initialize(dxCommon);
+	//ModelCommon* modelCommon = new ModelCommon();
+	//modelCommon->Initialize(dxCommon);
 
 	//3Dモデルマネージャーの初期化
 	ModelManager::GetInstance()->Initialize(dxCommon);
@@ -354,10 +354,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	}
 
 	Model* model = new Model();
-	model->Initialize(modelCommon, "assets/models", "axis.obj");
-	Object3d* object3d = new Object3d();
-	object3d->Initialize(object3dCommon);
-	object3d->SetModel(model);
+	ModelManager::GetInstance()->LoadModel("models/axis.obj");
+	ModelManager::GetInstance()->LoadModel("models/sphere.obj");
+	Object3d* objectAxis = new Object3d();
+	objectAxis->Initialize(object3dCommon);
+	Object3d* objectPlane = new Object3d();
+	objectPlane->Initialize(object3dCommon);
+	Model* modelAxis = ModelManager::GetInstance()->FindModel("models/axis.obj");
+	Model*modelPlane= ModelManager::GetInstance()->FindModel("models/sphere.obj");
+	objectAxis->SetModel(modelAxis);
+	objectAxis->SetScale({ 1.0f, 1.0f, 1.0f });
+	objectPlane->SetModel(modelPlane);
+	objectPlane->SetScale({ 1.0f, 1.0f, 1.0f });
+	
+
+
 	int currentSpriteIndex = 0;
 	int spriteTextureIndex = 0;
 	bool isSpriteVisible = false;
@@ -596,7 +607,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 			}
 			ImGui::End();
 		}
-		object3d->Update();
+		objectAxis->Update();
+		objectPlane->Update();
 		// 更新処理
 		const Matrix4x4& viewMatrix = g_debugCamera.GetViewMatrix();
 		Matrix4x4 projectionMatrix = MakePerspectiveMatrix(0.45f, float(winApp->kClientWidth) / float(winApp->kClientHeight), 0.1f, 100.0f);
@@ -640,7 +652,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		object3dCommon->SetupCommonState();
 		commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 		commandList->SetGraphicsRootConstantBufferView(4, lightingSettingsResource->GetGPUVirtualAddress());
-		object3d->Draw();
+		objectAxis->Draw();
+		objectPlane->Draw();
 		// スプライト描画
 		if (isSpriteVisible) {
 			//spriteの描画前処理
@@ -694,7 +707,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		delete sprite;
 	}
 	delete object3dCommon;
-	delete object3d;
+
 
 	return 0;
 }

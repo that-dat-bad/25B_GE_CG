@@ -35,7 +35,9 @@ void ModelManager::LoadModel(const std::string& filePath)
 	
 	//モデルの生成とファイル読み込み、初期化
 	std::unique_ptr<Model> model = std::make_unique<Model>();
-	model->Initialize(modelCommon_, "assets", filePath);
+	//model->Initialize(modelCommon_, "assets", filePath);
+	std::string fullPath = "assets/" + filePath;
+	model->Initialize(modelCommon_, "", fullPath);
 
 	//モデルをmapコンテナに格納する
 	models_.insert(std::make_pair(filePath, std::move(model)));
