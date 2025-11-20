@@ -212,6 +212,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\base\Math\Vector4.h" />
     <ClInclude Include="src\engine\base\Math\Transform.h" />
     <ClInclude Include="src\engine\Graphics\TextureManager.h" />
+    <ClInclude Include="src\engine\Graphics\SrvManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\engine\Graphics\Camera.cpp" />
@@ -252,6 +253,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\engine\base\Math\Vector4.cpp" />
     <ClCompile Include="src\engine\base\Math\Transform.cpp" />
     <ClCompile Include="src\engine\Graphics\TextureManager.cpp" />
+    <ClCompile Include="src\engine\Graphics\SrvManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="external\imgui\LICENSE.txt" />

@@ -20,7 +20,7 @@ public:
 	static const uint32_t kRtvHeapDescriptorNum_ = 2; // ダブルバッファ用
 	static const uint32_t kDsvHeapDescriptorNum_ = 1; // 深度バッファ用
 	static const uint32_t kSwapChainBufferCount_ = 2;
-	static const uint32_t kMaxSRVCount_;//最大SRV数(最大テクスチャ枚数)
+	//static const uint32_t kMaxSRVCount_;//最大SRV数(最大テクスチャ枚数)
 
 
 	// 初期化
@@ -75,6 +75,7 @@ public:
 	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata);
 	Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
 
 private:
 
@@ -91,7 +92,7 @@ private:
 
 	// デスクリプタヒープ
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvDescriptorHeap_;
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap_;
+	//Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap_;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap_;
 
 
@@ -100,7 +101,7 @@ private:
 
 	// デスクリプタサイズ
 	uint32_t rtvDescriptorSize_;
-	uint32_t srvDescriptorSize_;
+	//uint32_t srvDescriptorSize_;
 	uint32_t dsvDescriptorSize_;
 
 	D3D12_RECT scissorRect_{};
@@ -171,7 +172,7 @@ private:
 
 
 
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
+
 
 
 

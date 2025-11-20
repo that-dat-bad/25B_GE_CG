@@ -33,6 +33,7 @@ using namespace StringUtility;
 #include"../engine/base/Math/MyMath.h"
 #include"../engine/Graphics/Camera.h"
 #include"../engine/Graphics/CameraManager.h"
+#include"../engine/Graphics/SrvManager.h"
 using namespace MyMath;
 
 // debug用のヘッダ
@@ -262,8 +263,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	DirectXCommon* dxCommon = new DirectXCommon();
 	dxCommon->Initialize(winApp);
 
+	SrvManager* srvManager = nullptr;
+	srvManager = new SrvManager();
+	srvManager->Initialize(dxCommon);
+
+
 	//TextureManagerの初期化
-	TextureManager::GetInstance()->Initialize(dxCommon);
+	TextureManager::GetInstance()->Initialize(dxCommon,srvManager);
 
 	//Sprite共通部の初期化
 	SpriteCommon* spriteCommon = new SpriteCommon();
@@ -726,6 +732,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	ModelManager::GetInstance()->Finalize();
 	delete dxCommon;
 	TextureManager::GetInstance()->Finalize();
+	delete srvManager;
 	delete input;
 	delete winApp;
 	delete spriteCommon;
