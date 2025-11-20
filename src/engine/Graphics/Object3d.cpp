@@ -38,33 +38,26 @@ void Object3d::Initialize(Object3dCommon* object3dCommon) {
 	// 7. Transform初期値設定
 
 	transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-	cameraTransform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
 	camera_ = object3dCommon_->GetDefaultCamera();
 }
 
 void Object3d::Update() {
-	// TransformからWorldMatrixを作る
+	// 1. World行列を作る
 	Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
 
-	// CameraTransformからCameraMatrixを作る
-	Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform_.scale, cameraTransform_.rotate, cameraTransform_.translate);
-
-	// CameraMatrixからViewMatrixを作る (逆行列)
-	Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-	//Matrix4x4 viewMatrix = MakeTranslateMatrix({ 0.0f, 0.0f, 10.0f });
-	// ProjectionMatrixを作る
-	Matrix4x4 projectionMatrix = MakePerspectiveMatrix(0.45f, 1280.0f / 720.0f, 0.1f, 100.0f);
-
-	// WVP行列を作成して書き込む
-	Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+	// 2. Camera行列を使ってWVPを作る
+	Matrix4x4 worldViewProjectionMatrix;
 
 	if (camera_) {
+		// カメラがセットされていれば、そのカメラの ViewProjection 行列をもらう
 		const Matrix4x4& viewProjectionMatrix = camera_->GetViewProjectionMatrix();
 		worldViewProjectionMatrix = Multiply(worldMatrix, viewProjectionMatrix);
 	} else {
+		// カメラが無い場合はとりあえずWorld行列だけ（または単位行列など）
 		worldViewProjectionMatrix = worldMatrix;
 	}
 
+	// 3. 定数バッファに転送
 	transformationMatrixData_->WVP = worldViewProjectionMatrix;
 	transformationMatrixData_->World = worldMatrix;
 }

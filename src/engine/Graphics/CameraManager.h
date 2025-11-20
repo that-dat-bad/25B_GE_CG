@@ -1,52 +1,37 @@
 #pragma once
 #include "Camera.h"
-#include <string>
 #include <map>
+#include <string>
 #include <memory>
 
-// カメラを管理するシングルトンクラス
 class CameraManager {
-public: // 静的メンバ関数
+public: // シングルトンパターン
 	static CameraManager* GetInstance();
-
-public: // メンバ関数
-	// 初期化
 	void Initialize();
-
-	// 更新（アクティブなカメラを更新）
-	void Update();
-
-	// 終了処理
 	void Finalize();
 
-	// --- 操作系 ---
-
-	// 新規カメラの作成
+	// カメラの生成 (newしてmapに登録)
 	void CreateCamera(const std::string& name);
 
 	// アクティブカメラの切り替え
 	void SetActiveCamera(const std::string& name);
 
-	// --- ゲッター ---
+	// アクティブカメラの取得 (描画やオブジェクト側で使う)
+	Camera* GetActiveCamera() const { return activeCamera_; }
 
-	// 現在アクティブなカメラを取得
-	Camera* GetActiveCamera() const;
+	// 更新 (アクティブなカメラだけ更新する)
+	void Update();
 
-	// 名前指定でカメラを取得
-	Camera* GetCamera(const std::string& name);
-
-private: // コンストラクタ等隠蔽
+private:
+	static CameraManager* instance_;
 	CameraManager() = default;
 	~CameraManager() = default;
 	CameraManager(const CameraManager&) = delete;
 	CameraManager& operator=(const CameraManager&) = delete;
 
-private: // メンバ変数
-	static CameraManager* instance_;
-
-	// 全カメラを名前で管理
+	// カメラのマップ (名前, 実体)
 	std::map<std::string, std::unique_ptr<Camera>> cameras_;
 
-	// 現在使用中のカメラ（ポインタ参照）
+	// 現在有効なカメラへのポインタ (所有権は持たない)
 	Camera* activeCamera_ = nullptr;
 };

@@ -32,6 +32,7 @@ using namespace StringUtility;
 #include"../engine/Graphics/ModelManager.h"
 #include"../engine/base/Math/MyMath.h"
 #include"../engine/Graphics/Camera.h"
+#include"../engine/Graphics/CameraManager.h"
 using namespace MyMath;
 
 // debug用のヘッダ
@@ -354,10 +355,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		sprites.push_back(newSprite);
 	}
 
-	Camera* camera = new Camera();
-	camera->SetRotate({ 0, 0, 0 });
-	camera->SetTranslate({ 0, 0, -10 });
-	object3dCommon->SetDefaultCamera(camera);
+
+	CameraManager::GetInstance()->Initialize();
+	CameraManager::GetInstance()->CreateCamera("Global"); // 俯瞰用
+	CameraManager::GetInstance()->CreateCamera("Player"); // プレイヤー視点用
+	CameraManager::GetInstance()->SetActiveCamera("Global");
+	CameraManager::GetInstance()->GetActiveCamera()->SetTranslate({ 0, 20, -20 });
+	CameraManager::GetInstance()->GetActiveCamera()->SetRotate({ 0.8f, 0, 0 });
+
+	CameraManager::GetInstance()->SetActiveCamera("Player");
+	CameraManager::GetInstance()->GetActiveCamera()->SetTranslate({ 0, 0, -5 });
 
 	Model* model = new Model();
 	ModelManager::GetInstance()->LoadModel("models/axis.obj");
@@ -372,7 +379,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	objectAxis->SetScale({ 1.0f, 1.0f, 1.0f });
 	objectPlane->SetModel(modelPlane);
 	objectPlane->SetScale({ 1.0f, 1.0f, 1.0f });
-	
+
 
 
 	int currentSpriteIndex = 0;
@@ -456,6 +463,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		}
 		//g_debugCamera.Update(keys_, mouseState);
 		// ImGuiウィンドウ
+		if (input->triggerKey(DIK_SPACE)) {
+			// 現在の名前を管理するか、トグル用のフラグで切り替え
+			static bool isGlobal = false;
+			isGlobal = !isGlobal;
+			if (isGlobal) {
+				CameraManager::GetInstance()->SetActiveCamera("Global");
+			} else {
+				CameraManager::GetInstance()->SetActiveCamera("Player");
+			}
+		}
 		ImGui::Begin("Settings");
 		{
 			ImGui::SeparatorText("Global Settings");
@@ -613,7 +630,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 			}
 			ImGui::End();
 		}
-		camera->Update();
+		CameraManager::GetInstance()->Update();
+		objectAxis->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
+		objectPlane->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
 		objectAxis->Update();
 		objectPlane->Update();
 		// 更新処理

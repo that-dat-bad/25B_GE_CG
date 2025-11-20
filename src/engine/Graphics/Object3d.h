@@ -56,7 +56,6 @@ private:
 
 	// トランスフォーム
 	Transform transform_;
-	Transform cameraTransform_;
 
 	//--座標変換行列--//
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource_ = nullptr;

@@ -181,6 +181,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\Graphics\Camera.h" />
+    <ClInclude Include="src\engine\Graphics\CameraManager.h" />
     <ClInclude Include="src\engine\Graphics\ModelManager.h" />
     <ClInclude Include="src\engine\Graphics\Model.h" />
     <ClInclude Include="src\engine\Graphics\ModelCommon.h" />
@@ -214,6 +215,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\engine\Graphics\Camera.cpp" />
+    <ClCompile Include="src\engine\Graphics\CameraManager.cpp" />
     <ClCompile Include="src\engine\Graphics\ModelManager.cpp" />
     <ClCompile Include="src\engine\Graphics\Model.cpp" />
     <ClCompile Include="src\engine\Graphics\ModelCommon.cpp" />
