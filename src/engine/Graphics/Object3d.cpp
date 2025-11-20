@@ -7,10 +7,9 @@
 #include <cassert>
 #include"Model.h"
 #include"ModelManager.h"
+#include"Camera.h"
 
-
-void Object3d::Initialize(Object3dCommon* object3dCommon)
-{
+void Object3d::Initialize(Object3dCommon* object3dCommon) {
 	// メンバ変数に保存
 	object3dCommon_ = object3dCommon;
 
@@ -40,10 +39,10 @@ void Object3d::Initialize(Object3dCommon* object3dCommon)
 
 	transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 	cameraTransform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
+	camera_ = object3dCommon_->GetDefaultCamera();
 }
 
-void Object3d::Update()
-{
+void Object3d::Update() {
 	// TransformからWorldMatrixを作る
 	Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
 
@@ -59,12 +58,18 @@ void Object3d::Update()
 	// WVP行列を作成して書き込む
 	Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 
+	if (camera_) {
+		const Matrix4x4& viewProjectionMatrix = camera_->GetViewProjectionMatrix();
+		worldViewProjectionMatrix = Multiply(worldMatrix, viewProjectionMatrix);
+	} else {
+		worldViewProjectionMatrix = worldMatrix;
+	}
+
 	transformationMatrixData_->WVP = worldViewProjectionMatrix;
 	transformationMatrixData_->World = worldMatrix;
 }
 
-void Object3d::Draw()
-{
+void Object3d::Draw() {
 	// コマンドリストの取得
 	ID3D12GraphicsCommandList* commandList = object3dCommon_->GetDirectXCommon()->GetCommandList();
 
@@ -74,15 +79,11 @@ void Object3d::Draw()
 	// 平行光源CBufferの設定 (RootParameter Index: 3)
 	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource_->GetGPUVirtualAddress());
 
-	//// 描画コマンド発行
-	//commandList->DrawInstanced(UINT(modelData_.vertices.size()), 1, 0, 0);
-	if (model_)
-	{
+	if (model_) {
 		model_->Draw();
 	}
 }
 
-void Object3d::SetModel(const std::string& filePath)
-{
+void Object3d::SetModel(const std::string& filePath) {
 	model_ = ModelManager::GetInstance()->FindModel(filePath);
 }

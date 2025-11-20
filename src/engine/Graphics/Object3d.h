@@ -10,6 +10,7 @@ using namespace MyMath;
 
 class Object3dCommon;
 class Model;
+class Camera;
 
 class Object3d
 {
@@ -39,38 +40,23 @@ public: // メンバ関数
 	void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
 	void SetModel(Model* model) { model_ = model; }
 	void SetModel(const std::string& filePath);
+	void SetCamera(Camera* camera) { camera_ = camera; }
 
 	// ゲッター
 	Vector3 GetScale() const { return transform_.scale; }
 	Vector3 GetRotate() const { return transform_.rotate; }
 	Vector3 GetTranslate() const { return transform_.translate; }
 
-	// 静的関数 (.mtl / .obj 読み込み)
-	//static MaterialData LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename);
-	//static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
+
 
 private: 
 	Object3dCommon* object3dCommon_ = nullptr;
 	Model* model_ = nullptr;
-
-	//// モデルデータ
-	//ModelData modelData_;
+	Camera* camera_ = nullptr;
 
 	// トランスフォーム
 	Transform transform_;
 	Transform cameraTransform_;
-
-	////--頂点データ--//
-	//// バッファリソース
-	//Microsoft::WRL::ComPtr<ID3D12Resource> vertexBuffer_ = nullptr;
-	//// バッファリソース内のデータを指すポインタ
-	//VertexData* vertexData_ = nullptr;
-	//// バッファビュー
-	//D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
-
-	////--マテリアル--//
-	//Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
-	//Material* materialData_ = nullptr;
 
 	//--座標変換行列--//
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource_ = nullptr;

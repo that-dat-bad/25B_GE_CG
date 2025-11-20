@@ -31,6 +31,7 @@ using namespace StringUtility;
 #include"../engine/Graphics/Model.h"
 #include"../engine/Graphics/ModelManager.h"
 #include"../engine/base/Math/MyMath.h"
+#include"../engine/Graphics/Camera.h"
 using namespace MyMath;
 
 // debug用のヘッダ
@@ -353,6 +354,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		sprites.push_back(newSprite);
 	}
 
+	Camera* camera = new Camera();
+	camera->SetRotate({ 0, 0, 0 });
+	camera->SetTranslate({ 0, 0, -10 });
+	object3dCommon->SetDefaultCamera(camera);
+
 	Model* model = new Model();
 	ModelManager::GetInstance()->LoadModel("models/axis.obj");
 	ModelManager::GetInstance()->LoadModel("models/sphere.obj");
@@ -607,6 +613,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 			}
 			ImGui::End();
 		}
+		camera->Update();
 		objectAxis->Update();
 		objectPlane->Update();
 		// 更新処理
