@@ -24,7 +24,7 @@ void SrvManager::SetGraphicsRootDescriptorTable(UINT RootParameterIndex, uint32_
 
 uint32_t SrvManager::Allocate() {
 	//上限に達していないかチェックしてassert
-	assert(kMaxSRVCount_ < useIndex_);
+	assert(useIndex_ < kMaxSRVCount_);
 
 	//returnする番号をいったん記録しておく
 	int index = useIndex_;
@@ -32,6 +32,15 @@ uint32_t SrvManager::Allocate() {
 	useIndex_++;
 	//上で記録した番号をreturn
 	return index;
+}
+
+bool SrvManager::CanAllocate() const
+{
+	if (useIndex_<kMaxSRVCount_)
+	{
+		return true;
+	}
+	return false;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE SrvManager::GetCPUDescriptorHandle(uint32_t index) {

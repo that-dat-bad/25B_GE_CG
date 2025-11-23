@@ -49,7 +49,6 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentRTVHandle() {
 		return rtvHandles_[swapChain_->GetCurrentBackBufferIndex()];
 	}
-	ID3D12DescriptorHeap* GetSRVDescriptorHeap() { return srvDescriptorHeap_.Get(); }
 	ID3D12DescriptorHeap* GetRTVDescriptorHeap() { return rtvDescriptorHeap_.Get(); }
 	ID3D12DescriptorHeap* GetDSVDescriptorHeap() { return dsvDescriptorHeap_.Get(); }
 	ID3D12Resource* GetDepthStencilBuffer() { return depthStencilResource_.Get(); }
@@ -92,7 +91,6 @@ private:
 
 	// デスクリプタヒープ
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvDescriptorHeap_;
-	//Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> srvDescriptorHeap_;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap_;
 
 
@@ -169,23 +167,4 @@ private:
 
 	//FPS固定更新
 	void UpdateFixFPS();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVCPUDescriptorHandle(uint32_t index);
-	D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
-
 };

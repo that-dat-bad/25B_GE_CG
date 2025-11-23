@@ -58,5 +58,4 @@ private:
 	DirectXCommon* dxCommon_ = nullptr;
 	SrvManager* srvManager_ = nullptr;
 
-	static uint32_t kSRVIndexTop;
 };

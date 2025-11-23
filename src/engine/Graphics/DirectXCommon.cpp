@@ -10,11 +10,11 @@
 #include<thread>
 #include "../../../external/DirectXTex/DirectXTex.h"
 #include "../../../external/DirectXTex/d3dx12.h"
+#include"../Graphics/SrvManager.h"
 
 using namespace logger;
 using namespace StringUtility;
 
-const uint32_t DirectXCommon::kMaxSRVCount_ = 512;
 
 void DirectXCommon::Initialize(WinApp* winApp) {
 	//FPS固定初期化
@@ -241,8 +241,6 @@ void DirectXCommon::CreateDescriptorHeaps()
 	//デスクリプタサイズを取得
 	// RTV
 	rtvDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	//SRV
-	srvDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	//DSV
 	dsvDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
@@ -251,8 +249,7 @@ void DirectXCommon::CreateDescriptorHeaps()
 	//ディスクリプタヒープの生成
 	//RTV
 	rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, kRtvHeapDescriptorNum_, false);
-	//SRV
-	srvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kMaxSRVCount_, true);
+
 	//DSV
 	dsvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, kDsvHeapDescriptorNum_, false);
 }
@@ -322,10 +319,10 @@ void DirectXCommon::InitializeImGui()
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
 	ImGui_ImplWin32_Init(winApp_->GetHwnd());
-	ImGui_ImplDX12_Init(device_.Get(), kSwapChainBufferCount_,
-		rtvFormat_, srvDescriptorHeap_.Get(),
-		srvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart(),
-		srvDescriptorHeap_->GetGPUDescriptorHandleForHeapStart());
+	//ImGui_ImplDX12_Init(device_.Get(), kSwapChainBufferCount_,
+	//	rtvFormat_, srvDescriptorHeap_.Get(),
+	//	srvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart(),
+	//	srvDescriptorHeap_->GetGPUDescriptorHandleForHeapStart());
 
 }
 
@@ -386,15 +383,6 @@ D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetGPUDescriptorHandle(ID3D12Descript
 	return handleGPU;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVCPUDescriptorHandle(uint32_t index)
-{
-	return GetCPUDescriptorHandle(srvDescriptorHeap_.Get(), srvDescriptorSize_, index);
-}
-
-D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetSRVGPUDescriptorHandle(uint32_t index)
-{
-	return GetGPUDescriptorHandle(srvDescriptorHeap_.Get(), srvDescriptorSize_, index);
-}
 
 Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring& filePath, const wchar_t* profile) {
 	Log(ConvertString(std::format(L"Begin CompileShader, Path :{}, profile : {}\n", filePath, profile)));

@@ -14,6 +14,9 @@ public:
 
 	uint32_t Allocate();
 
+	//テクスチャ枚数上限チェック
+	bool CanAllocate() const;
+
 	//最大SRV数(最大テクスチャ枚数)
 	static const uint32_t kMaxSRVCount_;
 	//SRV用のデスクリプタサイズ
