@@ -3,9 +3,10 @@
 #include "../../../external/DirectXTex/DirectXTex.h"
 #include <wrl/client.h>
 #include <d3d12.h>
-#include <vector>
+#include<unordered_map>
 
-// 前方宣言
+
+class SrvManager;
 class DirectXCommon;
 
 class TextureManager
@@ -14,7 +15,7 @@ public:
 	static TextureManager* GetInstance();
 
 	// 初期化
-	void Initialize(DirectXCommon* dxCommon);
+	void Initialize(DirectXCommon* dxCommon,SrvManager* srvManager);
 
 	// 終了処理
 	void Finalize();
@@ -48,12 +49,13 @@ private:
 		DirectX::TexMetadata metadata;
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 		Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource;
+		uint32_t srvIndex;
 		D3D12_CPU_DESCRIPTOR_HANDLE srvHandleCPU;
 		D3D12_GPU_DESCRIPTOR_HANDLE srvHandleGPU;
 	};
-	std::vector<TextureData> textureDatas_;
+	std::unordered_map<std::string,TextureData> textureDatas_;
 
 	DirectXCommon* dxCommon_ = nullptr;
+	SrvManager* srvManager_ = nullptr;
 
-	static uint32_t kSRVIndexTop;
 };
