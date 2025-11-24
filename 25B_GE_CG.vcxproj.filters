@@ -18,12 +18,15 @@
     <None Include="assets\shaders\Object3d.hlsli" />
     <None Include=".editorconfig" />
     <None Include="assets\shaders\Sprite2d.hlsli" />
+    <None Include="assets\shaders\Particle.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="assets\shaders\Object3d.PS.hlsl" />
     <FxCompile Include="assets\shaders\Object3d.VS.hlsl" />
     <FxCompile Include="assets\shaders\Sprite2d.VS.hlsl" />
     <FxCompile Include="assets\shaders\Sprite2d.PS.hlsl" />
+    <FxCompile Include="assets\shaders\Particle.VS.hlsl" />
+    <FxCompile Include="assets\shaders\Particle.PS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="assets\sounds\Alarm01.wav">
@@ -141,6 +144,12 @@
     <ClInclude Include="src\engine\Graphics\SrvManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="src\engine\Graphics\ParticleManager.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\Graphics\ParticleEmitter.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="external\imgui\imgui.cpp">
@@ -234,6 +243,12 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="src\engine\Graphics\SrvManager.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\Graphics\ParticleManager.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\Graphics\ParticleEmitter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

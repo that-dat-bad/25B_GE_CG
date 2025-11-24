@@ -34,6 +34,9 @@ using namespace StringUtility;
 #include"../engine/Graphics/Camera.h"
 #include"../engine/Graphics/CameraManager.h"
 #include"../engine/Graphics/SrvManager.h"
+#include "../engine/Debug/D3DResourceLeakChecker.h"
+#include "../engine/Graphics/ParticleManager.h"
+#include "../engine/Graphics/ParticleEmitter.h"
 using namespace MyMath;
 
 // debug用のヘッダ
@@ -251,6 +254,8 @@ void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData) {
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 #pragma region 基盤の初期化処理
+
+	D3DResourceLeakChecker leakCheck;
 	WinApp* winApp = new WinApp();
 	winApp->Initialize();
 	SetUnhandledExceptionFilter(ExportDump);
@@ -279,9 +284,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	Object3dCommon* object3dCommon = new Object3dCommon();
 	object3dCommon->Initialize(dxCommon);
 
-	//Model共通部の初期化
-	//ModelCommon* modelCommon = new ModelCommon();
-	//modelCommon->Initialize(dxCommon);
 
 	//3Dモデルマネージャーの初期化
 	ModelManager::GetInstance()->Initialize(dxCommon);
@@ -294,6 +296,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(hr));
 	hr = commandList->Reset(dxCommon->GetCommandAllocator(), nullptr);
 	assert(SUCCEEDED(hr));
+
+	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager);
+	ParticleManager::GetInstance()->CreateParticleGroup("Circle", "assets/textures/checkerBoard.png");
+	Transform emitterTransform;
+	emitterTransform.translate = { 0.0f, 0.0f, -2.0f };
+	emitterTransform.rotate = { 0.0f, 0.0f, 0.0f };
+	emitterTransform.scale = { 1.0f, 1.0f, 1.0f };
+	ParticleEmitter* particleEmitter = new ParticleEmitter("Circle", emitterTransform, 10, 0.5f);
 #pragma endregion
 
 
@@ -391,6 +401,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	int currentSpriteIndex = 0;
 	int spriteTextureIndex = 0;
 	bool isSpriteVisible = false;
+	bool isObjectVisible = true;
 
 	// ライトの初期化
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = dxCommon->CreateBufferResource(sizeof(DirectionalLight));
@@ -452,7 +463,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		//ImGui::NewFrame();
 
 		input->Update();
-
+		if (input->triggerKey(DIK_S)) {
+			isObjectVisible = !isObjectVisible;
+		}
 		XINPUT_STATE gamepadState;
 		ZeroMemory(&gamepadState, sizeof(XINPUT_STATE));
 		DWORD dwResult = XInputGetState(0, &gamepadState);
@@ -470,7 +483,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		//g_debugCamera.Update(keys_, mouseState);
 		// ImGuiウィンドウ
 		if (input->triggerKey(DIK_SPACE)) {
-			// 現在の名前を管理するか、トグル用のフラグで切り替え
 			static bool isGlobal = false;
 			isGlobal = !isGlobal;
 			if (isGlobal) {
@@ -641,6 +653,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		objectPlane->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
 		objectAxis->Update();
 		objectPlane->Update();
+		if (input->triggerKey(DIK_A)) {
+			particleEmitter->Emit();
+		}
+		particleEmitter->Update();
+		ParticleManager::GetInstance()->Update();
 		// 更新処理
 		const Matrix4x4& viewMatrix = g_debugCamera.GetViewMatrix();
 		Matrix4x4 projectionMatrix = MakePerspectiveMatrix(0.45f, float(winApp->kClientWidth) / float(winApp->kClientHeight), 0.1f, 100.0f);
@@ -683,8 +700,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		object3dCommon->SetupCommonState();
 		commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 		commandList->SetGraphicsRootConstantBufferView(4, lightingSettingsResource->GetGPUVirtualAddress());
-		objectAxis->Draw();
-		objectPlane->Draw();
+		if (isObjectVisible) {
+			objectAxis->Draw();
+			objectPlane->Draw();
+		}
+		ParticleManager::GetInstance()->Draw();
 		// スプライト描画
 		if (isSpriteVisible) {
 			//spriteの描画前処理
@@ -732,6 +752,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	delete dxCommon;
 	TextureManager::GetInstance()->Finalize();
 	delete srvManager;
+	delete particleEmitter;
+	ParticleManager::GetInstance()->Finalize();
 	delete input;
 	delete winApp;
 	delete spriteCommon;

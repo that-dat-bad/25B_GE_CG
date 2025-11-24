@@ -140,6 +140,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
+    <None Include="assets\shaders\Particle.hlsli" />
     <None Include="assets\shaders\Object3d.hlsli" />
     <None Include="assets\shaders\Sprite2d.hlsli" />
   </ItemGroup>
@@ -153,6 +154,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="assets\shaders\Particle.PS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="assets\shaders\Particle.VS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="assets\shaders\Sprite2d.PS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -180,6 +187,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Image Include="assets\textures\uvChecker.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\engine\Graphics\ParticleEmitter.h" />
+    <ClInclude Include="src\engine\Graphics\ParticleManager.h" />
     <ClInclude Include="src\engine\Graphics\Camera.h" />
     <ClInclude Include="src\engine\Graphics\CameraManager.h" />
     <ClInclude Include="src\engine\Graphics\ModelManager.h" />
@@ -215,6 +224,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\Graphics\SrvManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\engine\Graphics\ParticleEmitter.cpp" />
+    <ClCompile Include="src\engine\Graphics\ParticleManager.cpp" />
     <ClCompile Include="src\engine\Graphics\Camera.cpp" />
     <ClCompile Include="src\engine\Graphics\CameraManager.cpp" />
     <ClCompile Include="src\engine\Graphics\ModelManager.cpp" />
