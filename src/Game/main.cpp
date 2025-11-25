@@ -37,6 +37,7 @@ using namespace StringUtility;
 #include "../engine/Debug/D3DResourceLeakChecker.h"
 #include "../engine/Graphics/ParticleManager.h"
 #include "../engine/Graphics/ParticleEmitter.h"
+#include"../engine/Debug/ImguiManager.h"
 using namespace MyMath;
 
 // debug用のヘッダ
@@ -52,9 +53,7 @@ using namespace MyMath;
 #pragma comment(lib,"dxcompiler.lib")
 
 
-#include "../../external/imgui/imgui.h"
-#include "../../external/imgui/imgui_impl_dx12.h"
-#include "../../external/imgui/imgui_impl_win32.h"
+
 
 #include "../../external/DirectXTex/DirectXTex.h"
 #include "../../external/DirectXTex/d3dx12.h"
@@ -273,6 +272,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	srvManager->Initialize(dxCommon);
 
 
+	//ImguiManagerの初期化
+	ImGuiManager* imguiManager = nullptr;
+	imguiManager = new ImGuiManager();
+	imguiManager->Initialize(winApp, dxCommon, srvManager);
+
 	//TextureManagerの初期化
 	TextureManager::GetInstance()->Initialize(dxCommon,srvManager);
 
@@ -458,9 +462,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 			break;
 		}
 
-		//ImGui_ImplDX12_NewFrame();
-		//ImGui_ImplWin32_NewFrame();
-		//ImGui::NewFrame();
+		imguiManager->Begin();
 
 		input->Update();
 		if (input->triggerKey(DIK_S)) {
@@ -726,17 +728,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 
 		// ImGui描画
-		//ImGui::Render();
-		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-
+		imguiManager->End();
 		// 描画後処理
 		dxCommon->PostDraw();
 	}
 
 	// クリーンアップ処理
-	//ImGui_ImplDX12_Shutdown();
-	//ImGui_ImplWin32_Shutdown();
-	//ImGui::DestroyContext();
+	imguiManager->Finalize();
+	delete imguiManager;
 
 	SoundUnload(&alarmSound);
 	if (masteringVoice) {
