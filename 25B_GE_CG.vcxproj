@@ -73,7 +73,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;USE_IMGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -157,9 +157,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </FxCompile>
     <FxCompile Include="assets\shaders\Particle.PS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="assets\shaders\Particle.VS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="assets\shaders\Sprite2d.PS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -187,6 +191,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Image Include="assets\textures\uvChecker.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\engine\Debug\ImguiManager.h" />
     <ClInclude Include="src\engine\Graphics\ParticleEmitter.h" />
     <ClInclude Include="src\engine\Graphics\ParticleManager.h" />
     <ClInclude Include="src\engine\Graphics\Camera.h" />
@@ -224,6 +229,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\Graphics\SrvManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\engine\Debug\ImguiManager.cpp" />
     <ClCompile Include="src\engine\Graphics\ParticleEmitter.cpp" />
     <ClCompile Include="src\engine\Graphics\ParticleManager.cpp" />
     <ClCompile Include="src\engine\Graphics\Camera.cpp" />
@@ -236,13 +242,27 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\engine\Graphics\Sprite.cpp" />
     <ClCompile Include="src\engine\Graphics\SpriteCommon.cpp" />
     <ClCompile Include="src\engine\Debug\D3DResourceLeakChecker.cpp" />
-    <ClCompile Include="external\imgui\imgui.cpp" />
-    <ClCompile Include="external\imgui\imgui_demo.cpp" />
-    <ClCompile Include="external\imgui\imgui_draw.cpp" />
-    <ClCompile Include="external\imgui\imgui_impl_dx12.cpp" />
-    <ClCompile Include="external\imgui\imgui_impl_win32.cpp" />
-    <ClCompile Include="external\imgui\imgui_tables.cpp" />
-    <ClCompile Include="external\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="external\imgui\imgui.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_demo.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_draw.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_impl_dx12.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_impl_win32.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_tables.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="external\imgui\imgui_widgets.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\engine\base\logger.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Development|x64'">stdafx.h</PrecompiledHeaderFile>
     </ClCompile>

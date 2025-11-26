@@ -6,9 +6,7 @@
 #include <array>
 #include <dxcapi.h>
 #pragma comment(lib, "dxcompiler.lib")
-#include "../../../external/imgui/imgui.h"
-#include "../../../external/imgui/imgui_impl_dx12.h"
-#include "../../../external/imgui/imgui_impl_win32.h"
+
 #include "../../../external/DirectXTex/DirectXTex.h"
 #include<string>
 #include<chrono>
@@ -157,10 +155,6 @@ private:
 
 	//DXCコンパイラの初期化
 	void InitializeDxcCompiler();
-
-	//ImGuiの初期化
-	void InitializeImGui();
-
 
 	//FPS固定初期化
 	void InitializeFixFPS();
