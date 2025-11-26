@@ -493,6 +493,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 				CameraManager::GetInstance()->SetActiveCamera("Player");
 			}
 		}
+#ifdef USE_IMGUI
+
+
+
 		ImGui::Begin("Settings");
 		{
 			ImGui::SeparatorText("Global Settings");
@@ -650,6 +654,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 			}
 			ImGui::End();
 		}
+#endif // USE_IMGUI
 		CameraManager::GetInstance()->Update();
 		objectAxis->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
 		objectPlane->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
