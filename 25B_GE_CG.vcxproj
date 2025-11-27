@@ -186,9 +186,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Media Include="assets\sounds\Alarm01.wav" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="assets\textures\black_1920x1080.png" />
     <Image Include="assets\textures\checkerBoard.png" />
     <Image Include="assets\textures\monsterBall.png" />
     <Image Include="assets\textures\uvChecker.png" />
+    <Image Include="assets\textures\whiteCircle128_84.png" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\Debug\ImguiManager.h" />

@@ -10,10 +10,11 @@
 #include "../base/Math/MyMath.h"
 #include "DirectXCommon.h"
 #include "SrvManager.h"
-
+#include"SpriteCommon.h"
 using namespace MyMath;
 
-// パーティクル1粒の情報（CPU側での計算用）
+
+// パーティクル1粒の情報
 struct Particle {
 	Transform transform;
 	Vector3 velocity;
@@ -30,6 +31,7 @@ struct ParticleInstancingData {
 
 // パーティクルグループ
 struct ParticleGroup {
+	BlendMode blendMode = BlendMode::kNone;
 	// マテリアルデータ
 	std::string textureFilePath;
 	uint32_t textureSrvIndex;
@@ -44,6 +46,9 @@ struct ParticleGroup {
 	ParticleInstancingData* instancingDataPtr = nullptr; // 書き込み用ポインタ
 };
 
+
+
+
 class ParticleManager
 {
 public: // シングルトンパターン
@@ -57,8 +62,10 @@ public: // シングルトンパターン
 	// グループの作成
 	void CreateParticleGroup(const std::string& name, const std::string& textureFilePath);
 
+	void SetBlendMode(const std::string& groupName, BlendMode mode);
+
 	// パーティクルの発生
-	void Emit(const std::string& name, const Vector3& position, uint32_t count);
+	void Emit(const std::string& name, const Vector3& position, uint32_t count, const Vector4& color, const Vector3& velocity, float velocityDiff);
 
 private:
 	ParticleManager() = default;
@@ -80,14 +87,13 @@ private:
 	struct VertexData {
 		Vector4 position;
 		Vector2 texcoord;
-		Vector3 normal;
 	};
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexBuffer_;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
 
 	// パイプライン関連
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState_;
+	std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, static_cast<size_t>(BlendMode::kCountBlendMode)> graphicsPipelineStates_;
 
 	// ランダムエンジン
 	std::mt19937 randomEngine_;

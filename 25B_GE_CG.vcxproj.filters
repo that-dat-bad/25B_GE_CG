@@ -43,6 +43,12 @@
     <Image Include="assets\textures\uvChecker.png">
       <Filter>リソース ファイル</Filter>
     </Image>
+    <Image Include="assets\textures\black_1920x1080.png">
+      <Filter>リソース ファイル</Filter>
+    </Image>
+    <Image Include="assets\textures\whiteCircle128_84.png">
+      <Filter>リソース ファイル</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="external\imgui\imconfig.h">

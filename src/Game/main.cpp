@@ -302,12 +302,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(hr));
 
 	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager);
-	ParticleManager::GetInstance()->CreateParticleGroup("Circle", "assets/textures/checkerBoard.png");
+	ParticleManager::GetInstance()->CreateParticleGroup("Fire", "assets/textures/whiteCircle128_84.png");
+	ParticleManager::GetInstance()->SetBlendMode("Fire", BlendMode::kAdd);
 	Transform emitterTransform;
 	emitterTransform.translate = { 0.0f, 0.0f, -2.0f };
 	emitterTransform.rotate = { 0.0f, 0.0f, 0.0f };
 	emitterTransform.scale = { 1.0f, 1.0f, 1.0f };
-	ParticleEmitter* particleEmitter = new ParticleEmitter("Circle", emitterTransform, 10, 0.5f);
+	ParticleEmitter* fireEmitter = new ParticleEmitter(
+		"Fire",
+		emitterTransform,
+		10,                         // 一度に出す数
+		0.1f,                       // 0.1秒ごとに発生
+		{ 1.0f, 0.8f, 0.2f, 1.0f }, // 黄色っぽい明るい色（フェード演出用）
+		{ 0.0f, 0.1f, 0.0f },       // 上昇速度
+		0.05f                       // 拡散
+	);
+
 #pragma endregion
 
 
@@ -316,6 +326,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		"assets/textures/uvchecker.png",
 		"assets/textures/monsterBall.png",
 		"assets/textures/checkerBoard.png",
+		"assets/textures/black_1920x1080.png"
 	};
 
 
@@ -331,24 +342,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	};
 
 
-	// ゲームオブジェクトの初期化
-	std::vector<GameObject> gameObjects;
-	GameObject obj1;
-	obj1.transform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-	obj1.modelAssetIndex = 0; // Sphere
-	gameObjects.push_back(obj1);
 
-	GameObject obj2;
-	obj2.transform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {2.0f, 0.0f, 0.0f} };
-	obj2.modelAssetIndex = 1; // Plane
-	gameObjects.push_back(obj2);
 
 	int selectedMeshIndex = 0;
 
 	// スプライトの初期化
 	Sprite* sprite = new Sprite();
-	sprite->Initialize(spriteCommon, dxCommon, "assets/textures/uvchecker.png");
-
+	sprite->Initialize(spriteCommon, dxCommon, "assets/textures/black_1920x1080.png");
+	sprite->SetAnchorPoint({ 0.5f,0.5f });
+	sprite->SetPosition({ float(winApp->kClientWidth) / 2.0f,float(winApp->kClientHeight) / 2.0f });
 
 
 
@@ -360,7 +362,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 
 
-	
+
 
 
 
@@ -428,57 +430,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		imguiManager->Begin();
 
 		input->Update();
-		if (input->triggerKey(DIK_S)) {
-			isObjectVisible = !isObjectVisible;
-		}
+
 		XINPUT_STATE gamepadState;
 		ZeroMemory(&gamepadState, sizeof(XINPUT_STATE));
 		DWORD dwResult = XInputGetState(0, &gamepadState);
 
-		if (dwResult == ERROR_SUCCESS && !gameObjects.empty()) {
-			float rotationSpeed = 0.05f;
-			if (abs(gamepadState.Gamepad.sThumbRX) > XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) {
-				gameObjects[0].transform.rotate.y += static_cast<float>(gamepadState.Gamepad.sThumbRX) / SHRT_MAX * rotationSpeed;
-			}
-			if (abs(gamepadState.Gamepad.sThumbRY) > XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) {
-				gameObjects[0].transform.rotate.x += static_cast<float>(gamepadState.Gamepad.sThumbRY) / SHRT_MAX * rotationSpeed;
-			}
-		}
+
 		//g_debugCamera.Update(keys_, mouseState);
 		// ImGuiウィンドウ
 
 		CameraManager::GetInstance()->SetActiveCamera("Global");
 		CameraManager::GetInstance()->Update();
-
-		particleEmitter->Update();
+		fireEmitter->Update();
 		ParticleManager::GetInstance()->Update();
 		// 更新処理
 		const Matrix4x4& viewMatrix = g_debugCamera.GetViewMatrix();
 		Matrix4x4 projectionMatrix = MakePerspectiveMatrix(0.45f, float(winApp->kClientWidth) / float(winApp->kClientHeight), 0.1f, 100.0f);
+#ifdef USE_IMGUI
 
-		for (auto& gameObject : gameObjects) {
-			Matrix4x4 globalWorldMatrix = MakeAffineMatrix(gameObject.transform.scale, gameObject.transform.rotate, gameObject.transform.translate);
-			if (gameObject.modelAssetIndex >= 0 && gameObject.modelAssetIndex < modelAssets.size()) {
-				ModelData& currentModel = modelAssets[gameObject.modelAssetIndex].modelData;
-				for (auto& mesh : currentModel.meshes) {
-					Matrix4x4 meshLocalWorldMatrix = MakeAffineMatrix(mesh.transform.scale, mesh.transform.rotate, mesh.transform.translate);
-					Matrix4x4 finalWorldMatrix = Multiply(meshLocalWorldMatrix, globalWorldMatrix);
-					mesh.wvpData->World = finalWorldMatrix;
-					mesh.wvpData->WVP = Multiply(finalWorldMatrix, Multiply(viewMatrix, projectionMatrix));
-					if (mesh.hasUV) {
-						mesh.materialData->uvTransform = MakeAffineMatrix(mesh.uvTransform.scale, mesh.uvTransform.rotate, mesh.uvTransform.translate);
-					} else {
-						mesh.materialData->uvTransform = Identity4x4();
-					}
-				}
-			}
-		}
 		ImGui::Begin("Sprite Settings");
 		if (ImGui::Combo("Blend Mode", &currentBlendMode, modes, IM_ARRAYSIZE(modes))) {
 			sprite->SetBlendMode(static_cast<BlendMode>(currentBlendMode));
 		}
 
 		ImGui::End();
+#endif // USE_IMGUI
 		sprite->Update();
 
 
@@ -490,15 +466,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		object3dCommon->SetupCommonState();
 		commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 		commandList->SetGraphicsRootConstantBufferView(4, lightingSettingsResource->GetGPUVirtualAddress());
-		ParticleManager::GetInstance()->Draw();
+
 		// スプライト描画
 		//spriteの描画前処理
 		spriteCommon->SetupCommonState();
 		//sprite->Draw(dxCommon, texturePaths[spriteTextureIndex].gpuHandle);
 		sprite->Draw(dxCommon);
+		ParticleManager::GetInstance()->Draw();
 
-
-	// ImGui描画
+		// ImGui描画
 		imguiManager->End();
 		// 描画後処理
 		dxCommon->PostDraw();
@@ -519,12 +495,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	CloseHandle(dxCommon->GetFenceEvent());
 	CoUninitialize();
 	ModelManager::GetInstance()->Finalize();
-	delete dxCommon;
+
 	TextureManager::GetInstance()->Finalize();
 	delete srvManager;
-	delete particleEmitter;
 	ParticleManager::GetInstance()->Finalize();
+	delete fireEmitter;
 	delete input;
+	delete dxCommon;
 	delete winApp;
 	delete spriteCommon;
 	delete object3dCommon;

@@ -43,7 +43,6 @@ void ParticleManager::Update() {
 	Matrix4x4 projectionMatrix = camera->GetProjectionMatrix();
 	Matrix4x4 viewProjectionMatrix = camera->GetViewProjectionMatrix();
 
-
 	Matrix4x4 cameraWorldMatrix = camera->GetWorldMatrix();
 	Matrix4x4 billboardMatrix = Identity4x4();
 	billboardMatrix.m[0][0] = cameraWorldMatrix.m[0][0];
@@ -71,6 +70,20 @@ void ParticleManager::Update() {
 				continue;
 			}
 
+			// --- 演出計算 (フェードアウト・縮小) ---
+			// 0.0(生まれたて) ～ 1.0(死ぬ直前)
+			float lifeRatio = it->currentTime / it->lifeTime;
+
+			// 1. 色の計算：徐々に透明にする
+			Vector4 drawColor = it->color;
+			drawColor.w = it->color.w * (1.0f - lifeRatio);
+
+			// 2. 大きさの計算：徐々に小さくする
+			float scaleFactor = 1.0f - lifeRatio;
+			// スケール適用 (初期サイズ1.0前提)
+			it->transform.scale = { scaleFactor, scaleFactor, scaleFactor };
+			// ------------------------------------
+
 			// 移動処理 (速度を加算)
 			it->transform.translate = Add(it->transform.translate, it->velocity);
 
@@ -90,7 +103,7 @@ void ParticleManager::Update() {
 
 				// インスタンシングデータへの書き込み
 				group.instancingDataPtr[group.instanceCount].WVP = wvp;
-				group.instancingDataPtr[group.instanceCount].color = it->color;
+				group.instancingDataPtr[group.instanceCount].color = drawColor; // 計算後の色を渡す
 
 				group.instanceCount++;
 			}
@@ -106,9 +119,6 @@ void ParticleManager::Draw() {
 	// ルートシグネチャの設定
 	commandList->SetGraphicsRootSignature(rootSignature_.Get());
 
-	// PSOの設定
-	commandList->SetPipelineState(graphicsPipelineState_.Get());
-
 	// プリミティブトポロジーの設定
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -118,7 +128,7 @@ void ParticleManager::Draw() {
 	// 全てのパーティクルグループについて処理
 	for (auto& [name, group] : particleGroups_) {
 		if (group.instanceCount == 0) continue;
-
+		commandList->SetPipelineState(graphicsPipelineStates_[static_cast<int>(group.blendMode)].Get());
 		// テクスチャのSRVを設定
 		D3D12_GPU_DESCRIPTOR_HANDLE textureHandle = srvManager_->GetGPUDescriptorHandle(group.textureSrvIndex);
 		commandList->SetGraphicsRootDescriptorTable(0, textureHandle);
@@ -176,34 +186,37 @@ void ParticleManager::CreateParticleGroup(const std::string& name, const std::st
 	group.instanceCount = 0;
 }
 
-void ParticleManager::Emit(const std::string& name, const Vector3& position, uint32_t count) {
+void ParticleManager::SetBlendMode(const std::string& groupName, BlendMode mode) {
+	assert(particleGroups_.contains(groupName));
+
+	particleGroups_[groupName].blendMode = mode;
+}
+
+void ParticleManager::Emit(const std::string& name, const Vector3& position, uint32_t count, const Vector4& color, const Vector3& velocity, float velocityDiff) {
 	// 登録済みのグループかチェック
 	assert(particleGroups_.contains(name));
 
 	ParticleGroup& group = particleGroups_[name];
 
-	std::uniform_real_distribution<float> distPos(-1.0f, 1.0f);
-	std::uniform_real_distribution<float> distVel(-1.0f, 1.0f);
-	std::uniform_real_distribution<float> distColor(0.0f, 1.0f);
-	std::uniform_real_distribution<float> distTime(1.0f, 3.0f);
+	std::uniform_real_distribution<float> distPos(-0.5f, 0.5f); // 発生位置のバラつき
+	std::uniform_real_distribution<float> distDiff(-velocityDiff, velocityDiff); // 速度のバラつき
+	std::uniform_real_distribution<float> distTime(1.0f, 2.0f); // 寿命
 
 	for (uint32_t i = 0; i < count; ++i) {
 		Particle particle{};
 		particle.transform.scale = { 1.0f, 1.0f, 1.0f };
 		particle.transform.rotate = { 0.0f, 0.0f, 0.0f };
 
-		// 位置に少しランダム要素を加える
+		// 位置：指定座標の周辺に少し散らす
 		Vector3 randomPos = { distPos(randomEngine_), distPos(randomEngine_), distPos(randomEngine_) };
 		particle.transform.translate = Add(position, randomPos);
 
-		// 速度もランダムに
-		Vector3 randomVel = { distVel(randomEngine_), distVel(randomEngine_), distVel(randomEngine_) };
-		particle.velocity = Normalize(randomVel); // 方向
-		particle.velocity.x *= 0.1f; // スピード調整
-		particle.velocity.y *= 0.1f;
-		particle.velocity.z *= 0.1f;
+		// 速度：指定速度 + ランダム成分
+		Vector3 randomVel = { distDiff(randomEngine_), distDiff(randomEngine_), distDiff(randomEngine_) };
+		particle.velocity = Add(velocity, randomVel);
 
-		particle.color = { distColor(randomEngine_), distColor(randomEngine_), distColor(randomEngine_), 1.0f };
+		// 色と寿命
+		particle.color = color;
 		particle.lifeTime = distTime(randomEngine_);
 		particle.currentTime = 0.0f;
 
@@ -213,7 +226,6 @@ void ParticleManager::Emit(const std::string& name, const Vector3& position, uin
 
 void ParticleManager::CreateModel() {
 	VertexData vertices[6];
-
 
 	Vector4 leftBottom = { -0.5f, -0.5f, 0.0f, 1.0f };
 	Vector4 leftTop = { -0.5f,  0.5f, 0.0f, 1.0f };
@@ -255,7 +267,7 @@ void ParticleManager::CreateRootSignature() {
 	descriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
-	descriptorRange[0].BaseShaderRegister = 0; 
+	descriptorRange[0].BaseShaderRegister = 0;
 	descriptorRange[0].NumDescriptors = 1;
 	descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -280,16 +292,16 @@ void ParticleManager::CreateRootSignature() {
 	rootParameters[1].DescriptorTable.pDescriptorRanges = descriptorRangeInstancing;
 	rootParameters[1].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeInstancing);
 
-	// サンプラー設定
+	// サンプラー設定 (黒フチ対策でBORDERに変更)
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
 	staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-	staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
 	staticSamplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 	staticSamplers[0].MaxLOD = D3D12_FLOAT32_MAX;
 	staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
+	staticSamplers[0].BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 	descriptionRootSignature.pParameters = rootParameters;
 	descriptionRootSignature.NumParameters = _countof(rootParameters);
 	descriptionRootSignature.pStaticSamplers = staticSamplers;
@@ -329,22 +341,12 @@ void ParticleManager::CreateGraphicsPipeline() {
 	graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
 	graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
 
-	// ブレンドステート
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].BlendEnable = TRUE;
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-
 	// ラスタライザステート
 	graphicsPipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // 両面描画
 	graphicsPipelineStateDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 
-	// デプスステンシル
-	graphicsPipelineStateDesc.DepthStencilState.DepthEnable = false;
+	// デプスステンシル (3D描画順序のためにEnable=true推奨。WriteMaskはZERO)
+	graphicsPipelineStateDesc.DepthStencilState.DepthEnable = true;
 	graphicsPipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 	graphicsPipelineStateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
@@ -355,6 +357,65 @@ void ParticleManager::CreateGraphicsPipeline() {
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineState_));
-	assert(SUCCEEDED(hr));
+	for (size_t i = 0; i < static_cast<size_t>(BlendMode::kCountBlendMode); ++i) {
+
+		D3D12_BLEND_DESC blendDesc{};
+		blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+		// 基本的にブレンドは有効
+		blendDesc.RenderTarget[0].BlendEnable = TRUE;
+
+		// モードごとの設定
+		switch (static_cast<BlendMode>(i)) {
+		case BlendMode::kNone:
+			blendDesc.RenderTarget[0].BlendEnable = FALSE;
+			break;
+		case BlendMode::kNormal:
+			blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+			blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+			blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+			blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+			blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+			blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+			break;
+		case BlendMode::kAdd:
+			// 発光用ワンワン加算 (黒透け対策)
+			blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+			blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+			blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+			blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+			blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+			blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+			break;
+		case BlendMode::kSubtract:
+			blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+			blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;
+			blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+			blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+			blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+			blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+			break;
+		case BlendMode::kMultiply:
+			blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_ZERO;
+			blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+			blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_SRC_COLOR;
+			blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+			blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+			blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+			break;
+		case BlendMode::kScreen:
+			blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_INV_DEST_COLOR;
+			blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+			blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
+			blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+			blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+			blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+			break;
+		}
+
+		graphicsPipelineStateDesc.BlendState = blendDesc;
+
+		// PSO生成
+		HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineStates_[i]));
+		assert(SUCCEEDED(hr));
+	}
 }
