@@ -104,9 +104,11 @@ void Sprite::Update()
 
 }
 
-void Sprite::Draw(DirectXCommon* dxCommon, D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle)
+void Sprite::Draw(DirectXCommon* dxCommon)
 {
 	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
+
+	spriteCommon_->SetBlendMode(blendMode_);
 
 	// 1. 頂点バッファの設定
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView);

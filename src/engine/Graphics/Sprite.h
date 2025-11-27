@@ -5,8 +5,8 @@ using namespace MyMath;
 #include <cstdint>
 #include <wrl/client.h>
 #include<string>
+#include"SpriteCommon.h"
 
-class SpriteCommon;
 class DirectXCommon;
 
 class Sprite
@@ -16,7 +16,7 @@ public:
 
 	void Update();
 
-	void Draw(DirectXCommon* dxCommon, D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle);
+	void Draw(DirectXCommon* dxCommon);
 
 	void ChangeTexture(std::string textureFilePath);
 
@@ -34,6 +34,7 @@ public:
 	void SetFlipY(bool isFlip) { isFlipY_ = isFlip; }
 	void SetTextureLeftTop(const Vector2& leftTop) { textureLeftTop_ = leftTop; }
 	void SetTextureSize(const Vector2& size) { textureSize_ = size; }
+	void SetBlendMode(BlendMode blendMode) { blendMode_ = blendMode; }
 
 	//---ゲッター---//
 	Vector2 GetPosition() const { return { transform_.translate.x, transform_.translate.y }; }
@@ -45,6 +46,7 @@ public:
 	bool GetFlipY() const { return isFlipY_; }
 	Vector2 GetTextureLeftTop() const { return textureLeftTop_; }
 	Vector2 GetTextureSize() const { return textureSize_; }
+	BlendMode GetBlendMode() const { return blendMode_; }
 
 private:
 
@@ -93,5 +95,6 @@ private:
 	//テクスチャ切り出しサイズ
 	Vector2 textureSize_ = { 100.0f,100.0f };
 	Vector2 size_ = { 100.0f,100.0f };
+	BlendMode blendMode_ = BlendMode::kNormal;
 };
 

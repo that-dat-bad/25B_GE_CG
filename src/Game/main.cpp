@@ -278,7 +278,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	imguiManager->Initialize(winApp, dxCommon, srvManager);
 
 	//TextureManagerの初期化
-	TextureManager::GetInstance()->Initialize(dxCommon,srvManager);
+	TextureManager::GetInstance()->Initialize(dxCommon, srvManager);
 
 	//Sprite共通部の初期化
 	SpriteCommon* spriteCommon = new SpriteCommon();
@@ -329,12 +329,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		//"sphere.obj",
 		//"plane.obj",
 	};
-	//for (const auto& filename : modelPaths) {
-	//	ModelData modelData = LoadObjFile("assets/models", filename, dxCommon);
-	//	ModelAsset newAsset;
-	//	newAsset.modelData = modelData;
-	//	modelAssets.push_back(newAsset);
-	//}
+
 
 	// ゲームオブジェクトの初期化
 	std::vector<GameObject> gameObjects;
@@ -351,54 +346,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	int selectedMeshIndex = 0;
 
 	// スプライトの初期化
-	//Sprite* sprite = new Sprite();
-	//sprite->Initialize(spriteCommon, dxCommon);
+	Sprite* sprite = new Sprite();
+	sprite->Initialize(spriteCommon, dxCommon, "assets/textures/uvchecker.png");
 
-	std::vector<Sprite*> sprites;
-	const int kSpriteCount = 5; // 5枚描画してみる
 
-	for (int i = 0; i < kSpriteCount; ++i) {
-		Sprite* newSprite = new Sprite();
-		if (i == 0 || i == 2 || i == 4) { // 1, 3, 5枚目 (インデックス 0, 2, 4)
-			newSprite->Initialize(spriteCommon, dxCommon, "assets/textures/monsterBall.png");
-
-		} else { // 2, 4枚目 (インデックス 1, 3)
-			newSprite->Initialize(spriteCommon, dxCommon, "assets/textures/uvchecker.png");
-
-		}
-		//newSprite->Initialize(spriteCommon, dxCommon, "assets/textures/monsterBall.png");
-
-		// 横に並ぶように初期位置をずらす
-		Vector2 pos = { 100.0f + (i * 150.0f), 200.0f };
-		newSprite->SetPosition(pos);
-
-		sprites.push_back(newSprite);
-	}
 
 
 	CameraManager::GetInstance()->Initialize();
-	CameraManager::GetInstance()->CreateCamera("Global"); // 俯瞰用
-	CameraManager::GetInstance()->CreateCamera("Player"); // プレイヤー視点用
+	CameraManager::GetInstance()->CreateCamera("Global");
 	CameraManager::GetInstance()->SetActiveCamera("Global");
 	CameraManager::GetInstance()->GetActiveCamera()->SetTranslate({ 0, 20, -20 });
 	CameraManager::GetInstance()->GetActiveCamera()->SetRotate({ 0.8f, 0, 0 });
 
-	CameraManager::GetInstance()->SetActiveCamera("Player");
-	CameraManager::GetInstance()->GetActiveCamera()->SetTranslate({ 0, 0, -5 });
 
-	Model* model = new Model();
-	ModelManager::GetInstance()->LoadModel("models/axis.obj");
-	ModelManager::GetInstance()->LoadModel("models/teapot.obj");
-	Object3d* objectAxis = new Object3d();
-	objectAxis->Initialize(object3dCommon);
-	Object3d* objectPlane = new Object3d();
-	objectPlane->Initialize(object3dCommon);
-	Model* modelAxis = ModelManager::GetInstance()->FindModel("models/axis.obj");
-	Model*modelPlane= ModelManager::GetInstance()->FindModel("models/teapot.obj");
-	objectAxis->SetModel(modelAxis);
-	objectAxis->SetScale({ 1.0f, 1.0f, 1.0f });
-	objectPlane->SetModel(modelPlane);
-	objectPlane->SetScale({ 1.0f, 1.0f, 1.0f });
+
+	
 
 
 
@@ -455,7 +417,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	SoundData alarmSound = SoundLoadWave("assets/sounds/Alarm01.wav");
 
 	int selectedLightingOption = 0;
-
+	const char* modes[] = { "None", "Normal", "Add", "Subtract", "Multiply", "Screen" };
+	static int currentBlendMode = 1;
 	while (true) {
 
 		if (winApp->ProcessMessage()) {
@@ -472,8 +435,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		ZeroMemory(&gamepadState, sizeof(XINPUT_STATE));
 		DWORD dwResult = XInputGetState(0, &gamepadState);
 
-		if (dwResult == ERROR_SUCCESS && !gameObjects.empty())
-		{
+		if (dwResult == ERROR_SUCCESS && !gameObjects.empty()) {
 			float rotationSpeed = 0.05f;
 			if (abs(gamepadState.Gamepad.sThumbRX) > XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) {
 				gameObjects[0].transform.rotate.y += static_cast<float>(gamepadState.Gamepad.sThumbRX) / SHRT_MAX * rotationSpeed;
@@ -484,185 +446,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		}
 		//g_debugCamera.Update(keys_, mouseState);
 		// ImGuiウィンドウ
-		if (input->triggerKey(DIK_SPACE)) {
-			static bool isGlobal = false;
-			isGlobal = !isGlobal;
-			if (isGlobal) {
-				CameraManager::GetInstance()->SetActiveCamera("Global");
-			} else {
-				CameraManager::GetInstance()->SetActiveCamera("Player");
-			}
-		}
-#ifdef USE_IMGUI
 
-
-
-		ImGui::Begin("Settings");
-		{
-			ImGui::SeparatorText("Global Settings");
-			const char* lightingItems[] = { "Lambert", "Half-Lambert", "None" };
-			ImGui::Combo("Lighting Model", &selectedLightingOption, lightingItems, IM_ARRAYSIZE(lightingItems));
-
-			if (selectedLightingOption == 2) {
-				for (auto& gameObject : gameObjects) {
-					if (gameObject.modelAssetIndex >= 0 && gameObject.modelAssetIndex < modelAssets.size()) {
-						for (auto& mesh : modelAssets[gameObject.modelAssetIndex].modelData.meshes) {
-							mesh.materialData->enableLighting = 0;
-						}
-					}
-				}
-			} else {
-				for (auto& gameObject : gameObjects) {
-					if (gameObject.modelAssetIndex >= 0 && gameObject.modelAssetIndex < modelAssets.size()) {
-						for (auto& mesh : modelAssets[gameObject.modelAssetIndex].modelData.meshes) {
-							mesh.materialData->enableLighting = 1;
-						}
-					}
-				}
-				lightingSettingsData->lightingModel = selectedLightingOption;
-			}
-			ImGui::ColorEdit4("Light Color", &directionalLightData->color.x);
-			if (!gameObjects.empty() && gameObjects[0].modelAssetIndex >= 0 && gameObjects[0].modelAssetIndex < modelAssets.size() &&
-				!modelAssets[gameObjects[0].modelAssetIndex].modelData.meshes.empty() &&
-				modelAssets[gameObjects[0].modelAssetIndex].modelData.meshes[0].materialData->enableLighting != 0) {
-				ImGui::SliderFloat3("Light Direction", &directionalLightData->direction.x, -1.0f, 1.0f);
-				directionalLightData->direction = Normalize(directionalLightData->direction);
-			} else {
-				ImGui::Text("Light Direction: N/A (Lighting Disabled)");
-			}
-			ImGui::SeparatorText("Audio Settings");
-			if (ImGui::Button("Play Alarm Sound")) {
-				SoundPlayWave(xAudio2, alarmSound);
-			}
-			ImGui::SeparatorText("Sprite Settings");
-			ImGui::Checkbox("Show Sprite", &isSpriteVisible);
-			if (isSpriteVisible) {
-				// 1. テクスチャ選択 (共通)
-				std::vector<const char*> textureNames;
-				for (const auto& path : texturePaths) { textureNames.push_back(path.c_str()); }
-				ImGui::Combo("Sprite Texture", &spriteTextureIndex, textureNames.data(), static_cast<int>(textureNames.size()));
-
-				ImGui::Separator();
-
-				//操作するスプライトを選択
-				ImGui::SliderInt("Select Sprite No", &currentSpriteIndex, 0, int(sprites.size()) - 1);
-
-				// 選ばれたスプライトを取得
-				Sprite* targetSprite = sprites[currentSpriteIndex];
-
-				ImGui::Text("Editing Sprite: %d", currentSpriteIndex);
-
-				// --------------------------------------------------
-				// 2. 座標 (Translate)
-				// --------------------------------------------------
-				Vector2 pos = targetSprite->GetPosition();
-				if (ImGui::DragFloat2("Position", &pos.x, 1.0f)) {
-					targetSprite->SetPosition(pos);
-				}
-
-				// --------------------------------------------------
-				// 3. 回転 (Rotate)
-				// --------------------------------------------------
-				float rot = targetSprite->GetRotation();
-				if (ImGui::SliderAngle("Rotation", &rot)) {
-					targetSprite->SetRotation(rot);
-				}
-
-				// --------------------------------------------------
-				// 4. サイズ (Scale)
-				// --------------------------------------------------
-				Vector2 size = targetSprite->GetSize();
-				if (ImGui::DragFloat2("Size", &size.x, 1.0f)) {
-					targetSprite->SetSize(size);
-				}
-
-				// --------------------------------------------------
-				// 5. 色 (Color)
-				// --------------------------------------------------
-				Vector4 color = targetSprite->GetColor();
-				if (ImGui::ColorEdit4("Color", &color.x)) {
-					targetSprite->SetColor(color);
-				}
-			}
-			ImGui::SeparatorText("Object Settings");
-			for (int i = 0; i < gameObjects.size(); ++i) {
-				GameObject& currentGameObject = gameObjects[i];
-				ImGui::PushID(i);
-				ImGui::SeparatorText(std::format("Object {}", i + 1).c_str());
-				std::vector<const char*> modelNames;
-				for (const auto& asset : modelAssets) { modelNames.push_back(asset.modelData.name.c_str()); }
-				ImGui::Combo("Model", &currentGameObject.modelAssetIndex, modelNames.data(), static_cast<int>(modelNames.size()));
-				if (currentGameObject.modelAssetIndex >= 0 && currentGameObject.modelAssetIndex < modelAssets.size() &&
-					!modelAssets[currentGameObject.modelAssetIndex].modelData.meshes.empty() &&
-					modelAssets[currentGameObject.modelAssetIndex].modelData.meshes[0].materialData) {
-					Material* currentMaterial = modelAssets[currentGameObject.modelAssetIndex].modelData.meshes[0].materialData;
-					ImGui::ColorEdit4("Material Color", &currentMaterial->color.x);
-					Log(std::format("Current Model: {}, Material Color: R:{:.2f}, G:{:.2f}, B:{:.2f}, A:{:.2f}\n",
-						modelAssets[currentGameObject.modelAssetIndex].modelData.name,
-						currentMaterial->color.x, currentMaterial->color.y, currentMaterial->color.z, currentMaterial->color.w));
-				}
-				ImGui::DragFloat3("Position", &currentGameObject.transform.translate.x, 0.1f);
-				ImGui::DragFloat3("Scale", &currentGameObject.transform.scale.x, 0.1f);
-				ImGui::SliderAngle("Rotate X", &currentGameObject.transform.rotate.x);
-				ImGui::SliderAngle("Rotate Y", &currentGameObject.transform.rotate.y);
-				ImGui::SliderAngle("Rotate Z", &currentGameObject.transform.rotate.z);
-				ImGui::PopID();
-			}
-		}
-		ImGui::End();
-
-		if (!gameObjects.empty() && gameObjects[0].modelAssetIndex >= 0 && gameObjects[0].modelAssetIndex < modelAssets.size() &&
-			modelAssets[gameObjects[0].modelAssetIndex].modelData.name == "multiMesh.obj")
-		{
-			ImGui::Begin("Mesh Settings (Object 1)");
-			{
-				ModelData& currentModel = modelAssets[gameObjects[0].modelAssetIndex].modelData;
-				if (!currentModel.meshes.empty()) {
-					std::vector<const char*> meshNames;
-					for (const auto& mesh : currentModel.meshes) { meshNames.push_back(mesh.name.c_str()); }
-					if (selectedMeshIndex >= currentModel.meshes.size()) {
-						selectedMeshIndex = 0;
-					}
-					ImGui::Combo("Select Mesh", &selectedMeshIndex, meshNames.data(), static_cast<int>(meshNames.size()));
-					if (selectedMeshIndex >= 0 && selectedMeshIndex < currentModel.meshes.size()) {
-						MeshObject& selectedMesh = currentModel.meshes[selectedMeshIndex];
-						ImGui::SeparatorText(selectedMesh.name.c_str());
-						ImGui::DragFloat3("Mesh Position", &selectedMesh.transform.translate.x, 0.1f);
-						ImGui::DragFloat3("Mesh Scale", &selectedMesh.transform.scale.x, 0.1f);
-						ImGui::SliderAngle("Mesh Rotate X", &selectedMesh.transform.rotate.x);
-						ImGui::SliderAngle("Mesh Rotate Y", &selectedMesh.transform.rotate.y);
-						ImGui::SliderAngle("Mesh Rotate Z", &selectedMesh.transform.rotate.z);
-						ImGui::ColorEdit4("Mesh Color", &selectedMesh.materialData->color.x);
-						if (selectedMesh.hasUV) {
-							std::vector<const char*> textureNames;
-							for (const auto& path : texturePaths) { textureNames.push_back(path.c_str()); }
-							size_t meshTexIdx = selectedMesh.textureAssetIndex;
-							ImGui::Combo("Mesh Texture", reinterpret_cast<int*>(&meshTexIdx), textureNames.data(), static_cast<int>(textureNames.size()));
-							selectedMesh.textureAssetIndex = static_cast<int>(meshTexIdx);
-							ImGui::SeparatorText("Mesh UV Transform");
-							ImGui::DragFloat3("Mesh UV Scale", &selectedMesh.uvTransform.scale.x, 0.01f, 0.01f, 10.0f);
-							ImGui::SliderAngle("Mesh UV Rotate Z", &selectedMesh.uvTransform.rotate.z);
-							ImGui::DragFloat3("Mesh UV Translate", &selectedMesh.uvTransform.translate.x, 0.01f);
-						} else {
-							ImGui::Text("Mesh Texture: N/A (No UVs)");
-							ImGui::Text("Mesh UV Transform: N/A (No UVs)");
-						}
-					}
-				} else {
-					ImGui::Text("No meshes in this model.");
-				}
-			}
-			ImGui::End();
-		}
-#endif // USE_IMGUI
+		CameraManager::GetInstance()->SetActiveCamera("Global");
 		CameraManager::GetInstance()->Update();
-		objectAxis->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
-		objectPlane->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
-		objectAxis->Update();
-		objectPlane->Update();
-		if (input->triggerKey(DIK_A)) {
-			particleEmitter->Emit();
-		}
+
 		particleEmitter->Update();
 		ParticleManager::GetInstance()->Update();
 		// 更新処理
@@ -686,53 +473,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 				}
 			}
 		}
-
-		if (isSpriteVisible) {
-			/*sprite->Update();*/
-			for (Sprite* sprite : sprites) {
-				sprite->Update();
-			}
+		ImGui::Begin("Sprite Settings");
+		if (ImGui::Combo("Blend Mode", &currentBlendMode, modes, IM_ARRAYSIZE(modes))) {
+			sprite->SetBlendMode(static_cast<BlendMode>(currentBlendMode));
 		}
+
+		ImGui::End();
+		sprite->Update();
+
 
 		// --- 描画処理 ---
 		// directXの描画前処理
 		dxCommon->PreDraw();
 		srvManager->PreDraw();
 
-
-
-
-
-
 		object3dCommon->SetupCommonState();
 		commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 		commandList->SetGraphicsRootConstantBufferView(4, lightingSettingsResource->GetGPUVirtualAddress());
-		if (isObjectVisible) {
-			objectAxis->Draw();
-			objectPlane->Draw();
-		}
 		ParticleManager::GetInstance()->Draw();
 		// スプライト描画
-		if (isSpriteVisible) {
-			//spriteの描画前処理
-			spriteCommon->SetupCommonState();
-			//sprite->Draw(dxCommon, texturePaths[spriteTextureIndex].gpuHandle);
-			for (Sprite* sprite : sprites) {
-				// 文字列配列からパスを取り出す
-				std::string path = texturePaths[spriteTextureIndex];
-
-				// TextureManagerからハンドルを取得
-				D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle =
-					TextureManager::GetInstance()->GetSrvHandleGPU(spriteTextureIndex);
-
-				// 描画
-				sprite->Draw(dxCommon, textureSrvHandle);
-			}
-		}
+		//spriteの描画前処理
+		spriteCommon->SetupCommonState();
+		//sprite->Draw(dxCommon, texturePaths[spriteTextureIndex].gpuHandle);
+		sprite->Draw(dxCommon);
 
 
-
-		// ImGui描画
+	// ImGui描画
 		imguiManager->End();
 		// 描画後処理
 		dxCommon->PostDraw();
@@ -761,9 +527,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	delete input;
 	delete winApp;
 	delete spriteCommon;
-	for (Sprite* sprite : sprites) {
-		delete sprite;
-	}
 	delete object3dCommon;
 
 
