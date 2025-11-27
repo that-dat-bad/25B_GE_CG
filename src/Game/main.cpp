@@ -37,6 +37,7 @@ using namespace StringUtility;
 #include "../engine/Debug/D3DResourceLeakChecker.h"
 #include "../engine/Graphics/ParticleManager.h"
 #include "../engine/Graphics/ParticleEmitter.h"
+#include"../engine/Audio/AudioManager.h"
 #include"../engine/Debug/ImguiManager.h"
 using namespace MyMath;
 

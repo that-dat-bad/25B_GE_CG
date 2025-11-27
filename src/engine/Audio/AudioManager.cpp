@@ -9,11 +9,6 @@ void AudioManager::Initialize() {
 	assert(SUCCEEDED(hr));
 	hr = xAudio2_->CreateMasteringVoice(&masteringVoice_);
 	assert(SUCCEEDED(hr));
-
-	// サウンドデータの読み込み
-	SoundData alarmSound = SoundLoadWave("assets/sounds/Alarm01.wav");
-
-
 }
 
 SoundData AudioManager::SoundLoadWave(const char* filename) {
@@ -52,9 +47,9 @@ void AudioManager::SoundUnload(SoundData* soundData) {
 	soundData->wfex = {};
 }
 
-void AudioManager::SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData) {
+void AudioManager::SoundPlayWave(const SoundData& soundData) {
 	IXAudio2SourceVoice* pSourceVoice = nullptr;
-	HRESULT result = xAudio2->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
+	HRESULT result = xAudio2_->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
 	assert(SUCCEEDED(result));
 	XAUDIO2_BUFFER buf = {};
 	buf.pAudioData = soundData.pBuffer;

@@ -34,7 +34,7 @@ public:
 
 	void SoundUnload(SoundData* soundData);
 
-	void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData);
+	void SoundPlayWave(const SoundData& soundData);
 
 private:
 	IXAudio2* xAudio2_ = nullptr;
