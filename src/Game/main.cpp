@@ -223,6 +223,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	Object3dCommon* object3dCommon = new Object3dCommon();
 	object3dCommon->Initialize(dxCommon);
 
+	AudioManager* audioManager = new AudioManager();
+	audioManager->Initialize();
 
 	//3Dモデルマネージャーの初期化
 	ModelManager::GetInstance()->Initialize(dxCommon);
@@ -387,7 +389,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(hrXAudio2));
 
 	// サウンドデータの読み込み
-	SoundData alarmSound = SoundLoadWave("assets/sounds/Alarm01.wav");
+	SoundData alarmSound =audioManager->SoundLoadWave("assets/sounds/Alarm01.wav");
 
 	int selectedLightingOption = 0;
 
@@ -467,7 +469,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 			}
 			ImGui::SeparatorText("Audio Settings");
 			if (ImGui::Button("Play Alarm Sound")) {
-				SoundPlayWave(xAudio2, alarmSound);
+				audioManager->SoundPlayWave(alarmSound);
 			}
 			ImGui::SeparatorText("Sprite Settings");
 			ImGui::Checkbox("Show Sprite", &isSpriteVisible);
@@ -677,7 +679,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	imguiManager->Finalize();
 	delete imguiManager;
 
-	SoundUnload(&alarmSound);
+	audioManager->SoundUnload(&alarmSound);
 	if (masteringVoice) {
 		masteringVoice->DestroyVoice();
 	}
@@ -696,6 +698,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	delete input;
 	delete winApp;
 	delete spriteCommon;
+	audioManager->SoundUnload(&alarmSound);
+	delete audioManager;
+
 	for (Sprite* sprite : sprites) {
 		delete sprite;
 	}
