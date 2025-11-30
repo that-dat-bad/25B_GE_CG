@@ -304,6 +304,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager);
 	ParticleManager::GetInstance()->CreateParticleGroup("Fire", "assets/textures/whiteCircle128_84.png");
 	ParticleManager::GetInstance()->SetBlendMode("Fire", BlendMode::kAdd);
+	ParticleManager::GetInstance()->CreateParticleGroup("Spark", "assets/textures/whiteCircle128_84.png");
+	ParticleManager::GetInstance()->SetBlendMode("Spark", BlendMode::kAdd);
+	Vector3 prevMousePos = { 0, 0, 0 };
 	Transform emitterTransform;
 	emitterTransform.translate = { 0.0f, 0.0f, -2.0f };
 	emitterTransform.rotate = { 0.0f, 0.0f, 0.0f };
@@ -430,15 +433,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		imguiManager->Begin();
 
 		input->Update();
-
+		POINT mousePoint;
+		GetCursorPos(&mousePoint);
+		ScreenToClient(winApp->GetHwnd(), &mousePoint);
 		XINPUT_STATE gamepadState;
 		ZeroMemory(&gamepadState, sizeof(XINPUT_STATE));
 		DWORD dwResult = XInputGetState(0, &gamepadState);
 
-
+		float x = (float(mousePoint.x) - float(winApp->kClientWidth) / 2.0f) / 100.0f;
+		float y = -(float(mousePoint.y) - float(winApp->kClientHeight) / 2.0f) / 100.0f; // Y軸は反転
+		Vector3 currentMousePos = { x, y, -2.0f }; // 炎と同じくらいの奥行き(-2.0f)
 		//g_debugCamera.Update(keys_, mouseState);
 		// ImGuiウィンドウ
+		if (input->PushMouse(0)) {
 
+
+			ParticleManager::GetInstance()->Emit(
+				"Spark",
+				currentMousePos,
+				prevMousePos, 
+				5,
+				{ 1.0f, 0.1f, 0.2f, 1.0f },
+				{ 0.0f, 0.0f, 0.0f },
+				0.1f
+			);
+		}
+		prevMousePos = currentMousePos;
 		CameraManager::GetInstance()->SetActiveCamera("Global");
 		CameraManager::GetInstance()->Update();
 		fireEmitter->Update();

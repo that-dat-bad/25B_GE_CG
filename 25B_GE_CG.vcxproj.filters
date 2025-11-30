@@ -19,6 +19,7 @@
     <None Include=".editorconfig" />
     <None Include="assets\shaders\Sprite2d.hlsli" />
     <None Include="assets\shaders\Particle.hlsli" />
+    <None Include="src\ReadMe.md" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="assets\shaders\Object3d.PS.hlsl" />

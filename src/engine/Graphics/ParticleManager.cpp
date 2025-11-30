@@ -71,7 +71,6 @@ void ParticleManager::Update() {
 			}
 
 			// --- 演出計算 (フェードアウト・縮小) ---
-			// 0.0(生まれたて) ～ 1.0(死ぬ直前)
 			float lifeRatio = it->currentTime / it->lifeTime;
 
 			// 1. 色の計算：徐々に透明にする
@@ -79,10 +78,8 @@ void ParticleManager::Update() {
 			drawColor.w = it->color.w * (1.0f - lifeRatio);
 
 			// 2. 大きさの計算：徐々に小さくする
-			float scaleFactor = 1.0f - lifeRatio;
-			// スケール適用 (初期サイズ1.0前提)
-			it->transform.scale = { scaleFactor, scaleFactor, scaleFactor };
-			// ------------------------------------
+			float scale = it->startScale * (1.0f - lifeRatio);
+			it->transform.scale = { scale, scale, scale };
 
 			// 移動処理 (速度を加算)
 			it->transform.translate = Add(it->transform.translate, it->velocity);
@@ -204,6 +201,7 @@ void ParticleManager::Emit(const std::string& name, const Vector3& position, uin
 
 	for (uint32_t i = 0; i < count; ++i) {
 		Particle particle{};
+		particle.startScale = 1.0f;
 		particle.transform.scale = { 1.0f, 1.0f, 1.0f };
 		particle.transform.rotate = { 0.0f, 0.0f, 0.0f };
 
@@ -220,6 +218,39 @@ void ParticleManager::Emit(const std::string& name, const Vector3& position, uin
 		particle.lifeTime = distTime(randomEngine_);
 		particle.currentTime = 0.0f;
 
+		group.particles.push_back(particle);
+	}
+}
+
+void ParticleManager::Emit(const std::string& name, const Vector3& position, const Vector3& prevPosition, uint32_t count, const Vector4& color, const Vector3& velocity, float velocityDiff) {
+	// 登録済みのグループかチェック
+	assert(particleGroups_.contains(name));
+	ParticleGroup& group = particleGroups_[name];
+
+	std::uniform_real_distribution<float> distPos(-0.5f, 0.5f);
+	std::uniform_real_distribution<float> distDiff(-velocityDiff, velocityDiff);
+	std::uniform_real_distribution<float> distTime(0.5f, 1.0f);
+	std::uniform_real_distribution<float> distLerp(0.0f, 1.0f);
+
+	for (uint32_t i = 0; i < count; ++i) {
+		Particle particle{};
+		particle.startScale = 0.05f;
+		particle.transform.scale = { 0.1f, 0.1f, 0.1f };
+		particle.transform.rotate = { 0.0f, 0.0f, 0.0f };
+
+		// 軌跡の補間計算
+		float t = distLerp(randomEngine_);
+		Vector3 interpolatedPos = Lerp(prevPosition, position, t);
+
+		// 位置のランダム散らし
+		Vector3 randomPos = { distPos(randomEngine_) * 0.5f, distPos(randomEngine_) * 0.5f, 0.0f };
+		particle.transform.translate = Add(interpolatedPos, randomPos);
+
+		Vector3 randomVel = { distDiff(randomEngine_), distDiff(randomEngine_), distDiff(randomEngine_) };
+		particle.velocity = Add(velocity, randomVel);
+		particle.color = color;
+		particle.lifeTime = distTime(randomEngine_);
+		particle.currentTime = 0.0f;
 		group.particles.push_back(particle);
 	}
 }

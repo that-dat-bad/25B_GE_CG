@@ -143,6 +143,10 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="assets\shaders\Particle.hlsli" />
     <None Include="assets\shaders\Object3d.hlsli" />
     <None Include="assets\shaders\Sprite2d.hlsli" />
+    <None Include="src\ReadMe.md">
+      <SubType>
+      </SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="assets\shaders\Object3d.PS.hlsl">

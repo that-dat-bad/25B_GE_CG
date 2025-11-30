@@ -21,6 +21,7 @@ struct Particle {
 	Vector4 color;
 	float lifeTime;
 	float currentTime;
+	float startScale;
 };
 
 // GPUに送るインスタンシングデータ (StructuredBuffer用)
@@ -66,7 +67,7 @@ public: // シングルトンパターン
 
 	// パーティクルの発生
 	void Emit(const std::string& name, const Vector3& position, uint32_t count, const Vector4& color, const Vector3& velocity, float velocityDiff);
-
+	void Emit(const std::string& name, const Vector3& position, const Vector3& prevPosition, uint32_t count, const Vector4& color, const Vector3& velocity, float velocityDiff);
 private:
 	ParticleManager() = default;
 	~ParticleManager() = default;
