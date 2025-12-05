@@ -502,6 +502,9 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 }
 
 DirectXCommon* DirectXCommon::GetInstance() {
-	static DirectXCommon instance;
-	return &instance;
+	static DirectXCommon* instance = nullptr;
+	if (instance == nullptr) {
+		instance = new DirectXCommon();
+	}
+	return instance;
 }

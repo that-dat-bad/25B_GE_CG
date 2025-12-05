@@ -15,6 +15,7 @@ class DirectXCommon
 {
 public:
 	static DirectXCommon* GetInstance();
+	~DirectXCommon() = default;
 	static const uint32_t kRtvHeapDescriptorNum_ = 2; // ダブルバッファ用
 	static const uint32_t kDsvHeapDescriptorNum_ = 1; // 深度バッファ用
 	static const uint32_t kSwapChainBufferCount_ = 2;
@@ -77,7 +78,7 @@ public:
 private:
 
 	DirectXCommon() = default;
-	~DirectXCommon() = default;
+
 	DirectXCommon(const DirectXCommon&) = delete;
 	const DirectXCommon& operator=(const DirectXCommon&) = delete;
 

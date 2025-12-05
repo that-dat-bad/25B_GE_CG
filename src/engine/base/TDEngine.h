@@ -8,16 +8,22 @@
 #include "DirectXCommon.h"
 #include "Input.h"
 #include "ImGuiManager.h"
+#include "Object3dCommon.h"
+#include "SpriteCommon.h"
+#include "AudioManager.h"
+#include "TextureManager.h"
+#include "Sprite.h"
 
 namespace TDEngine {
 
-	// グローバル初期化
-	// title: ウィンドウタイトル
-	// width, height: 画面解像度 (デフォルト引数付き)
+	Input* GetInput();
+	Object3dCommon* GetObject3dCommon();
+	SpriteCommon* GetSpriteCommon();
+	AudioManager* GetAudioManager();
+
 	void Initialize(const std::wstring& title, int width = 1280, int height = 720);
 
 	// エンジン更新処理 (ウィンドウメッセージ処理など)
-	// 戻り値: trueならアプリ終了
 	bool Update();
 
 	// 終了処理

@@ -35,7 +35,7 @@ void TDEngine::Initialize(const std::wstring& title, int width, int height) {
 	sDxCommon = DirectXCommon::GetInstance();
 	sDxCommon->Initialize(sWinApp);
 
-	sSrvManager = new SrvManager();
+	sSrvManager = SrvManager::GetInstance();
 	sSrvManager->Initialize(sDxCommon);
 
 	// ImGuiManagerもシングルトン化している想定
@@ -107,10 +107,12 @@ bool TDEngine::Update() {
 
 void TDEngine::Finalize() {
 	// 各種解放処理
-	if (sImGuiManager) sImGuiManager->Finalize();
+	if (sImGuiManager) {
+		sImGuiManager->Finalize();
+		delete sImGuiManager;
+	}
 
 	if (sAudioManager) {
-		// 必要ならUnloadAll的な処理
 		delete sAudioManager;
 	}
 
@@ -120,14 +122,22 @@ void TDEngine::Finalize() {
 	TextureManager::GetInstance()->Finalize();
 	CameraManager::GetInstance()->Finalize();
 
-	if (sObject3dCommon) delete sObject3dCommon;
-	if (sSpriteCommon) delete sSpriteCommon;
-	if (sSrvManager) delete sSrvManager;
+	if (sObject3dCommon) {
+		delete sObject3dCommon;
+	}
+	if (sSpriteCommon) {
+		delete sSpriteCommon;
+	}
 
 	CloseHandle(sDxCommon->GetFenceEvent());
 
 
 
-	if (sInput) delete sInput;
-	if (sWinApp) delete sWinApp;
+	if (sInput) { delete sInput; }
+	if (sWinApp) { delete sWinApp; }
 }
+
+Input* TDEngine::GetInput() { return sInput; }
+Object3dCommon* TDEngine::GetObject3dCommon() { return sObject3dCommon; }
+SpriteCommon* TDEngine::GetSpriteCommon() { return sSpriteCommon; }
+AudioManager* TDEngine::GetAudioManager() { return sAudioManager; }

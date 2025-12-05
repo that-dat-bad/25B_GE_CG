@@ -1,9 +1,29 @@
 #include "Sprite.h"
-#include"SpriteCommon.h"
-#include"DirectXCommon.h"
-#include"../base/Math/MyMath.h"
-#include"TextureManager.h"
-#include"../../../external/DirectXTex/DirectXTex.h"
+#include "SpriteCommon.h"
+#include "DirectXCommon.h"
+#include "../base/Math/MyMath.h"
+#include "TextureManager.h"
+#include "../../../external/DirectXTex/DirectXTex.h"
+#include "TDEngine.h"
+
+
+Sprite* Sprite::Create(const std::string& textureFilePath, Vector2 position, Vector4 color, Vector2 anchorpoint, bool isFlipX, bool isFlipY)
+{
+	Sprite* sprite = new Sprite();
+	sprite->Initialize(
+		TDEngine::GetSpriteCommon(),
+		DirectXCommon::GetInstance(),
+		textureFilePath
+	);
+
+	sprite->SetPosition(position);
+	sprite->SetColor(color);
+	sprite->SetAnchorPoint(anchorpoint);
+	sprite->SetFlipX(isFlipX);
+	sprite->SetFlipY(isFlipY);
+
+	return sprite;
+}
 
 void Sprite::Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon, std::string textureFilePath)
 {
@@ -49,8 +69,6 @@ void Sprite::Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon, std
 
 void Sprite::Update()
 {
-
-
 	float left = 0.0f - anchorPoint_.x;
 	float right = 1.0f - anchorPoint_.x;
 	float top = 0.0f - anchorPoint_.y;
@@ -101,11 +119,15 @@ void Sprite::Update()
 
 	// 3. マテリアルへの書き込み
 	materialData_->WVP = wvpMatrix;
-
 }
 
 void Sprite::Draw(DirectXCommon* dxCommon)
 {
+	// 共通設定をセット (これを呼ばないと描画できない)
+	if (spriteCommon_) {
+		spriteCommon_->SetupCommonState();
+	}
+
 	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
 
 	// 1. 頂点バッファの設定
@@ -119,17 +141,25 @@ void Sprite::Draw(DirectXCommon* dxCommon)
 	commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
 
 	// 4. テクスチャの設定
-	//commandList->SetGraphicsRootDescriptorTable(1, textureSrvHandle);
-	commandList->SetGraphicsRootDescriptorTable(1,TextureManager::GetInstance()->GetSrvHandleGPU(textureIndex_));
-	
+	commandList->SetGraphicsRootDescriptorTable(1, TextureManager::GetInstance()->GetSrvHandleGPU(textureIndex_));
 
 	// 5. 描画コマンド
 	commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 }
 
-void Sprite::ChangeTexture(std::string textureFilePath)
+// テクスチャの切り出し範囲設定
+void Sprite::SetTextureRect(const Vector2& topLeft, const Vector2& size)
+{
+	textureLeftTop_ = topLeft;
+	textureSize_ = size;
+	size_ = size;
+}
+
+// テクスチャ変更
+void Sprite::SetTexture(std::string textureFilePath)
 {
 	textureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
+	AdjustTextureSize();
 }
 
 void Sprite::AdjustTextureSize()
@@ -140,4 +170,5 @@ void Sprite::AdjustTextureSize()
 	textureSize_.y = static_cast<float>(metadata.height);
 	//画像サイズをテクスチャサイズに合わせる
 	size_ = textureSize_;
+	textureLeftTop_ = { 0.0f, 0.0f };
 }

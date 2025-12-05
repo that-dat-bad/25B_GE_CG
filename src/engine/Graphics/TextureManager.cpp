@@ -2,7 +2,7 @@
 #include "DirectXCommon.h"
 #include <cassert>
 #include <filesystem> 
-#include"SrvManager.h"
+#include "SrvManager.h"
 TextureManager* TextureManager::instance_ = nullptr;
 
 
@@ -28,16 +28,23 @@ void TextureManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager)
 }
 
 void TextureManager::Finalize() {
+	textureDatas_.clear();
 	delete instance_;
 	instance_ = nullptr;
 }
 
-void TextureManager::LoadTexture(const std::string& filePath) {
+
+uint32_t TextureManager::LoadTexture(const std::string& filePath) {
+	return TextureManager::GetInstance()->Load(filePath);
+}
+
+
+uint32_t TextureManager::Load(const std::string& filePath) {
 	HRESULT hr;
 
-
+	// 読み込み済みならインデックスを返す
 	if (textureDatas_.contains(filePath)) {
-		return;
+		return textureDatas_[filePath].srvIndex;
 	}
 
 	assert(srvManager_->CanAllocate());
@@ -45,22 +52,20 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	DirectX::ScratchImage image;
 	std::wstring wFilePath = ConvertString(filePath);
 
-
 	hr = DirectX::LoadFromWICFile(wFilePath.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
-
 	assert(SUCCEEDED(hr));
 
 	DirectX::ScratchImage mipImages;
 	if (DirectX::IsCompressed(image.GetMetadata().format)) {
 		mipImages = std::move(image);
-	} else {
+	}
+	else {
 		hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
 		assert(SUCCEEDED(hr));
 	}
 
 
 	// --- テクスチャデータを追加 ---
-	// 追加した要素の参照を取得する
 	TextureData& textureData = textureDatas_[filePath];
 
 
@@ -87,6 +92,9 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 		textureData.metadata.format,
 		UINT(textureData.metadata.mipLevels)
 	);
+
+	// インデックスを返す
+	return textureData.srvIndex;
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetSrvHandleGPU(uint32_t textureIndex) {

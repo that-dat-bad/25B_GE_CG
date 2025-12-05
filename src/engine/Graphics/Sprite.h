@@ -1,10 +1,10 @@
 #pragma once
-#include"Math/MyMath.h"
+#include "Math/MyMath.h"
 using namespace MyMath;
 #include <d3d12.h>
 #include <cstdint>
 #include <wrl/client.h>
-#include<string>
+#include <string>
 
 class SpriteCommon;
 class DirectXCommon;
@@ -12,18 +12,21 @@ class DirectXCommon;
 class Sprite
 {
 public:
-	void Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon,std::string textureFilePath);
+	static Sprite* Create(const std::string& textureFilePath, Vector2 position = { 0,0 }, Vector4 color = { 1,1,1,1 }, Vector2 anchorpoint = { 0.5f, 0.5f }, bool isFlipX = false, bool isFlipY = false);
 
+public:
+	void Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon, std::string textureFilePath);
 	void Update();
-
 	void Draw(DirectXCommon* dxCommon);
 
-	void ChangeTexture(std::string textureFilePath);
+	// テクスチャの切り出し範囲設定
+	void SetTextureRect(const Vector2& topLeft, const Vector2& size);
 
+	// テクスチャ変更
+	void SetTexture(std::string textureFilePath);
 
 
 	//--アクセッサ--//
-	//---セッター---//
 	void SetPosition(const Vector2& pos) { transform_.translate = { pos.x, pos.y, 0.0f }; }
 	void SetRotation(float rot) { transform_.rotate.z = rot; }
 	void SetScale(const Vector2& scale) { transform_.scale = { scale.x, scale.y, 1.0f }; }
@@ -47,12 +50,9 @@ public:
 	Vector2 GetTextureSize() const { return textureSize_; }
 
 private:
-
 	SpriteCommon* spriteCommon_ = nullptr;
-	//テクスチャサイズをイメージに合わせる
 	void AdjustTextureSize();
 
-	//---頂点データ---//
 	struct VertexData {
 		Vector4 position;
 		Vector2 texcoord;
@@ -94,4 +94,3 @@ private:
 	Vector2 textureSize_ = { 100.0f,100.0f };
 	Vector2 size_ = { 100.0f,100.0f };
 };
-

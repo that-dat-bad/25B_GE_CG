@@ -65,6 +65,9 @@ void ImGuiManager::Finalize() {
 }
 
 ImGuiManager* ImGuiManager::GetInstance() {
-	static ImGuiManager instance;
-	return &instance;
+	static ImGuiManager* instance = nullptr;
+	if (instance == nullptr) {
+		instance = new ImGuiManager();
+	}
+	return instance;
 }
