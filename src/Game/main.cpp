@@ -37,6 +37,7 @@ using namespace StringUtility;
 #include "../engine/Debug/D3DResourceLeakChecker.h"
 #include "../engine/Graphics/ParticleManager.h"
 #include "../engine/Graphics/ParticleEmitter.h"
+#include"../engine/Audio/AudioManager.h"
 #include"../engine/Debug/ImguiManager.h"
 using namespace MyMath;
 
@@ -58,8 +59,7 @@ using namespace MyMath;
 #include "../../external/DirectXTex/DirectXTex.h"
 #include "../../external/DirectXTex/d3dx12.h"
 
-#include <xaudio2.h>
-#pragma comment(lib, "xaudio2.lib")
+
 
 #include <Xinput.h>
 #pragma comment(lib, "xinput.lib")
@@ -150,26 +150,7 @@ struct GameObject {
 	int modelAssetIndex = 0; // どのModelAssetを使用するか
 };
 
-struct ChunkHeader {
-	char id[4];
-	int32_t size;
-};
 
-struct RiffHeader {
-	ChunkHeader chunk;
-	char type[4];
-};
-
-struct FormatChunk {
-	ChunkHeader chunk;
-	WAVEFORMATEX fmt;
-};
-
-struct SoundData {
-	WAVEFORMATEX wfex;
-	BYTE* pBuffer;
-	unsigned int buffersize;
-};
 
 
 #pragma region 関数群
@@ -201,53 +182,7 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) {
 
 
 
-SoundData SoundLoadWave(const char* filename) {
-	std::ifstream file;
-	file.open(filename, std::ios_base::binary);
-	assert(file.is_open());
-	RiffHeader riff;
-	file.read((char*)&riff, sizeof(riff));
-	if (strncmp(riff.chunk.id, "RIFF", 4) != 0) assert(0);
-	if (strncmp(riff.type, "WAVE", 4) != 0) assert(0);
-	FormatChunk format = {};
-	file.read((char*)&format, sizeof(ChunkHeader));
-	if (strncmp(format.chunk.id, "fmt ", 4) != 0) assert(0);
-	file.read((char*)&format.fmt, format.chunk.size);
-	ChunkHeader data;
-	file.read((char*)&data, sizeof(data));
-	if (strncmp(data.id, "JUNK", 4) == 0) {
-		file.seekg(data.size, std::ios_base::cur);
-		file.read((char*)&data, sizeof(data));
-	}
-	if (strncmp(data.id, "data", 4) != 0) assert(0);
-	char* pBuffer = new char[data.size];
-	file.read(pBuffer, data.size);
-	file.close();
-	SoundData soundData = {};
-	soundData.wfex = format.fmt;
-	soundData.pBuffer = reinterpret_cast<BYTE*>(pBuffer);
-	soundData.buffersize = data.size;
-	return soundData;
-}
 
-void SoundUnload(SoundData* soundData) {
-	delete[] soundData->pBuffer;
-	soundData->pBuffer = nullptr;
-	soundData->buffersize = 0;
-	soundData->wfex = {};
-}
-
-void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData) {
-	IXAudio2SourceVoice* pSourceVoice = nullptr;
-	HRESULT result = xAudio2->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
-	assert(SUCCEEDED(result));
-	XAUDIO2_BUFFER buf = {};
-	buf.pAudioData = soundData.pBuffer;
-	buf.AudioBytes = soundData.buffersize;
-	buf.Flags = XAUDIO2_END_OF_STREAM;
-	result = pSourceVoice->SubmitSourceBuffer(&buf);
-	result = pSourceVoice->Start(0);
-}
 #pragma endregion
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -288,6 +223,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	Object3dCommon* object3dCommon = new Object3dCommon();
 	object3dCommon->Initialize(dxCommon);
 
+	AudioManager* audioManager = new AudioManager();
+	audioManager->Initialize();
 
 	//3Dモデルマネージャーの初期化
 	ModelManager::GetInstance()->Initialize(dxCommon);
@@ -452,7 +389,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(hrXAudio2));
 
 	// サウンドデータの読み込み
-	SoundData alarmSound = SoundLoadWave("assets/sounds/Alarm01.wav");
+	SoundData alarmSound =audioManager->SoundLoadWave("assets/sounds/Alarm01.wav");
 
 	int selectedLightingOption = 0;
 
@@ -532,7 +469,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 			}
 			ImGui::SeparatorText("Audio Settings");
 			if (ImGui::Button("Play Alarm Sound")) {
-				SoundPlayWave(xAudio2, alarmSound);
+				audioManager->SoundPlayWave(alarmSound);
 			}
 			ImGui::SeparatorText("Sprite Settings");
 			ImGui::Checkbox("Show Sprite", &isSpriteVisible);
@@ -742,7 +679,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	imguiManager->Finalize();
 	delete imguiManager;
 
-	SoundUnload(&alarmSound);
+	audioManager->SoundUnload(&alarmSound);
 	if (masteringVoice) {
 		masteringVoice->DestroyVoice();
 	}
@@ -761,6 +698,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	delete input;
 	delete winApp;
 	delete spriteCommon;
+	audioManager->SoundUnload(&alarmSound);
+	delete audioManager;
+
 	for (Sprite* sprite : sprites) {
 		delete sprite;
 	}

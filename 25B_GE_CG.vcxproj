@@ -191,6 +191,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Image Include="assets\textures\uvChecker.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\engine\Audio\AudioManager.h" />
     <ClInclude Include="src\engine\Debug\ImguiManager.h" />
     <ClInclude Include="src\engine\Graphics\ParticleEmitter.h" />
     <ClInclude Include="src\engine\Graphics\ParticleManager.h" />
@@ -229,6 +230,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\Graphics\SrvManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\engine\Audio\AudioManager.cpp" />
     <ClCompile Include="src\engine\Debug\ImguiManager.cpp" />
     <ClCompile Include="src\engine\Graphics\ParticleEmitter.cpp" />
     <ClCompile Include="src\engine\Graphics\ParticleManager.cpp" />
