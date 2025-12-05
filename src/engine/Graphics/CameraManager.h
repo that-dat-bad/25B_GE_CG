@@ -19,6 +19,8 @@ public: // シングルトンパターン
 	// アクティブカメラの取得 (描画やオブジェクト側で使う)
 	Camera* GetActiveCamera() const { return activeCamera_; }
 
+	Camera* GetCamera(const std::string& name);
+
 	// 更新 (アクティブなカメラだけ更新する)
 	void Update();
 

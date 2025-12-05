@@ -1,5 +1,5 @@
 #pragma once
-#include"../base/Math/MyMath.h"
+#include"Math/MyMath.h"
 using namespace MyMath;
 #include <d3d12.h>
 #include <cstdint>
@@ -16,7 +16,7 @@ public:
 
 	void Update();
 
-	void Draw(DirectXCommon* dxCommon, D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle);
+	void Draw(DirectXCommon* dxCommon);
 
 	void ChangeTexture(std::string textureFilePath);
 

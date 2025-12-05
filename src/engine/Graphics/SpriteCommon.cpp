@@ -1,6 +1,6 @@
 #include "SpriteCommon.h"
 #include "DirectXCommon.h"
-#include"../base/logger.h"
+#include"logger.h"
 #include <cassert>
 using namespace logger;
 

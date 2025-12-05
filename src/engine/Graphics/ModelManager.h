@@ -18,6 +18,7 @@ public:
 	/// </summary>
 	/// <param name="filePath"></param>
 	void LoadModel(const std::string& filePath);
+	void LoadModel(const std::string& directoryPath, const std::string& filename);
 
 	/// <summary>
 	/// モデルの検索

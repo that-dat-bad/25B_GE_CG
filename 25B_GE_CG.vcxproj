@@ -80,6 +80,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\engine\Audio;$(ProjectDir)src\engine\Graphics;$(ProjectDir)src\engine\Debug;$(ProjectDir)src\engine\base;$(ProjectDir)src\engine\io;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -103,6 +104,7 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\engine\Audio;$(ProjectDir)src\engine\Graphics;$(ProjectDir)src\engine\Debug;$(ProjectDir)src\engine\base;$(ProjectDir)src\engine\io;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -127,6 +129,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\engine\Audio;$(ProjectDir)src\engine\Graphics;$(ProjectDir)src\engine\Debug;$(ProjectDir)src\engine\base;$(ProjectDir)src\engine\io;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -232,6 +235,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\engine\Audio\AudioManager.cpp" />
+    <ClCompile Include="src\engine\base\TDEngine.cpp" />
     <ClCompile Include="src\engine\Debug\ImguiManager.cpp" />
     <ClCompile Include="src\engine\Graphics\ParticleEmitter.cpp" />
     <ClCompile Include="src\engine\Graphics\ParticleManager.cpp" />

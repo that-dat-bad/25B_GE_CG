@@ -43,6 +43,19 @@ void ModelManager::LoadModel(const std::string& filePath)
 	models_.insert(std::make_pair(filePath, std::move(model)));
 }
 
+void ModelManager::LoadModel(const std::string& directoryPath, const std::string& filename)
+{
+
+	if (models_.contains(filename))
+	{
+		return;
+	}
+
+	std::unique_ptr<Model> model = std::make_unique<Model>();
+	model->Initialize(modelCommon_, directoryPath, filename);
+	models_.insert(std::make_pair(filename, std::move(model)));
+}
+
 Model* ModelManager::FindModel(const std::string& filePath)
 {
 	if (models_.contains(filePath))

@@ -1,44 +1,25 @@
 #pragma once
+#include <Windows.h>
 #include <string>
-#include <d3d12.h>
+#include <cstdint>
 
-// 各種マネージャのヘッダー
+
 #include "WinApp.h"
-#include "../Graphics/DirectXCommon.h"
-#include "../io/Input.h"
-#include "../Audio/AudioManager.h"
-#include "../Graphics/TextureManager.h"
-#include "../Graphics/SrvManager.h"
-#include "../Graphics/ModelManager.h"
-#include "../Graphics/SpriteCommon.h"
-#include "../Graphics/Object3dCommon.h"
-#include "../Debug/ImGuiManager.h"
-#include "../Graphics/ParticleManager.h"
+#include "DirectXCommon.h"
+#include "Input.h"
+#include "ImGuiManager.h"
 
-// TDEngine 名前空間
-namespace TDEngine
-{
-	// エンジンの初期化
-	void Initialize(const std::wstring& title, int width, int height);
+namespace TDEngine {
 
-	// エンジンの更新（フレーム開始処理・入力更新など）
-	// 戻り値: falseならゲーム終了 (ウィンドウが閉じられた等)
+	// グローバル初期化
+	// title: ウィンドウタイトル
+	// width, height: 画面解像度 (デフォルト引数付き)
+	void Initialize(const std::wstring& title, int width = 1280, int height = 720);
+
+	// エンジン更新処理 (ウィンドウメッセージ処理など)
+	// 戻り値: trueならアプリ終了
 	bool Update();
 
-	// 描画開始（画面クリア・描画前処理）
-	void BeginFrame();
-
-	// 描画終了（ImGui描画・画面フリップ・FPS固定）
-	void EndFrame();
-
-	// エンジンの終了処理（リソース解放）
+	// 終了処理
 	void Finalize();
-
-	// --- ゲッター（ユーザーが細かい機能を使いたい場合用） ---
-	WinApp* GetWinApp();
-	DirectXCommon* GetDXCommon();
-	SpriteCommon* GetSpriteCommon();
-	Object3dCommon* GetObject3dCommon();
-	Input* GetInput();
-	AudioManager* GetAudio();
 }
