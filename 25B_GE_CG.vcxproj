@@ -191,6 +191,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Image Include="assets\textures\uvChecker.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\engine\base\TDEngine.h" />
     <ClInclude Include="src\engine\Debug\ImguiManager.h" />
     <ClInclude Include="src\engine\Graphics\ParticleEmitter.h" />
     <ClInclude Include="src\engine\Graphics\ParticleManager.h" />
