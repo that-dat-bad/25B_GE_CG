@@ -227,6 +227,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\base\Math\Transform.h" />
     <ClInclude Include="src\engine\Graphics\TextureManager.h" />
     <ClInclude Include="src\engine\Graphics\SrvManager.h" />
+    <ClInclude Include="src\Game\BackGround.h" />
+    <ClInclude Include="src\Game\Fade.h" />
+    <ClInclude Include="src\Game\SceneManager.h" />
+    <ClInclude Include="src\Game\TitleLogo.h" />
+    <ClInclude Include="src\Game\TitleScene.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\engine\Debug\ImguiManager.cpp" />
@@ -272,6 +277,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\engine\Graphics\DebugCamera.cpp" />
     <ClCompile Include="src\engine\Graphics\DirectXCommon.cpp" />
     <ClCompile Include="src\engine\io\Input.cpp" />
+    <ClCompile Include="src\Game\BackGround.cpp" />
+    <ClCompile Include="src\Game\Fade.cpp" />
     <ClCompile Include="src\Game\main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</WholeProgramOptimization>
@@ -285,6 +292,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\engine\base\Math\Transform.cpp" />
     <ClCompile Include="src\engine\Graphics\TextureManager.cpp" />
     <ClCompile Include="src\engine\Graphics\SrvManager.cpp" />
+    <ClCompile Include="src\Game\SceneManager.cpp" />
+    <ClCompile Include="src\Game\TitleLogo.cpp" />
+    <ClCompile Include="src\Game\TitleScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="external\imgui\LICENSE.txt" />

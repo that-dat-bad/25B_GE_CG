@@ -64,6 +64,10 @@ using namespace MyMath;
 #include <Xinput.h>
 #pragma comment(lib, "xinput.lib")
 
+
+
+#include"SceneManager.h"
+
 // 構造体の定義
 
 
@@ -456,6 +460,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 	int selectedLightingOption = 0;
 
+
+
+
+
+	SceneManager *sceneManager = new SceneManager();
+        sceneManager->Initialize(object3dCommon, spriteCommon, dxCommon, input);
+        
+
+
+
+
 	while (true) {
 
 		if (winApp->ProcessMessage()) {
@@ -465,234 +480,236 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		imguiManager->Begin();
 
 		input->Update();
-		if (input->triggerKey(DIK_S)) {
-			isObjectVisible = !isObjectVisible;
-		}
-		XINPUT_STATE gamepadState;
-		ZeroMemory(&gamepadState, sizeof(XINPUT_STATE));
-		DWORD dwResult = XInputGetState(0, &gamepadState);
+//		if (input->triggerKey(DIK_S)) {
+//			isObjectVisible = !isObjectVisible;
+//		}
+//		XINPUT_STATE gamepadState;
+//		ZeroMemory(&gamepadState, sizeof(XINPUT_STATE));
+//		DWORD dwResult = XInputGetState(0, &gamepadState);
+//
+//		if (dwResult == ERROR_SUCCESS && !gameObjects.empty())
+//		{
+//			float rotationSpeed = 0.05f;
+//			if (abs(gamepadState.Gamepad.sThumbRX) > XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) {
+//				gameObjects[0].transform.rotate.y += static_cast<float>(gamepadState.Gamepad.sThumbRX) / SHRT_MAX * rotationSpeed;
+//			}
+//			if (abs(gamepadState.Gamepad.sThumbRY) > XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) {
+//				gameObjects[0].transform.rotate.x += static_cast<float>(gamepadState.Gamepad.sThumbRY) / SHRT_MAX * rotationSpeed;
+//			}
+//		}
+//		//g_debugCamera.Update(keys_, mouseState);
+//		// ImGuiウィンドウ
+//		if (input->triggerKey(DIK_SPACE)) {
+//			static bool isGlobal = false;
+//			isGlobal = !isGlobal;
+//			if (isGlobal) {
+//				CameraManager::GetInstance()->SetActiveCamera("Global");
+//			} else {
+//				CameraManager::GetInstance()->SetActiveCamera("Player");
+//			}
+//		}
+//#ifdef USE_IMGUI
+//
+//
+//
+//		ImGui::Begin("Settings");
+//		{
+//			ImGui::SeparatorText("Global Settings");
+//			const char* lightingItems[] = { "Lambert", "Half-Lambert", "None" };
+//			ImGui::Combo("Lighting Model", &selectedLightingOption, lightingItems, IM_ARRAYSIZE(lightingItems));
+//
+//			if (selectedLightingOption == 2) {
+//				for (auto& gameObject : gameObjects) {
+//					if (gameObject.modelAssetIndex >= 0 && gameObject.modelAssetIndex < modelAssets.size()) {
+//						for (auto& mesh : modelAssets[gameObject.modelAssetIndex].modelData.meshes) {
+//							mesh.materialData->enableLighting = 0;
+//						}
+//					}
+//				}
+//			} else {
+//				for (auto& gameObject : gameObjects) {
+//					if (gameObject.modelAssetIndex >= 0 && gameObject.modelAssetIndex < modelAssets.size()) {
+//						for (auto& mesh : modelAssets[gameObject.modelAssetIndex].modelData.meshes) {
+//							mesh.materialData->enableLighting = 1;
+//						}
+//					}
+//				}
+//				lightingSettingsData->lightingModel = selectedLightingOption;
+//			}
+//			ImGui::ColorEdit4("Light Color", &directionalLightData->color.x);
+//			if (!gameObjects.empty() && gameObjects[0].modelAssetIndex >= 0 && gameObjects[0].modelAssetIndex < modelAssets.size() &&
+//				!modelAssets[gameObjects[0].modelAssetIndex].modelData.meshes.empty() &&
+//				modelAssets[gameObjects[0].modelAssetIndex].modelData.meshes[0].materialData->enableLighting != 0) {
+//				ImGui::SliderFloat3("Light Direction", &directionalLightData->direction.x, -1.0f, 1.0f);
+//				directionalLightData->direction = Normalize(directionalLightData->direction);
+//			} else {
+//				ImGui::Text("Light Direction: N/A (Lighting Disabled)");
+//			}
+//			ImGui::SeparatorText("Audio Settings");
+//			if (ImGui::Button("Play Alarm Sound")) {
+//				SoundPlayWave(xAudio2, alarmSound);
+//			}
+//			ImGui::SeparatorText("Sprite Settings");
+//			ImGui::Checkbox("Show Sprite", &isSpriteVisible);
+//			if (isSpriteVisible) {
+//				// 1. テクスチャ選択 (共通)
+//				std::vector<const char*> textureNames;
+//				for (const auto& path : texturePaths) { textureNames.push_back(path.c_str()); }
+//				ImGui::Combo("Sprite Texture", &spriteTextureIndex, textureNames.data(), static_cast<int>(textureNames.size()));
+//
+//				ImGui::Separator();
+//
+//				//操作するスプライトを選択
+//				ImGui::SliderInt("Select Sprite No", &currentSpriteIndex, 0, int(sprites.size()) - 1);
+//
+//				// 選ばれたスプライトを取得
+//				Sprite* targetSprite = sprites[currentSpriteIndex];
+//
+//				ImGui::Text("Editing Sprite: %d", currentSpriteIndex);
+//
+//				// --------------------------------------------------
+//				// 2. 座標 (Translate)
+//				// --------------------------------------------------
+//				Vector2 pos = targetSprite->GetPosition();
+//				if (ImGui::DragFloat2("Position", &pos.x, 1.0f)) {
+//					targetSprite->SetPosition(pos);
+//				}
+//
+//				// --------------------------------------------------
+//				// 3. 回転 (Rotate)
+//				// --------------------------------------------------
+//				float rot = targetSprite->GetRotation();
+//				if (ImGui::SliderAngle("Rotation", &rot)) {
+//					targetSprite->SetRotation(rot);
+//				}
+//
+//				// --------------------------------------------------
+//				// 4. サイズ (Scale)
+//				// --------------------------------------------------
+//				Vector2 size = targetSprite->GetSize();
+//				if (ImGui::DragFloat2("Size", &size.x, 1.0f)) {
+//					targetSprite->SetSize(size);
+//				}
+//
+//				// --------------------------------------------------
+//				// 5. 色 (Color)
+//				// --------------------------------------------------
+//				Vector4 color = targetSprite->GetColor();
+//				if (ImGui::ColorEdit4("Color", &color.x)) {
+//					targetSprite->SetColor(color);
+//				}
+//			}
+//			ImGui::SeparatorText("Object Settings");
+//			for (int i = 0; i < gameObjects.size(); ++i) {
+//				GameObject& currentGameObject = gameObjects[i];
+//				ImGui::PushID(i);
+//				ImGui::SeparatorText(std::format("Object {}", i + 1).c_str());
+//				std::vector<const char*> modelNames;
+//				for (const auto& asset : modelAssets) { modelNames.push_back(asset.modelData.name.c_str()); }
+//				ImGui::Combo("Model", &currentGameObject.modelAssetIndex, modelNames.data(), static_cast<int>(modelNames.size()));
+//				if (currentGameObject.modelAssetIndex >= 0 && currentGameObject.modelAssetIndex < modelAssets.size() &&
+//					!modelAssets[currentGameObject.modelAssetIndex].modelData.meshes.empty() &&
+//					modelAssets[currentGameObject.modelAssetIndex].modelData.meshes[0].materialData) {
+//					Material* currentMaterial = modelAssets[currentGameObject.modelAssetIndex].modelData.meshes[0].materialData;
+//					ImGui::ColorEdit4("Material Color", &currentMaterial->color.x);
+//					Log(std::format("Current Model: {}, Material Color: R:{:.2f}, G:{:.2f}, B:{:.2f}, A:{:.2f}\n",
+//						modelAssets[currentGameObject.modelAssetIndex].modelData.name,
+//						currentMaterial->color.x, currentMaterial->color.y, currentMaterial->color.z, currentMaterial->color.w));
+//				}
+//				ImGui::DragFloat3("Position", &currentGameObject.transform.translate.x, 0.1f);
+//				ImGui::DragFloat3("Scale", &currentGameObject.transform.scale.x, 0.1f);
+//				ImGui::SliderAngle("Rotate X", &currentGameObject.transform.rotate.x);
+//				ImGui::SliderAngle("Rotate Y", &currentGameObject.transform.rotate.y);
+//				ImGui::SliderAngle("Rotate Z", &currentGameObject.transform.rotate.z);
+//				ImGui::PopID();
+//			}
+//		}
+//		ImGui::End();
+//
+//		if (!gameObjects.empty() && gameObjects[0].modelAssetIndex >= 0 && gameObjects[0].modelAssetIndex < modelAssets.size() &&
+//			modelAssets[gameObjects[0].modelAssetIndex].modelData.name == "multiMesh.obj")
+//		{
+//			ImGui::Begin("Mesh Settings (Object 1)");
+//			{
+//				ModelData& currentModel = modelAssets[gameObjects[0].modelAssetIndex].modelData;
+//				if (!currentModel.meshes.empty()) {
+//					std::vector<const char*> meshNames;
+//					for (const auto& mesh : currentModel.meshes) { meshNames.push_back(mesh.name.c_str()); }
+//					if (selectedMeshIndex >= currentModel.meshes.size()) {
+//						selectedMeshIndex = 0;
+//					}
+//					ImGui::Combo("Select Mesh", &selectedMeshIndex, meshNames.data(), static_cast<int>(meshNames.size()));
+//					if (selectedMeshIndex >= 0 && selectedMeshIndex < currentModel.meshes.size()) {
+//						MeshObject& selectedMesh = currentModel.meshes[selectedMeshIndex];
+//						ImGui::SeparatorText(selectedMesh.name.c_str());
+//						ImGui::DragFloat3("Mesh Position", &selectedMesh.transform.translate.x, 0.1f);
+//						ImGui::DragFloat3("Mesh Scale", &selectedMesh.transform.scale.x, 0.1f);
+//						ImGui::SliderAngle("Mesh Rotate X", &selectedMesh.transform.rotate.x);
+//						ImGui::SliderAngle("Mesh Rotate Y", &selectedMesh.transform.rotate.y);
+//						ImGui::SliderAngle("Mesh Rotate Z", &selectedMesh.transform.rotate.z);
+//						ImGui::ColorEdit4("Mesh Color", &selectedMesh.materialData->color.x);
+//						if (selectedMesh.hasUV) {
+//							std::vector<const char*> textureNames;
+//							for (const auto& path : texturePaths) { textureNames.push_back(path.c_str()); }
+//							size_t meshTexIdx = selectedMesh.textureAssetIndex;
+//							ImGui::Combo("Mesh Texture", reinterpret_cast<int*>(&meshTexIdx), textureNames.data(), static_cast<int>(textureNames.size()));
+//							selectedMesh.textureAssetIndex = static_cast<int>(meshTexIdx);
+//							ImGui::SeparatorText("Mesh UV Transform");
+//							ImGui::DragFloat3("Mesh UV Scale", &selectedMesh.uvTransform.scale.x, 0.01f, 0.01f, 10.0f);
+//							ImGui::SliderAngle("Mesh UV Rotate Z", &selectedMesh.uvTransform.rotate.z);
+//							ImGui::DragFloat3("Mesh UV Translate", &selectedMesh.uvTransform.translate.x, 0.01f);
+//						} else {
+//							ImGui::Text("Mesh Texture: N/A (No UVs)");
+//							ImGui::Text("Mesh UV Transform: N/A (No UVs)");
+//						}
+//					}
+//				} else {
+//					ImGui::Text("No meshes in this model.");
+//				}
+//			}
+//			ImGui::End();
+//		}
+//#endif // USE_IMGUI
+//		CameraManager::GetInstance()->Update();
+//		objectAxis->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
+//		objectPlane->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
+//		objectAxis->Update();
+//		objectPlane->Update();
+//		if (input->triggerKey(DIK_A)) {
+//			particleEmitter->Emit();
+//		}
+//		particleEmitter->Update();
+//		ParticleManager::GetInstance()->Update();
+//		// 更新処理
+//		const Matrix4x4& viewMatrix = g_debugCamera.GetViewMatrix();
+//		Matrix4x4 projectionMatrix = MakePerspectiveMatrix(0.45f, float(winApp->kClientWidth) / float(winApp->kClientHeight), 0.1f, 100.0f);
+//
+//		for (auto& gameObject : gameObjects) {
+//			Matrix4x4 globalWorldMatrix = MakeAffineMatrix(gameObject.transform.scale, gameObject.transform.rotate, gameObject.transform.translate);
+//			if (gameObject.modelAssetIndex >= 0 && gameObject.modelAssetIndex < modelAssets.size()) {
+//				ModelData& currentModel = modelAssets[gameObject.modelAssetIndex].modelData;
+//				for (auto& mesh : currentModel.meshes) {
+//					Matrix4x4 meshLocalWorldMatrix = MakeAffineMatrix(mesh.transform.scale, mesh.transform.rotate, mesh.transform.translate);
+//					Matrix4x4 finalWorldMatrix = Multiply(meshLocalWorldMatrix, globalWorldMatrix);
+//					mesh.wvpData->World = finalWorldMatrix;
+//					mesh.wvpData->WVP = Multiply(finalWorldMatrix, Multiply(viewMatrix, projectionMatrix));
+//					if (mesh.hasUV) {
+//						mesh.materialData->uvTransform = MakeAffineMatrix(mesh.uvTransform.scale, mesh.uvTransform.rotate, mesh.uvTransform.translate);
+//					} else {
+//						mesh.materialData->uvTransform = Identity4x4();
+//					}
+//				}
+//			}
+//		}
+//
+//		if (isSpriteVisible) {
+//			/*sprite->Update();*/
+//			for (Sprite* sprite : sprites) {
+//				sprite->Update();
+//			}
+//		}
 
-		if (dwResult == ERROR_SUCCESS && !gameObjects.empty())
-		{
-			float rotationSpeed = 0.05f;
-			if (abs(gamepadState.Gamepad.sThumbRX) > XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) {
-				gameObjects[0].transform.rotate.y += static_cast<float>(gamepadState.Gamepad.sThumbRX) / SHRT_MAX * rotationSpeed;
-			}
-			if (abs(gamepadState.Gamepad.sThumbRY) > XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) {
-				gameObjects[0].transform.rotate.x += static_cast<float>(gamepadState.Gamepad.sThumbRY) / SHRT_MAX * rotationSpeed;
-			}
-		}
-		//g_debugCamera.Update(keys_, mouseState);
-		// ImGuiウィンドウ
-		if (input->triggerKey(DIK_SPACE)) {
-			static bool isGlobal = false;
-			isGlobal = !isGlobal;
-			if (isGlobal) {
-				CameraManager::GetInstance()->SetActiveCamera("Global");
-			} else {
-				CameraManager::GetInstance()->SetActiveCamera("Player");
-			}
-		}
-#ifdef USE_IMGUI
-
-
-
-		ImGui::Begin("Settings");
-		{
-			ImGui::SeparatorText("Global Settings");
-			const char* lightingItems[] = { "Lambert", "Half-Lambert", "None" };
-			ImGui::Combo("Lighting Model", &selectedLightingOption, lightingItems, IM_ARRAYSIZE(lightingItems));
-
-			if (selectedLightingOption == 2) {
-				for (auto& gameObject : gameObjects) {
-					if (gameObject.modelAssetIndex >= 0 && gameObject.modelAssetIndex < modelAssets.size()) {
-						for (auto& mesh : modelAssets[gameObject.modelAssetIndex].modelData.meshes) {
-							mesh.materialData->enableLighting = 0;
-						}
-					}
-				}
-			} else {
-				for (auto& gameObject : gameObjects) {
-					if (gameObject.modelAssetIndex >= 0 && gameObject.modelAssetIndex < modelAssets.size()) {
-						for (auto& mesh : modelAssets[gameObject.modelAssetIndex].modelData.meshes) {
-							mesh.materialData->enableLighting = 1;
-						}
-					}
-				}
-				lightingSettingsData->lightingModel = selectedLightingOption;
-			}
-			ImGui::ColorEdit4("Light Color", &directionalLightData->color.x);
-			if (!gameObjects.empty() && gameObjects[0].modelAssetIndex >= 0 && gameObjects[0].modelAssetIndex < modelAssets.size() &&
-				!modelAssets[gameObjects[0].modelAssetIndex].modelData.meshes.empty() &&
-				modelAssets[gameObjects[0].modelAssetIndex].modelData.meshes[0].materialData->enableLighting != 0) {
-				ImGui::SliderFloat3("Light Direction", &directionalLightData->direction.x, -1.0f, 1.0f);
-				directionalLightData->direction = Normalize(directionalLightData->direction);
-			} else {
-				ImGui::Text("Light Direction: N/A (Lighting Disabled)");
-			}
-			ImGui::SeparatorText("Audio Settings");
-			if (ImGui::Button("Play Alarm Sound")) {
-				SoundPlayWave(xAudio2, alarmSound);
-			}
-			ImGui::SeparatorText("Sprite Settings");
-			ImGui::Checkbox("Show Sprite", &isSpriteVisible);
-			if (isSpriteVisible) {
-				// 1. テクスチャ選択 (共通)
-				std::vector<const char*> textureNames;
-				for (const auto& path : texturePaths) { textureNames.push_back(path.c_str()); }
-				ImGui::Combo("Sprite Texture", &spriteTextureIndex, textureNames.data(), static_cast<int>(textureNames.size()));
-
-				ImGui::Separator();
-
-				//操作するスプライトを選択
-				ImGui::SliderInt("Select Sprite No", &currentSpriteIndex, 0, int(sprites.size()) - 1);
-
-				// 選ばれたスプライトを取得
-				Sprite* targetSprite = sprites[currentSpriteIndex];
-
-				ImGui::Text("Editing Sprite: %d", currentSpriteIndex);
-
-				// --------------------------------------------------
-				// 2. 座標 (Translate)
-				// --------------------------------------------------
-				Vector2 pos = targetSprite->GetPosition();
-				if (ImGui::DragFloat2("Position", &pos.x, 1.0f)) {
-					targetSprite->SetPosition(pos);
-				}
-
-				// --------------------------------------------------
-				// 3. 回転 (Rotate)
-				// --------------------------------------------------
-				float rot = targetSprite->GetRotation();
-				if (ImGui::SliderAngle("Rotation", &rot)) {
-					targetSprite->SetRotation(rot);
-				}
-
-				// --------------------------------------------------
-				// 4. サイズ (Scale)
-				// --------------------------------------------------
-				Vector2 size = targetSprite->GetSize();
-				if (ImGui::DragFloat2("Size", &size.x, 1.0f)) {
-					targetSprite->SetSize(size);
-				}
-
-				// --------------------------------------------------
-				// 5. 色 (Color)
-				// --------------------------------------------------
-				Vector4 color = targetSprite->GetColor();
-				if (ImGui::ColorEdit4("Color", &color.x)) {
-					targetSprite->SetColor(color);
-				}
-			}
-			ImGui::SeparatorText("Object Settings");
-			for (int i = 0; i < gameObjects.size(); ++i) {
-				GameObject& currentGameObject = gameObjects[i];
-				ImGui::PushID(i);
-				ImGui::SeparatorText(std::format("Object {}", i + 1).c_str());
-				std::vector<const char*> modelNames;
-				for (const auto& asset : modelAssets) { modelNames.push_back(asset.modelData.name.c_str()); }
-				ImGui::Combo("Model", &currentGameObject.modelAssetIndex, modelNames.data(), static_cast<int>(modelNames.size()));
-				if (currentGameObject.modelAssetIndex >= 0 && currentGameObject.modelAssetIndex < modelAssets.size() &&
-					!modelAssets[currentGameObject.modelAssetIndex].modelData.meshes.empty() &&
-					modelAssets[currentGameObject.modelAssetIndex].modelData.meshes[0].materialData) {
-					Material* currentMaterial = modelAssets[currentGameObject.modelAssetIndex].modelData.meshes[0].materialData;
-					ImGui::ColorEdit4("Material Color", &currentMaterial->color.x);
-					Log(std::format("Current Model: {}, Material Color: R:{:.2f}, G:{:.2f}, B:{:.2f}, A:{:.2f}\n",
-						modelAssets[currentGameObject.modelAssetIndex].modelData.name,
-						currentMaterial->color.x, currentMaterial->color.y, currentMaterial->color.z, currentMaterial->color.w));
-				}
-				ImGui::DragFloat3("Position", &currentGameObject.transform.translate.x, 0.1f);
-				ImGui::DragFloat3("Scale", &currentGameObject.transform.scale.x, 0.1f);
-				ImGui::SliderAngle("Rotate X", &currentGameObject.transform.rotate.x);
-				ImGui::SliderAngle("Rotate Y", &currentGameObject.transform.rotate.y);
-				ImGui::SliderAngle("Rotate Z", &currentGameObject.transform.rotate.z);
-				ImGui::PopID();
-			}
-		}
-		ImGui::End();
-
-		if (!gameObjects.empty() && gameObjects[0].modelAssetIndex >= 0 && gameObjects[0].modelAssetIndex < modelAssets.size() &&
-			modelAssets[gameObjects[0].modelAssetIndex].modelData.name == "multiMesh.obj")
-		{
-			ImGui::Begin("Mesh Settings (Object 1)");
-			{
-				ModelData& currentModel = modelAssets[gameObjects[0].modelAssetIndex].modelData;
-				if (!currentModel.meshes.empty()) {
-					std::vector<const char*> meshNames;
-					for (const auto& mesh : currentModel.meshes) { meshNames.push_back(mesh.name.c_str()); }
-					if (selectedMeshIndex >= currentModel.meshes.size()) {
-						selectedMeshIndex = 0;
-					}
-					ImGui::Combo("Select Mesh", &selectedMeshIndex, meshNames.data(), static_cast<int>(meshNames.size()));
-					if (selectedMeshIndex >= 0 && selectedMeshIndex < currentModel.meshes.size()) {
-						MeshObject& selectedMesh = currentModel.meshes[selectedMeshIndex];
-						ImGui::SeparatorText(selectedMesh.name.c_str());
-						ImGui::DragFloat3("Mesh Position", &selectedMesh.transform.translate.x, 0.1f);
-						ImGui::DragFloat3("Mesh Scale", &selectedMesh.transform.scale.x, 0.1f);
-						ImGui::SliderAngle("Mesh Rotate X", &selectedMesh.transform.rotate.x);
-						ImGui::SliderAngle("Mesh Rotate Y", &selectedMesh.transform.rotate.y);
-						ImGui::SliderAngle("Mesh Rotate Z", &selectedMesh.transform.rotate.z);
-						ImGui::ColorEdit4("Mesh Color", &selectedMesh.materialData->color.x);
-						if (selectedMesh.hasUV) {
-							std::vector<const char*> textureNames;
-							for (const auto& path : texturePaths) { textureNames.push_back(path.c_str()); }
-							size_t meshTexIdx = selectedMesh.textureAssetIndex;
-							ImGui::Combo("Mesh Texture", reinterpret_cast<int*>(&meshTexIdx), textureNames.data(), static_cast<int>(textureNames.size()));
-							selectedMesh.textureAssetIndex = static_cast<int>(meshTexIdx);
-							ImGui::SeparatorText("Mesh UV Transform");
-							ImGui::DragFloat3("Mesh UV Scale", &selectedMesh.uvTransform.scale.x, 0.01f, 0.01f, 10.0f);
-							ImGui::SliderAngle("Mesh UV Rotate Z", &selectedMesh.uvTransform.rotate.z);
-							ImGui::DragFloat3("Mesh UV Translate", &selectedMesh.uvTransform.translate.x, 0.01f);
-						} else {
-							ImGui::Text("Mesh Texture: N/A (No UVs)");
-							ImGui::Text("Mesh UV Transform: N/A (No UVs)");
-						}
-					}
-				} else {
-					ImGui::Text("No meshes in this model.");
-				}
-			}
-			ImGui::End();
-		}
-#endif // USE_IMGUI
-		CameraManager::GetInstance()->Update();
-		objectAxis->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
-		objectPlane->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
-		objectAxis->Update();
-		objectPlane->Update();
-		if (input->triggerKey(DIK_A)) {
-			particleEmitter->Emit();
-		}
-		particleEmitter->Update();
-		ParticleManager::GetInstance()->Update();
-		// 更新処理
-		const Matrix4x4& viewMatrix = g_debugCamera.GetViewMatrix();
-		Matrix4x4 projectionMatrix = MakePerspectiveMatrix(0.45f, float(winApp->kClientWidth) / float(winApp->kClientHeight), 0.1f, 100.0f);
-
-		for (auto& gameObject : gameObjects) {
-			Matrix4x4 globalWorldMatrix = MakeAffineMatrix(gameObject.transform.scale, gameObject.transform.rotate, gameObject.transform.translate);
-			if (gameObject.modelAssetIndex >= 0 && gameObject.modelAssetIndex < modelAssets.size()) {
-				ModelData& currentModel = modelAssets[gameObject.modelAssetIndex].modelData;
-				for (auto& mesh : currentModel.meshes) {
-					Matrix4x4 meshLocalWorldMatrix = MakeAffineMatrix(mesh.transform.scale, mesh.transform.rotate, mesh.transform.translate);
-					Matrix4x4 finalWorldMatrix = Multiply(meshLocalWorldMatrix, globalWorldMatrix);
-					mesh.wvpData->World = finalWorldMatrix;
-					mesh.wvpData->WVP = Multiply(finalWorldMatrix, Multiply(viewMatrix, projectionMatrix));
-					if (mesh.hasUV) {
-						mesh.materialData->uvTransform = MakeAffineMatrix(mesh.uvTransform.scale, mesh.uvTransform.rotate, mesh.uvTransform.translate);
-					} else {
-						mesh.materialData->uvTransform = Identity4x4();
-					}
-				}
-			}
-		}
-
-		if (isSpriteVisible) {
-			/*sprite->Update();*/
-			for (Sprite* sprite : sprites) {
-				sprite->Update();
-			}
-		}
+		sceneManager->Update();
 
 		// --- 描画処理 ---
 		// directXの描画前処理
@@ -730,6 +747,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 			}
 		}
 
+		sceneManager->Draw();
 
 
 		// ImGui描画
@@ -737,6 +755,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		// 描画後処理
 		dxCommon->PostDraw();
 	}
+
+	delete sceneManager;
 
 	// クリーンアップ処理
 	imguiManager->Finalize();
