@@ -9,7 +9,7 @@ void WorldTransform::Initialize() {
 	constBuff_ = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(ConstBufferDataWorldTransform));
 
 	// 定数バッファのマッピング
-	// ※一度マップしたら、Unmapせずに書き込み続ける方式（KamataEngine仕様）
+	// ※一度マップしたら、Unmapせずに書き込み続ける方式（TDEngine仕様）
 	HRESULT hr = constBuff_->Map(0, nullptr, reinterpret_cast<void**>(&constMap));
 	assert(SUCCEEDED(hr));
 
