@@ -12,7 +12,7 @@ public:
 	static ModelManager* GetInstance();
 	void Initialize(DirectXCommon* dxCommon);
 	void Finalize();
-
+	~ModelManager() = default;
 	/// <summary>
 	/// モデルファイルの読み込み
 	/// </summary>
@@ -29,7 +29,7 @@ public:
 private:
 	static ModelManager* instance_;
 	ModelManager() = default;
-	~ModelManager() = default;
+
 	ModelManager(const ModelManager&) = delete;
 	ModelManager& operator=(const ModelManager&) = delete;
 	ModelCommon* modelCommon_ = nullptr;

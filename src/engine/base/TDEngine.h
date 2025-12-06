@@ -13,6 +13,9 @@
 #include "AudioManager.h"
 #include "TextureManager.h"
 #include "Sprite.h"
+#include "Object3d.h"
+#include "Model.h"
+#include "WorldTransform.h"
 
 namespace TDEngine {
 

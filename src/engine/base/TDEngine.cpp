@@ -65,8 +65,12 @@ void TDEngine::Initialize(const std::wstring& title, int width, int height) {
 
 	// カメラ初期化
 	CameraManager::GetInstance()->Initialize();
-	CameraManager::GetInstance()->CreateCamera("Global");
-	CameraManager::GetInstance()->SetActiveCamera("Global");
+	CameraManager::GetInstance()->CreateCamera("Default");
+	CameraManager::GetInstance()->SetActiveCamera("Default");
+	Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
+	camera->SetTranslate({ 0.0f, 5.0f, -15.0f }); // 後ろに引いて上に上げる
+	camera->SetRotate({ 0.2f, 0.0f, 0.0f });
+	sObject3dCommon->SetDefaultCamera(CameraManager::GetInstance()->GetActiveCamera());
 
 	// --- 初期化コマンド転送完了待機 ---
 	hr = sDxCommon->GetCommandList()->Close();

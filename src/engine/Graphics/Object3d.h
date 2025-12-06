@@ -16,6 +16,8 @@ class Object3d
 {
 public:
 	
+	static Object3d* Create();
+
 	struct TransformationMatrix {
 		Matrix4x4 WVP;
 		Matrix4x4 World;
@@ -26,7 +28,8 @@ public:
 		float intensity;
 	};
 
-public: // メンバ関数
+public:
+
 	// 初期化
 	void Initialize(Object3dCommon* object3dCommon);
 	// 更新

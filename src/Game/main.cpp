@@ -1,53 +1,46 @@
-#include "TDEngine.h" 
-#include <Windows.h>
-#include"D3DResourceLeakChecker.h"
+#include "TDEngine.h"
+
 using namespace TDEngine;
 
-// Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
-	D3DResourceLeakChecker leakCheck;
-	///////////
-	// 初期化
-	///////////
-	// エンジン初期化
-	TDEngine::Initialize(L"testest");
+	TDEngine::Initialize(L"CG2");
 
-	Texture::LoadTexture("assets/textures/monsterBall.png");
-	Sprite* sprite1 = Sprite::Create("assets/textures/monsterBall.png", { 300.0f, 300.0f });
-	// シングルトン化されたインスタンスを取得
-	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
-	ImGuiManager* imguiManager = ImGuiManager::GetInstance();
 
-	///////////
+	Model::LoadFromOBJ("axis.obj"); 
+	Model::LoadFromOBJ("plane.obj");
+
+	Object3d* object3d = Object3d::Create();
+	object3d->SetModel("axis.obj"); // 読み込んだモデルをセット
+	object3d->SetTranslate({ -2.0f, 0.0f, 0.0f });
+
+	Object3d* plane = Object3d::Create();
+	plane->SetModel("plane.obj");
+
+	
 	// メインループ
-	///////////
 	while (true) {
-		// エンジンの更新 (trueが返ってきたらループを抜ける)
-		if (TDEngine::Update()) {
-			break;
-		}
+		if (TDEngine::Update()) break;
+		
+		ImGuiManager::GetInstance()->Begin();
+		// ... Update処理 ...
+		object3d->Update();
+		plane->Update();
 
-		// ImGuiの受付開始
-		imguiManager->Begin();
+		ImGuiManager::GetInstance()->End();
 
-		//ここにゲームシーンの更新処理
-		sprite1->Update();
-		// ImGuiの受付終了
-		imguiManager->End();
+		DirectXCommon::GetInstance()->PreDraw();
 
-		// 描画開始
-		dxCommon->PreDraw();
+		// ... 描画 ...
+		object3d->Draw();
+		plane->Draw();
 
-		//ここにゲームシーンの描画処理
-		sprite1->Draw(dxCommon);
-		// ImGuiの描画
-		imguiManager->Draw();
-
-		// 描画終了
-		dxCommon->PostDraw();
+		ImGuiManager::GetInstance()->Draw();
+		DirectXCommon::GetInstance()->PostDraw();
 	}
-	delete sprite1;
-	// エンジンの終了処理
+
+	// 解放
+	delete object3d;
+	delete plane;
 	TDEngine::Finalize();
 
 	return 0;

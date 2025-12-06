@@ -9,6 +9,8 @@ class ModelCommon;
 class Model
 {
 public:
+	static void LoadFromOBJ(const std::string& modelName);
+	static Model* CreateFromOBJ(const std::string& modelName, bool smoothing = false);
 	void Initialize(ModelCommon* modelCommon,const std::string& directorypath,const std::string& filename);
 	void Draw();
 	struct VertexData {
@@ -33,7 +35,7 @@ public:
 		std::vector<VertexData> vertices;
 		MaterialData material;
 	};
-
+	void SetAlpha(float alpha);
 
 	static MaterialData LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename);
 	static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);

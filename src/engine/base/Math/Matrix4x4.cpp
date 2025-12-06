@@ -258,6 +258,40 @@ namespace MyMath {
 		return buf;
 	}
 
+	Matrix4x4 MakeRotateMatrix(const Vector3& rotation) {
+		float cx = std::cos(rotation.x);
+		float sx = std::sin(rotation.x);
+		float cy = std::cos(rotation.y);
+		float sy = std::sin(rotation.y);
+		float cz = std::cos(rotation.z);
+		float sz = std::sin(rotation.z);
+
+		Matrix4x4 rx = {
+			1, 0, 0, 0,
+			0, cx, -sx, 0,
+			0, sx, cx, 0,
+			0, 0, 0, 1
+		};
+
+		Matrix4x4 ry = {
+			cy, 0, sy, 0,
+			0, 1, 0, 0,
+			-sy, 0, cy, 0,
+			0, 0, 0, 1
+		};
+
+		Matrix4x4 rz = {
+			cz, -sz, 0, 0,
+			sz, cz, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1
+		};
+
+		return Multiply(rx, Multiply(ry, rz));
+	}
+
+
+
 	Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate) {
 		//拡大縮小行列
 		Matrix4x4 scaleMatrix = Identity4x4();

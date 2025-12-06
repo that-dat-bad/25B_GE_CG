@@ -1,7 +1,7 @@
 #include "ModelManager.h"
 #include "ModelCommon.h"
 #include "DirectXCommon.h"
-
+#include <filesystem>
 ModelManager* ModelManager::instance_ = nullptr;
 
 ModelManager* ModelManager::GetInstance()
@@ -28,18 +28,54 @@ void ModelManager::Finalize()
 
 void ModelManager::LoadModel(const std::string& filePath)
 {
+	// 読み込み済みなら早期リターン
 	if (models_.contains(filePath))
 	{
 		return;
 	}
-	
-	//モデルの生成とファイル読み込み、初期化
-	std::unique_ptr<Model> model = std::make_unique<Model>();
-	//model->Initialize(modelCommon_, "assets", filePath);
-	std::string fullPath = "assets/" + filePath;
-	model->Initialize(modelCommon_, "", fullPath);
 
-	//モデルをmapコンテナに格納する
+	std::unique_ptr<Model> model = std::make_unique<Model>();
+
+	// デフォルトは "assets" 直下と仮定
+	std::string directoryPath = "assets";
+
+	// 探したいファイルのパスを作成 ("assets/axis.obj" など)
+	std::string searchPath = directoryPath + "/" + filePath;
+
+	// 1. 直下に存在するかチェック
+	if (!std::filesystem::exists(searchPath)) {
+
+		// 2. なければ assets 以下の全フォルダを再帰的に探索する
+		bool found = false;
+		// recursive_directory_iterator はサブフォルダも全部潜ってくれます
+		for (const auto& entry : std::filesystem::recursive_directory_iterator("assets")) {
+
+			// フォルダではなく「ファイル」であるか確認
+			if (entry.is_regular_file()) {
+
+				// ファイル名が一致するか確認 (例: "axis.obj" == "axis.obj")
+				if (entry.path().filename().string() == filePath) {
+
+					// 見つかった！
+					// そのファイルがある「ディレクトリパス」を取得
+					// entry.path().parent_path() は "assets/someFolder" のようなパスを返します
+					directoryPath = entry.path().parent_path().string();
+					found = true;
+					break; // 見つかったらループ終了
+				}
+			}
+		}
+
+		// それでも見つからなかった場合
+		if (!found) {
+
+		}
+	}
+
+	// 発見した（またはデフォルトの）ディレクトリパスを渡して初期化
+	model->Initialize(modelCommon_, directoryPath, filePath);
+
+	// 格納
 	models_.insert(std::make_pair(filePath, std::move(model)));
 }
 

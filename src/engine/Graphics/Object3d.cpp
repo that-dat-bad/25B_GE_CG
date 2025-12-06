@@ -8,6 +8,17 @@
 #include"Model.h"
 #include"ModelManager.h"
 #include"Camera.h"
+#include"TDEngine.h"
+
+Object3d* Object3d::Create() {
+	// 3Dオブジェクトのインスタンスを生成
+	Object3d* object3d = new Object3d();
+
+	// TDEngineが持っている共通設定を使って初期化
+	object3d->Initialize(TDEngine::GetObject3dCommon());
+
+	return object3d;
+}
 
 void Object3d::Initialize(Object3dCommon* object3dCommon) {
 	// メンバ変数に保存
@@ -63,6 +74,10 @@ void Object3d::Update() {
 }
 
 void Object3d::Draw() {
+	if (object3dCommon_) {
+		object3dCommon_->SetupCommonState();
+	}
+
 	// コマンドリストの取得
 	ID3D12GraphicsCommandList* commandList = object3dCommon_->GetDirectXCommon()->GetCommandList();
 
