@@ -1,7 +1,8 @@
 #pragma once
 #include "AABB.h"
 #include "EnemyDeathParticle.h"
-#include <TDEngine.h>
+#include "TDEngine.h" // <TDEngine.h> -> "TDEngine.h"
+#include <vector>     // ★追加: std::vector用
 
 class Player;
 class Enemy;
@@ -48,7 +49,7 @@ private:
 	// モデル
 	TDEngine::Model* model_ = nullptr;
 	// モデルサイズ
-	TDEngine::Vector3 size_ = {2.0f, 2.0f, 2.0f};
+	TDEngine::Vector3 size_ = { 2.0f, 2.0f, 2.0f };
 
 	// ワールド変換データ
 	TDEngine::WorldTransform worldTransform_;

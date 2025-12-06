@@ -1,5 +1,6 @@
 #pragma once
-#include <TDEngine.h>
+#include "TDEngine.h" // KamataEngine.h から変更
+#include "Camera.h"   // ★追加: Cameraクラスを使うため
 #include "BackGround.h"
 #include "TitleLogo.h"
 #include "Fade.h"
@@ -53,19 +54,19 @@ private:
 	// シーン終了フラグ
 	bool isFinished_ = false;
 
-	// カメラ
-	TDEngine::Camera camera_;
+	// カメラ (KamataEngine::Camera -> Camera)
+	Camera camera_;
 
 	// 背景
 	BackGround* backGround_ = nullptr;
-	// 背景の位置
-	TDEngine::Vector3 pos = {0.0f, 0.0f, 0.0f};
-	// 背景のモデル
-	TDEngine::Model* modelBackground_ = nullptr;
+	// 背景の位置 (KamataEngine::Vector3 -> Vector3)
+	Vector3 pos = { 0.0f, 0.0f, 0.0f };
+	// 背景のモデル (KamataEngine::Model -> Model)
+	Model* modelBackground_ = nullptr;
 	// タイトルロゴ
 	TitleLogo* logo_ = nullptr;
 	// タイトルロゴのモデル
-	TDEngine::Model* modelLogo_ = nullptr;
+	Model* modelLogo_ = nullptr;
 
 private:
 	// フェードインの更新

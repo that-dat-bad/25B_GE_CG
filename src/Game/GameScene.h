@@ -3,12 +3,14 @@
 #include "Enemy.h"
 #include "Skydome.h"
 #include "Fade.h"
-#include "TDEngine.h"
+#include "TDEngine.h" // TDEngineヘッダー
 
 class Player;
 class ChainBomb;
 class Wind;
 class TimeLimit;
+
+using namespace TDEngine;
 
 class GameScene {
 private:
@@ -22,48 +24,45 @@ private:
 
 private:
 	// カメラ
-	TDEngine::Camera camera_;
+	Camera camera_;
 
 	// プレイヤーのポインタ
 	Player* player_ = nullptr;
 	// プレイヤーのモデル
-	TDEngine::Model* modelPlayer_ = nullptr;
+	Model* modelPlayer_ = nullptr;
 	// プレイヤーの位置
-	const TDEngine::Vector3 playerPos_ = {-27, 0, 0};
+	const Vector3 playerPos_ = { -27, 0, 0 };
 
 	// 敵
 	Enemy* enemy_ = nullptr;
 	// 敵のモデル
-	TDEngine::Model* modelEnemy_ = nullptr;
+	Model* modelEnemy_ = nullptr;
 	// 敵の位置
-	TDEngine::Vector3 enemyPos_ = {0, 20, 0};
+	Vector3 enemyPos_ = { 0, 20, 0 };
 
 	// 連鎖ボム
 	std::vector<ChainBomb*> chainBombs_;
 	// 連鎖ボムのモデル
-	TDEngine::Model* modelChainBomb_ = nullptr;
+	Model* modelChainBomb_ = nullptr;
 	// 連鎖ボムの位置
-	TDEngine::Vector3 chainBombPos_ = {0, 0, 0};
+	Vector3 chainBombPos_ = { 0, 0, 0 };
 
 	// 風
 	Wind* wind_ = nullptr;
 	// 風のモデル
-	TDEngine::Model* modelWind_ = nullptr;
+	Model* modelWind_ = nullptr;
 	// 風の位置
-	TDEngine::Vector3 windPos_ = {12.2f, -10.0f};
+	Vector3 windPos_ = { 12.2f, -10.0f };
 
 	// 天球
 	Skydome* skydome_ = nullptr;
 
 	// 天球のモデル
-	TDEngine::Model* modelSkydome_ = nullptr;
+	Model* modelSkydome_ = nullptr;
 
 
 	// 時間制限
 	TimeLimit* timeLimit_ = nullptr;
-
-	// デバッグカメラ
-	// TDEngine::DebugCamera* debugCamera_ = nullptr;
 
 	// フェード
 	Fade fade_;
@@ -75,7 +74,7 @@ private:
 	bool isGameover_ = false;
 
 	// ワールド変換データ
-	TDEngine::WorldTransform worldTransform_;
+	WorldTransform worldTransform_;
 
 public:
 	// デストラクタ

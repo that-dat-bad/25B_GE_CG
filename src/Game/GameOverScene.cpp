@@ -8,8 +8,9 @@ void GameOverScene::Initialize() {
 
 	phase_ = Phase::kFadeIn;
 
-	// カメラの初期化
-	camera_.Initialize();
+	// カメラの更新 (Initializeは無いのでUpdateで初期化)
+	camera_.Update();
+
 	// 背景の初期化
 	backGround_ = new BackGround();
 	// 背景のモデル読み込み
@@ -18,31 +19,29 @@ void GameOverScene::Initialize() {
 }
 
 void GameOverScene::Update() {
+
+	// カメラ更新
+	camera_.Update();
+
 	switch (phase_) {
 	case Phase::kFadeIn:
-
 		UpdateFadeIn();
-
 		break;
 	case Phase::kMain:
-
 		UpdateMain();
-
 		break;
 	case Phase::kFadeOut:
-
 		UpdateFadeOut();
-
 		break;
 	}
 }
 
 void GameOverScene::Draw() {
-	Model::PreDraw();
+	// Model::PreDraw(); // 不要
 
 	backGround_->Draw();
 
-	Model::PostDraw();
+	// Model::PostDraw(); // 不要
 
 	fade_.Draw();
 }
@@ -60,7 +59,8 @@ void GameOverScene::UpdateFadeIn() {
 void GameOverScene::UpdateMain() {
 	backGround_->Update();
 
-	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
+	// ★修正: Input::GetInstance() -> GetInput()
+	if (GetInput()->TriggerKey(DIK_SPACE)) {
 		phase_ = Phase::kFadeOut;
 		fade_.Start(Fade::Status::kFadeOut, duration_);
 	}

@@ -5,7 +5,7 @@
 #include "TextureManager.h"
 #include "../../../external/DirectXTex/DirectXTex.h"
 #include "TDEngine.h"
-
+using namespace TDEngine;
 
 Sprite* Sprite::Create(const std::string& textureFilePath, Vector2 position, Vector4 color, Vector2 anchorpoint, bool isFlipX, bool isFlipY)
 {
@@ -22,6 +22,17 @@ Sprite* Sprite::Create(const std::string& textureFilePath, Vector2 position, Vec
 	sprite->SetFlipX(isFlipX);
 	sprite->SetFlipY(isFlipY);
 
+	return sprite;
+}
+
+Sprite* Sprite::Create(uint32_t textureHandle, Vector2 position, Vector4 color, Vector2 anchorpoint, bool isFlipX, bool isFlipY) {
+	Sprite* sprite = new Sprite();
+	sprite->Initialize(TDEngine::GetSpriteCommon(), DirectXCommon::GetInstance(), textureHandle);
+	sprite->SetPosition(position);
+	sprite->SetColor(color);
+	sprite->SetAnchorPoint(anchorpoint);
+	sprite->SetFlipX(isFlipX);
+	sprite->SetFlipY(isFlipY);
 	return sprite;
 }
 
@@ -63,6 +74,48 @@ void Sprite::Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon, std
 	materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	materialData_->WVP = Identity4x4();
 	textureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
+	anchorPoint_ = { 0.5f, 0.5f };
+	AdjustTextureSize();
+}
+
+void Sprite::Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon, uint32_t textureHandle)
+{
+	spriteCommon_ = spriteCommon;
+
+	//vertexResource(vertexBuffer)を作る
+	vertexBuffer_ = dxCommon->CreateBufferResource(sizeof(VertexData) * 4);
+	//IndexResource(indexBuffer)を作る
+	indexBuffer_ = dxCommon->CreateBufferResource(sizeof(uint32_t) * 6);
+	//VertexBufferViewの作成
+	vertexBufferView.BufferLocation = vertexBuffer_->GetGPUVirtualAddress();
+	vertexBufferView.SizeInBytes = sizeof(VertexData) * 4;
+	vertexBufferView.StrideInBytes = sizeof(VertexData);
+	//IndexBufferViewの作成
+	indexBufferView.BufferLocation = indexBuffer_->GetGPUVirtualAddress();
+	indexBufferView.SizeInBytes = sizeof(uint32_t) * 6;
+	indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+	//VertexResourceにデータを書き込むためのアドレスを取得してvertexDataに割り当てる
+	vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
+	float initialSpriteWidth = 100.0f;
+	float initialSpriteHeight = 100.0f;
+	size_.x = initialSpriteWidth;
+	size_.y = initialSpriteHeight;
+
+	//IndexResourceにデータを書き込むためのアドレスを取得してindexDataに割り当てる
+	uint32_t* indexDataLocal = nullptr;
+	indexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&indexDataLocal));
+	indexDataLocal[0] = 0; indexDataLocal[1] = 1; indexDataLocal[2] = 2;
+	indexDataLocal[3] = 1; indexDataLocal[4] = 3; indexDataLocal[5] = 2;
+	indexBuffer_->Unmap(0, nullptr);
+
+
+	//マテリアルリソースの作成
+	materialResource_ = dxCommon->CreateBufferResource(sizeof(Material));
+	//マテリアルリソースにデータを書き込むためのアドレスを取得してmaterialDataに割り当てる
+	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
+	materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	materialData_->WVP = Identity4x4();
+	textureIndex_ = textureHandle;
 	anchorPoint_ = { 0.5f, 0.5f };
 	AdjustTextureSize();
 }
@@ -162,6 +215,11 @@ void Sprite::SetTexture(std::string textureFilePath)
 	AdjustTextureSize();
 }
 
+void Sprite::SetTextureHandle(uint32_t textureHandle)
+{
+	textureIndex_ = textureHandle;
+	AdjustTextureSize();
+}
 void Sprite::AdjustTextureSize()
 {
 	//テクスチャメタデータを取得

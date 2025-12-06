@@ -20,8 +20,10 @@ public:
 	// 終了処理
 	void Finalize();
 
+	static uint32_t Load(const std::string& filePath);
+
 	// テクスチャ読み込み
-	uint32_t Load(const std::string& filePath);
+	uint32_t LoadInternal(const std::string& filePath);
 
 	// テクスチャ読み込み
 	static uint32_t LoadTexture(const std::string& filePath);

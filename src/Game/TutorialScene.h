@@ -1,5 +1,5 @@
 #pragma once
-#include <TDEngine.h>
+#include "TDEngine.h" // TDEngine統合ヘッダー
 #include "AABB.h"
 #include "Fade.h"
 #include "Player.h"
@@ -50,22 +50,22 @@ private:
 	// シーン終了フラグ
 	bool isFinished_ = false;
 
-	// カメラ
-	TDEngine::Camera camera_;
+	// カメラ (TDEngine::Camera)
+	Camera camera_;
 
 	// プレイヤーのポインタ
 	Player* player_ = nullptr;
 	// プレイヤーのモデル
-	TDEngine::Model* modelPlayer_ = nullptr;
+	Model* modelPlayer_ = nullptr;
 	// プレイヤーの位置
-	const TDEngine::Vector3 playerPos_ = {-27, 0, 0};
+	const Vector3 playerPos_ = { -27, 0, 0 };
 
 	// 敵
 	Enemy* enemy_ = nullptr;
 	// 敵のモデル
-	TDEngine::Model* modelEnemy_ = nullptr;
+	Model* modelEnemy_ = nullptr;
 	// 敵の位置
-	TDEngine::Vector3 enemyPos_ = {0, 20, 0};
+	Vector3 enemyPos_ = { 0, 20, 0 };
 
 	// シーン切り替えタイマー
 	int changeTimer_ = 60;
@@ -74,7 +74,7 @@ private:
 	Skydome* skydome_ = nullptr;
 
 	// 天球のモデル
-	TDEngine::Model* modelSkydome_ = nullptr;
+	Model* modelSkydome_ = nullptr;
 
 
 private:

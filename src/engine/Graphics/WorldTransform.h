@@ -3,11 +3,10 @@
 #include <d3d12.h>
 #include <wrl/client.h>
 
-// 定数バッファ用データ構造（アライメント調整済み）
 struct ConstBufferDataWorldTransform {
-	MyMath::Matrix4x4 matWorld; // ローカル -> ワールド変換行列
+	MyMath::Matrix4x4 WVP;
+	MyMath::Matrix4x4 World;
 };
-
 /// <summary>
 /// ワールド変換データ
 /// </summary>

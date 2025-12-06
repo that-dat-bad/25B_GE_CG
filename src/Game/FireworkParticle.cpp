@@ -1,28 +1,55 @@
 #include "FireworkParticle.h"
-#include <TDEngine.h>
 #include <algorithm>
+#include <cmath>
+
 using namespace TDEngine;
+using namespace MyMath;
 
-void FireworkParticle::Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position) {
+// --- ヘルパー関数 (TDEngineのWorldTransformにない機能) ---
 
-	worldTransform_.translation_.x = 2.0f;
-	worldTransform_.translation_.y = 2.0f;
+// Z軸回転行列の作成
+Matrix4x4 MakeRotateZ(float angle) {
+	Matrix4x4 m = Identity4x4();
+	m.m[0][0] = std::cos(angle);
+	m.m[0][1] = std::sin(angle);
+	m.m[1][0] = -std::sin(angle);
+	m.m[1][1] = std::cos(angle);
+	return m;
+}
 
-	// nullポインタチェック
+// ベクトルと行列の掛け算 (回転適用など)
+Vector3 TransformNormalVec3(const Vector3& v, const Matrix4x4& m) {
+	return {
+		v.x * m.m[0][0] + v.y * m.m[1][0] + v.z * m.m[2][0],
+		v.x * m.m[0][1] + v.y * m.m[1][1] + v.z * m.m[2][1],
+		v.x * m.m[0][2] + v.y * m.m[1][2] + v.z * m.m[2][2]
+	};
+}
+
+// ベクトルの加算
+Vector3 AddVec3(const Vector3& a, const Vector3& b) {
+	return { a.x + b.x, a.y + b.y, a.z + b.z };
+}
+
+// --------------------------------------------------------
+
+void FireworkParticle::Initialize(Model* model, Camera* camera, const Vector3& position) {
 	assert(model);
-
-	// 引数をメンバ変数に記録
 	model_ = model;
 	camera_ = camera;
 
-	// ワールドトランスフォームの初期化
+	// 全パーティクルの初期化
 	for (auto& worldTransform : worldTransforms_) {
 		worldTransform.Initialize();
-		worldTransform.translation_ = position;
+		worldTransform.translation = position;
+		worldTransform.scale = { 1.0f, 1.0f, 1.0f };
 	}
 
-	objectColor_.Initialize();
-	color_ = {1.0f, 1.0f, 1.0f, 1.0f};
+	// 初期カラー
+	color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
+	counter_ = 0.0f;
+	isFinished_ = false;
+	speed = 2.0f;
 }
 
 void FireworkParticle::Update() {
@@ -42,35 +69,37 @@ void FireworkParticle::Update() {
 		isFinished_ = true;
 	}
 
-	// 色の更新
+	// 色の更新 (アルファ値を減衰)
 	color_.w = std::clamp(1.0f - (counter_ / kDuration), 0.0f, 1.0f);
-	// 色変更オブジェクトに色の数値を設定する
-	objectColor_.SetColor(color_);
 
 	for (uint32_t i = 0; i < kNumParticles; ++i) {
 
-		if (i >= kNumParticles / 2)
-		{
+		if (i >= kNumParticles / 2) {
 			speed = 0.01f;
 		}
-		
+
 		// 基本となる速度ベクトル
-		Vector3 velocity = {speed, 0.0f, 0.0f};
+		Vector3 velocity = { speed, 0.0f, 0.0f };
+
 		// 回転角を計算する
 		float angle = kAngleUnit * i;
+
 		// Z軸回りの回転行列
-		Matrix4x4 matrixRotation = worldTransform_.MakeRotateZMatrix(angle);
+		Matrix4x4 matrixRotation = MakeRotateZ(angle);
+
 		// 基本ベクトルを回転させて速度ベクトルを得る
-		velocity = worldTransform_.Transform(velocity, matrixRotation);
-		// 移動処理
-		worldTransforms_[i].translation_ = worldTransforms_[i].Add(worldTransforms_[i].translation_, velocity);
+		velocity = TransformNormalVec3(velocity, matrixRotation);
+
+		// 移動処理 (Add関数で加算)
+		worldTransforms_[i].translation = AddVec3(worldTransforms_[i].translation, velocity);
+
 		// モデルを傾ける
-		worldTransforms_[i].rotation_.z = angle;
+		worldTransforms_[i].rotation.z = angle;
 	}
 
+	// 行列更新
 	for (WorldTransform& worldTransform : worldTransforms_) {
-		// 行列を定数バッファに移動
-		worldTransform.UpdateWorldMatrix(worldTransform);
+		worldTransform.UpdateMatrix();
 	}
 }
 
@@ -80,8 +109,11 @@ void FireworkParticle::Draw() {
 		return;
 	}
 
+	// アルファ値をモデルに適用
+	model_->SetAlpha(color_.w);
+
+	// 全パーティクルを描画
 	for (WorldTransform& worldTransform : worldTransforms_) {
-		// モデルの描画
-		model_->Draw(worldTransform, *camera_, &objectColor_);
+		model_->Draw(worldTransform, *camera_);
 	}
 }

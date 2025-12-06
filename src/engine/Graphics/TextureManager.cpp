@@ -33,13 +33,17 @@ void TextureManager::Finalize() {
 	instance_ = nullptr;
 }
 
-
-uint32_t TextureManager::LoadTexture(const std::string& filePath) {
-	return TextureManager::GetInstance()->Load(filePath);
+uint32_t TextureManager::Load(const std::string& filePath) {
+	return TextureManager::GetInstance()->LoadInternal(filePath);
 }
 
 
-uint32_t TextureManager::Load(const std::string& filePath) {
+uint32_t TextureManager::LoadTexture(const std::string& filePath) {
+	return TextureManager::GetInstance()->LoadInternal(filePath);
+}
+
+
+uint32_t TextureManager::LoadInternal(const std::string& filePath) {
 	HRESULT hr;
 
 	// 読み込み済みならインデックスを返す

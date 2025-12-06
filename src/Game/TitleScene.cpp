@@ -1,7 +1,7 @@
 #include "TitleScene.h"
-#include "../External/TDEngine/include/2d/ImGuiManager.h"
+// #include "../External/KamataEngine/include/2d/ImGuiManager.h" // 不要
 
-using namespace TDEngine;
+using namespace TDEngine; // KamataEngine -> TDEngine
 
 void TitleScene::Initialize() {
 	fade_.Initialize();
@@ -9,60 +9,58 @@ void TitleScene::Initialize() {
 
 	phase_ = Phase::kFadeIn;
 
-	// カメラの初期化
-	camera_.Initialize();
+
+	// カメラの更新を一回呼んで行列を作っておく
+	camera_.Update();
 
 	// 背景の初期化
 	backGround_ = new BackGround();
 	// 背景のモデル読み込み
 	modelBackground_ = Model::CreateFromOBJ("title", true);
+
+	// カメラを渡す
 	backGround_->Initialize(modelBackground_, &camera_, pos);
+
 	// タイトルロゴの初期化
 	logo_ = new TitleLogo();
 	// タイトルロゴのモデル読み込み
 	modelLogo_ = Model::CreateFromOBJ("titleLogo", true);
 	logo_->Initialize(modelLogo_, &camera_, pos);
-	
 }
 
 void TitleScene::Update() {
 
+	// シーンごとのカメラ更新が必要ならここで呼ぶ
+	camera_.Update();
+
 	switch (phase_) {
 	case Phase::kFadeIn:
-
 		UpdateFadeIn();
-
 		break;
 	case Phase::kMain:
-
 		UpdateMain();
-
 		break;
 	case Phase::kFadeOut:
-
 		UpdateFadeOut();
-
 		break;
 	}
 
+	ImGuiManager::GetInstance()->Begin(); // TDEngineでは必要なら
 	ImGui::Begin("TitleScene");
-
 	ImGui::Text("Select: %d", static_cast<int>(select_));
-
 	ImGui::End();
+	ImGuiManager::GetInstance()->End();
 }
 
-void TitleScene::Draw() { 
+void TitleScene::Draw() {
 
-	Model::PreDraw();
 
 	backGround_->Draw();
 	logo_->Draw();
 
-	Model::PostDraw();
 
-	fade_.Draw(); 
-	
+	fade_.Draw();
+
 }
 
 void TitleScene::UpdateFadeIn() {
@@ -79,7 +77,8 @@ void TitleScene::UpdateFadeIn() {
 }
 
 void TitleScene::UpdateMain() {
-	if (Input::GetInstance()->PushKey(DIK_SPACE)) {
+	// Input::GetInstance() -> TDEngine::GetInput()
+	if (GetInput()->PushKey(DIK_SPACE)) {
 		if (select_ != Select::kNone) {
 			phase_ = Phase::kFadeOut;
 			fade_.Start(Fade::Status::kFadeOut, duration_);
@@ -109,9 +108,10 @@ void TitleScene::UpdateFadeOut() {
 /// 選択
 /// </summary>
 void TitleScene::UpdateSelect() {
-	if (Input::GetInstance()->PushKey(DIK_A)) {
+	if (GetInput()->PushKey(DIK_A)) {
 		select_ = Select::kTutorial;
-	} else if (Input::GetInstance()->PushKey(DIK_D)) {
+	}
+	else if (GetInput()->PushKey(DIK_D)) {
 		select_ = Select::kGame;
 	}
 }

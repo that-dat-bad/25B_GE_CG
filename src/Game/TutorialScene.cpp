@@ -1,5 +1,7 @@
 #include "TutorialScene.h"
-#include "../External/TDEngine/include/2d/ImGuiManager.h"
+// TDEngine.h に ImGuiManager が含まれているため、個別インクルードは不要ですが
+// 必要に応じてパスを調整してください。
+// #include "../External/TDEngine/include/2d/ImGuiManager.h" 
 
 using namespace TDEngine;
 
@@ -9,8 +11,8 @@ void TutorialScene::Initialize() {
 
 	phase_ = Phase::kFadeIn;
 
-	// カメラの初期化
-	camera_.Initialize();
+	// カメラの更新 (Initializeは無いのでUpdateで行列作成)
+	camera_.Update();
 
 	// 天球の生成
 	skydome_ = new Skydome();
@@ -20,9 +22,6 @@ void TutorialScene::Initialize() {
 
 	// 天球の初期化
 	skydome_->Initialize(modelSkydome_, &camera_);
-
-	//// デバッグカメラ生成
-	// debugCamera_ = new DebugCamera(1280, 720);
 
 	// プレイヤー
 	player_ = new Player();
@@ -44,25 +43,23 @@ void TutorialScene::Initialize() {
 }
 
 void TutorialScene::Update() {
+	// カメラの更新
+	camera_.Update();
 
 	switch (phase_) {
 	case Phase::kFadeIn:
-
 		UpdateFadeIn();
-
 		break;
 	case Phase::kMain:
-
 		UpdateMain();
-
 		break;
 	case Phase::kFadeOut:
-
 		UpdateFadeOut();
-
 		break;
 	}
 
+	// ImGui
+	ImGuiManager::GetInstance()->Begin(); // TDEngineの仕組みに合わせて呼ぶ
 	ImGui::Begin("TutorialScene");
 
 	ImGui::Text("push Enter: isCleared_= %s", isCleared_ ? "true" : "false");
@@ -71,11 +68,12 @@ void TutorialScene::Update() {
 	}
 
 	ImGui::End();
+	ImGuiManager::GetInstance()->End();
 }
 
 void TutorialScene::Draw() {
 
-	Model::PreDraw();
+	// Model::PreDraw(); // 不要
 
 	// 天球の描画
 	skydome_->Draw();
@@ -85,7 +83,7 @@ void TutorialScene::Draw() {
 	// 敵の描画
 	enemy_->Draw();
 
-	Model::PostDraw();
+	// Model::PostDraw(); // 不要
 
 	fade_.Draw();
 }
@@ -116,7 +114,8 @@ void TutorialScene::UpdateMain() {
 			fade_.Start(Fade::Status::kFadeOut, duration_);
 		}
 
-	} else {
+	}
+	else {
 
 		// 敵の更新処理
 		enemy_->Update();

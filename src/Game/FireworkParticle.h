@@ -1,12 +1,14 @@
 #pragma once
-#include <TDEngine.h>
+#include "TDEngine.h"
 #include <array>
 #include <numbers>
 
 class FireworkParticle {
 private:
 	// ワールド変換データ
-	TDEngine::WorldTransform worldTransform_;
+	// (std::arrayで個数分持つ)
+	std::array<TDEngine::WorldTransform, 16> worldTransforms_; // kNumParticles = 16
+
 	// モデル
 	TDEngine::Model* model_ = nullptr;
 
@@ -16,8 +18,6 @@ private:
 	// パーティクルの個数
 	static inline const uint32_t kNumParticles = 16;
 
-	std::array<TDEngine::WorldTransform, kNumParticles> worldTransforms_;
-
 	// 存続時間
 	static inline const float kDuration = 1.0f;
 
@@ -25,7 +25,7 @@ private:
 	float speed = 2.0f;
 
 	// 分割した一個分の角度
-	static inline const float kAngleUnit = (std::numbers::pi_v<float> * 4.0f) / kNumParticles;
+	static inline const float kAngleUnit = (std::numbers::pi_v<float> *4.0f) / kNumParticles;
 
 	// 終了フラグ
 	bool isFinished_ = false;
@@ -33,9 +33,7 @@ private:
 	// 経過時間カウント
 	float counter_ = 0.0f;
 
-	// 色変更オブジェクト
-	TDEngine::ObjectColor objectColor_;
-	// 色の数値
+	// 色の数値 (ObjectColorは廃止し、Vector4で管理)
 	TDEngine::Vector4 color_;
 
 public:

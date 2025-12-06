@@ -1,72 +1,73 @@
 #include "Needle.h"
+#include <cassert>
+
 using namespace TDEngine;
+using namespace MyMath;
 
-void Needle::Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position, const TDEngine::Vector3 rotate) {
-	worldTransform_.translation_.x = 2.0f;
-	worldTransform_.translation_.y = 2.0f;
+// 簡易的なイージング関数
+Vector3 EaseInVec3(float t, const Vector3& start, const Vector3& end) {
+	return {
+		start.x + (end.x - start.x) * t * t,
+		start.y + (end.y - start.y) * t * t,
+		start.z + (end.z - start.z) * t * t
+	};
+}
+Vector3 NormalizeVec3(const Vector3& v) {
+	float len = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+	if (len == 0) return v;
+	return { v.x / len, v.y / len, v.z / len };
+}
 
-	// nullポインタチェック
+
+void Needle::Initialize(Model* model, Camera* camera, const Vector3& position, const Vector3 rotate) {
 	assert(model);
-
-	// 引数をメンバ変数に記録
 	model_ = model;
 	camera_ = camera;
 
-	// ワールドトランスフォームの初期化
 	worldTransform_.Initialize();
-	worldTransform_.translation_ = position;
-	worldTransform_.rotation_ = rotate;
+	worldTransform_.translation = position;
+	worldTransform_.rotation = rotate;
+
+	// 初期位置調整
+	worldTransform_.translation.x = 2.0f;
+	worldTransform_.translation.y = 2.0f;
 }
 
 void Needle::Update() {
-	// tを増加
 	t += 0.01f;
-	// サイズをイージング
-	worldTransform_.scale_ = worldTransform_.EaseIn(t, worldTransform_.scale_, upScale_);
-	// 行列を定数バッファに移動
-	worldTransform_.UpdateWorldMatrix(worldTransform_);
+	// サイズをイージング (EaseIn関数を使用)
+	worldTransform_.scale = EaseInVec3(t, worldTransform_.scale, upScale_);
+	worldTransform_.UpdateMatrix();
 }
 
 void Needle::Draw() {
-	// モデルの描画
 	model_->Draw(worldTransform_, *camera_);
 }
 
-TDEngine::Vector3 Needle::GetWorldPosition() { 
-	// ワールド座標を入れる変数
-	Vector3 worldPos;
-	// ワールド行列の平行移動成分を取得
-	worldPos = worldTransform_.translation_;
-	return worldPos;
+Vector3 Needle::GetWorldPosition() {
+	return worldTransform_.translation;
 }
 
 OBB Needle::GetOBB() {
 	OBB obb;
-
-	// 中心点を定義する
 	obb.center = GetWorldPosition();
 
-	// サイズを定義する
-	const TDEngine::Vector3& currentScale = worldTransform_.scale_;
+	const Vector3& currentScale = worldTransform_.scale;
+	obb.size.x = width * currentScale.x;
+	obb.size.y = height * currentScale.y;
+	obb.size.z = width * currentScale.z;
 
-	obb.size.x = width * currentScale.x;  // ワールドスケールを適用
-	obb.size.y = height * currentScale.y; // ワールドスケールを適用
-	obb.size.z = width * currentScale.z;  // ワールドスケールを適用
+	const Matrix4x4& matWorld = worldTransform_.matWorld;
 
-	// 3. 各軸の方向ベクトル (orientations) の計算
-	const TDEngine::Matrix4x4& matWorld = worldTransform_.matWorld_;
+	// 軸の取得と正規化
+	Vector3 xAxis = { matWorld.m[0][0], matWorld.m[0][1], matWorld.m[0][2] };
+	obb.orientations[0] = NormalizeVec3(xAxis);
 
-	// 行列の第1列目を抽出し、正規化
-	TDEngine::Vector3 xAxis = {matWorld.m[0][0], matWorld.m[0][1], matWorld.m[0][2]};
-	obb.orientations[0] = worldTransform_.Normalize(xAxis);
+	Vector3 yAxis = { matWorld.m[1][0], matWorld.m[1][1], matWorld.m[1][2] };
+	obb.orientations[1] = NormalizeVec3(yAxis);
 
-	// Y軸（orientations[1]）: 行列の第2列目を抽出し、正規化
-	TDEngine::Vector3 yAxis = {matWorld.m[1][0], matWorld.m[1][1], matWorld.m[1][2]};
-	obb.orientations[1] = worldTransform_.Normalize(yAxis);
-
-	// Z軸（orientations[2]）: 行列の第3列目を抽出し、正規化
-	TDEngine::Vector3 zAxis = {matWorld.m[2][0], matWorld.m[2][1], matWorld.m[2][2]};
-	obb.orientations[2] = worldTransform_.Normalize(zAxis);
+	Vector3 zAxis = { matWorld.m[2][0], matWorld.m[2][1], matWorld.m[2][2] };
+	obb.orientations[2] = NormalizeVec3(zAxis);
 
 	return obb;
 }

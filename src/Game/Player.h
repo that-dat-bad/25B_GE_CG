@@ -1,10 +1,9 @@
-
 #pragma once
 #include "AABB.h"
 #include "EnemyDeathParticle.h"
 #include "FireworkParticle.h"
 #include "Rand.h"
-#include <TDEngine.h>
+#include "TDEngine.h" // TDEngine統合ヘッダー
 
 class Enemy;
 class Wind;
@@ -63,13 +62,13 @@ public:
 
 	TDEngine::Vector3 GetVelocity() const { return velocity_; }
 
-	void SetPosition(const TDEngine::Vector3& position) { worldTransform_.translation_ = position; }
+	void SetPosition(const TDEngine::Vector3& position) { worldTransform_.translation = position; }
 
 	bool IsBlow() const { return isBlow_; }
 	void SetIsBlow(bool isBlow) { isBlow_ = isBlow; }
 
 	// プレイヤーの大きさを取得
-	TDEngine::Vector3 GetScale() const { return worldTransform_.scale_; }
+	TDEngine::Vector3 GetScale() const { return worldTransform_.scale; }
 
 	bool IsRespawning() const { return state_ == State::kRespawn; }
 	bool IsInvincible() const { return state_ == State::kInvincible; }
@@ -133,9 +132,9 @@ private:
 	float respawnTimer_ = 0.0f;
 
 	// リスポーンスタート地点
-	TDEngine::Vector3 startPos_ = {0.0f, 0.0f, 0.0f};
+	TDEngine::Vector3 startPos_ = { 0.0f, 0.0f, 0.0f };
 	// リスポーン終了地点
-	TDEngine::Vector3 endPos_ = {0.0f, 0.0f, 0.0f};
+	TDEngine::Vector3 endPos_ = { 0.0f, 0.0f, 0.0f };
 
 	//無敵時間
 	float invincibleTimer_ = 0.0f;
@@ -153,7 +152,7 @@ private:
 	// 速度
 	TDEngine::Vector3 velocity_ = {};
 	// 加速度
-	TDEngine::Vector3 acceleration_ = {0, 0, 0};
+	TDEngine::Vector3 acceleration_ = { 0, 0, 0 };
 	// 加速度定数
 	static inline const float kAcceleration = 0.01f;
 	//無敵時は減速
@@ -206,7 +205,7 @@ private:
 
 	void ApplyScaleFromHeight();
 
-	
+
 	/// <summary>
 	/// イージング
 	/// </summary>

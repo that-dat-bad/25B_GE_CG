@@ -1,19 +1,20 @@
-#include <TDEngine.h>
-
 #include "Skydome.h"
+#include <cassert> // assert用
+
 using namespace TDEngine;
 
-void Skydome::Initialize(Model* model, Camera* camera) {
-	// nullポインタチェック
-	assert(model);
+void Skydome::Initialize(TDEngine::Model* model, TDEngine::Camera* camera) {
+    assert(model);
+    model_ = model;
+    camera_ = camera;
+    worldTransform_.Initialize();
+}
 
-	// 引数をメンバ変数に記録
-	model_ = model;
-	camera_ = camera;
+void Skydome::Update() {
 
-	// ワールドトランスフォームの初期化
-	worldTransform_.Initialize();
-};
+    worldTransform_.UpdateMatrix();
+}
 
-void Skydome::Update() { worldTransform_.UpdateWorldMatrix(worldTransform_); };
-void Skydome::Draw() { model_->Draw(worldTransform_, *camera_); };
+void Skydome::Draw() {
+    model_->Draw(worldTransform_, *camera_);
+}

@@ -16,7 +16,8 @@
 #include "Object3d.h"
 #include "Model.h"
 #include "WorldTransform.h"
-
+#include "Math/MyMath.h"
+#include "Camera.h"
 namespace TDEngine {
 
 	Input* GetInput();

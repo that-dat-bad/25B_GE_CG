@@ -8,13 +8,15 @@
 #include<fstream>
 #include<sstream>
 #include <filesystem>
+#include <TDEngine.h>
+using namespace TDEngine;
 
-void Model::LoadFromOBJ(const std::string& modelName) {
+void TDEngine::Model::LoadFromOBJ(const std::string& modelName) {
 
 	ModelManager::GetInstance()->LoadModel(modelName);
 }
 
-Model* Model::CreateFromOBJ(const std::string& modelName, bool smoothing) {
+TDEngine::Model* TDEngine::Model::CreateFromOBJ(const std::string& modelName, bool smoothing) {
 	//マネージャ経由で読み込む
 	ModelManager::GetInstance()->LoadModel(modelName);
 
@@ -23,7 +25,7 @@ Model* Model::CreateFromOBJ(const std::string& modelName, bool smoothing) {
 }
 
 
-void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename)
+void TDEngine::Model::Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename)
 {
 
 	modelCommon_ = modelCommon;
@@ -68,7 +70,7 @@ void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypat
 
 }
 
-void Model::Draw() {
+void TDEngine::Model::Draw() {
 
 	// コマンドリストの取得
 	ID3D12GraphicsCommandList* commandList = modelCommon_->GetDirectXCommon()->GetCommandList();
@@ -91,7 +93,39 @@ void Model::Draw() {
 
 }
 
-Model::MaterialData Model::LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename)
+void TDEngine::Model::Draw(const WorldTransform& worldTransform, const Camera& camera) {
+	// 1. WVP行列を計算して、WorldTransformの定数バッファに書き込む
+	// (WorldTransformは matWorld しか更新していないので、ここで合成する)
+	if (worldTransform.constMap) {
+		Matrix4x4 worldViewProjection = Multiply(worldTransform.matWorld, camera.GetViewProjectionMatrix());
+		worldTransform.constMap->WVP = worldViewProjection;
+		worldTransform.constMap->World = worldTransform.matWorld;
+	}
+
+	// 2. 共通設定のセット (これを忘れると描画されない)
+	// TDEngine::ModelはObject3dCommonの設定を借りることにする
+	TDEngine::GetObject3dCommon()->SetupCommonState();
+
+	ID3D12GraphicsCommandList* commandList = modelCommon_->GetDirectXCommon()->GetCommandList();
+
+	// 3. 頂点バッファセット
+	commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
+
+	// 4. 定数バッファセット (WorldTransformが持っているバッファを使う！)
+	// RootParameter[1] が Transform用と想定
+	commandList->SetGraphicsRootConstantBufferView(1, worldTransform.constBuff_->GetGPUVirtualAddress());
+
+	// 5. テクスチャセット
+	if (modelData_.material.textureIndex != 0) {
+		D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle = TextureManager::GetInstance()->GetSrvHandleGPU(modelData_.material.textureIndex);
+		commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandle);
+	}
+
+	// 6. 描画
+	commandList->DrawInstanced(UINT(modelData_.vertices.size()), 1, 0, 0);
+}
+
+TDEngine::Model::MaterialData TDEngine::Model::LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename)
 {
 	MaterialData materialData; // 返却用
 	materialData.textureIndex = 0; // 初期化
@@ -119,7 +153,7 @@ Model::MaterialData Model::LoadMaterialTemplate(const std::string& directoryPath
 	return materialData;
 }
 
-Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std::string& filename)
+TDEngine::Model::ModelData TDEngine::Model::LoadObjFile(const std::string& directoryPath, const std::string& filename)
 {
 	ModelData modelData; // 返却用
 	std::vector<Vector4> positions;

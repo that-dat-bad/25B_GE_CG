@@ -1,4 +1,3 @@
-
 #include "Player.h"
 #include "Wind.h"
 
@@ -7,7 +6,7 @@
 #include <numbers>
 
 using namespace TDEngine;
-using namespace TDEngine::MathUtility;
+using namespace MyMath; // TDEngineの数学ライブラリを使用
 
 /// <summary>
 /// 初期化
@@ -21,8 +20,8 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& position) {
 	camera_ = camera;
 
 	worldTransform_.Initialize();
-	worldTransform_.scale_ = {1.0f, 1.0f, 1.0f};
-	worldTransform_.translation_ = position;
+	worldTransform_.scale = { 1.0f, 1.0f, 1.0f }; // scale_ -> scale
+	worldTransform_.translation = position; // translation_ -> translation
 
 	ApplyScaleFromHeight();
 
@@ -31,12 +30,13 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& position) {
 	// デスパーティクルのモデル生成
 	modelParticle_ = Model::CreateFromOBJ("playerDeathParticle", true);
 	modelFireParticle_ = Model::CreateFromOBJ("firework", true);
+
 	rand_ = new Rand();
 	rand_->Initialize();
 	rand_->RandomInitialize();
 
-	// ワールドトランスフォーム更新
-	worldTransform_.UpdateWorldMatrix(worldTransform_);
+	// ワールドトランスフォーム更新 (UpdateWorldMatrix -> UpdateMatrix)
+	worldTransform_.UpdateMatrix();
 }
 /// <summary>
 /// 更新
@@ -67,7 +67,7 @@ void Player::Update() {
 	}
 
 	// ワールドトランスフォーム更新
-	worldTransform_.UpdateWorldMatrix(worldTransform_);
+	worldTransform_.UpdateMatrix();
 }
 
 /// <summary>
@@ -78,19 +78,21 @@ void Player::Draw() {
 	if (state_ == State::kDead) {
 		// デスパーティクルの描画
 		deathParticle_->Draw();
-		
+
 		for (FireworkParticle* fireworkParticle : fireworkParticles_)
 		{
 			fireworkParticle->Draw();
 		}
 
 
-	} else {
+	}
+	else {
 		if (state_ == State::kInvincible) {
 			if (frameCount_ % 4 == 0) {
 				model_->Draw(worldTransform_, *camera_);
 			}
-		} else {
+		}
+		else {
 			model_->Draw(worldTransform_, *camera_);
 		}
 	}
@@ -101,10 +103,11 @@ void Player::Draw() {
 /// </summary>
 void Player::UpdateMove() {
 	// 加速度
-	acceleration_ = {0, 0, 0};
+	acceleration_ = { 0, 0, 0 };
 
-	if (Input::GetInstance()->PushKey(DIK_D) || Input::GetInstance()->PushKey(DIK_A)) {
-		if (Input::GetInstance()->PushKey(DIK_D)) {
+	// Input::GetInstance() -> GetInput()
+	if (GetInput()->PushKey(DIK_D) || GetInput()->PushKey(DIK_A)) {
+		if (GetInput()->PushKey(DIK_D)) {
 			if (velocity_.x < 0.0f) {
 				// 速度と逆方向に入力中はブレーキ
 				velocity_.x *= (1.0f - kAttenuation);
@@ -112,19 +115,21 @@ void Player::UpdateMove() {
 
 			if (state_ == State::kInvincible) {
 				acceleration_.x += kAccelerationInvincible;
-			} else {
+			}
+			else {
 				acceleration_.x += kAcceleration;
 			}
 
 			if (lrDirection_ != LRDirection::kRight) {
 				lrDirection_ = LRDirection::kRight;
 
-				// 旋回開始時の角度を保存
-				turnFirstRotationY_ = worldTransform_.rotation_.y;
+				// 旋回開始時の角度を保存 (rotation_ -> rotation)
+				turnFirstRotationY_ = worldTransform_.rotation.y;
 				// 旋回タイマーをセット
 				turnTimer_ = kTimeTurn;
 			}
-		} else if (Input::GetInstance()->PushKey(DIK_A)) {
+		}
+		else if (GetInput()->PushKey(DIK_A)) {
 			if (velocity_.x > 0.0f) {
 				// 速度と逆方向に入力中はブレーキ
 				velocity_.x *= (1.0f - kAttenuation);
@@ -132,7 +137,8 @@ void Player::UpdateMove() {
 
 			if (state_ == State::kInvincible) {
 				acceleration_.x -= kAccelerationInvincible;
-			} else {
+			}
+			else {
 				acceleration_.x -= kAcceleration;
 			}
 
@@ -140,12 +146,13 @@ void Player::UpdateMove() {
 				lrDirection_ = LRDirection::kLeft;
 
 				// 旋回開始時の角度を保存
-				turnFirstRotationY_ = worldTransform_.rotation_.y;
+				turnFirstRotationY_ = worldTransform_.rotation.y;
 				// 旋回タイマーをセット
 				turnTimer_ = kTimeTurn;
 			}
 		}
-	} else {
+	}
+	else {
 		// 入力していないときは移動減衰をかける
 		velocity_.x *= (1.0f - kAttenuation);
 	}
@@ -158,15 +165,15 @@ void Player::UpdateMove() {
 		float smoothTurnProgress = EaseInOutSine(turnProgress);
 
 		// 左右のプレイヤー角度テーブル（ちょっと雑かも）
-		float destinationRotationYTable[] = {0.0f, std::numbers::pi_v<float> * 3.0f / 4.0f};
+		float destinationRotationYTable[] = { 0.0f, std::numbers::pi_v<float> *3.0f / 4.0f };
 		// 状態に応じた角度を取得
 		float destinationRotationY = destinationRotationYTable[static_cast<uint32_t>(lrDirection_)];
-		// プレイヤーの角度を設定
-		worldTransform_.rotation_.y = std::lerp(turnFirstRotationY_, destinationRotationY, smoothTurnProgress);
+		// プレイヤーの角度を設定 (rotation_ -> rotation)
+		worldTransform_.rotation.y = std::lerp(turnFirstRotationY_, destinationRotationY, smoothTurnProgress);
 	}
 
-	if (Input::GetInstance()->PushKey(DIK_W) || Input::GetInstance()->PushKey(DIK_S)) {
-		if (Input::GetInstance()->PushKey(DIK_W)) {
+	if (GetInput()->PushKey(DIK_W) || GetInput()->PushKey(DIK_S)) {
+		if (GetInput()->PushKey(DIK_W)) {
 			if (velocity_.y < 0.0f) {
 				// 速度と逆方向に入力中はブレーキ
 				velocity_.y *= (1.0f - kAttenuation);
@@ -174,11 +181,13 @@ void Player::UpdateMove() {
 
 			if (state_ == State::kInvincible) {
 				acceleration_.y += kAccelerationInvincible;
-			} else {
+			}
+			else {
 				acceleration_.y += kAcceleration;
 			}
 
-		} else if (Input::GetInstance()->PushKey(DIK_S)) {
+		}
+		else if (GetInput()->PushKey(DIK_S)) {
 			if (velocity_.y > 0.0f) {
 				// 速度と逆方向に入力中はブレーキ
 				velocity_.y *= (1.0f - kAttenuation);
@@ -186,11 +195,13 @@ void Player::UpdateMove() {
 
 			if (state_ == State::kInvincible) {
 				acceleration_.y -= kAccelerationInvincible;
-			} else {
+			}
+			else {
 				acceleration_.y -= kAcceleration;
 			}
 		}
-	} else {
+	}
+	else {
 		// 入力していないときは移動減衰をかける
 		velocity_.y *= (1.0f - kAttenuation);
 	}
@@ -208,10 +219,12 @@ void Player::UpdateMove() {
 		if (size_ < borderSize) {
 			// 小さいときは2倍
 			maxSpeed = kMaxSpeed * 2.0f;
-		} else if (size_ > borderSize) {
+		}
+		else if (size_ > borderSize) {
 			// 大きいときは1.2倍
 			maxSpeed = kMaxSpeed * 1.2f;
-		} else {
+		}
+		else {
 			maxSpeed = kMaxSpeed;
 		}
 	}
@@ -237,36 +250,37 @@ void Player::UpdateAlive() {
 	// 移動入力処理
 	UpdateMove();
 
-	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
+	// Input::GetInstance() -> GetInput()
+	if (GetInput()->TriggerKey(DIK_SPACE)) {
 		if (state_ != State::kInvincible) {
 			isExplode_ = true;
 			state_ = State::kDead;
 
 			respawnTimer_ = kRespawnTimeSelf;
-			// デスパーティクルの初期化
+			// デスパーティクルの初期化 (translation_ -> translation)
 			deathParticle_ = new EnemyDeathParticle();
-			deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation_);
+			deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation);
 			// 爆発パーティクルを生成
 			for (int32_t i = 0; i < kFireParticleCount; ++i) {
 				FireworkParticle* fireworkParticle = new FireworkParticle();
 				// 爆発パーティクルの初期位置設定
-				Vector3 pos = worldTransform_.translation_;
+				Vector3 pos = worldTransform_.translation;
 				pos.x += static_cast<float>(rand_->GetRandom()) - 2.0f;
 				pos.y -= static_cast<float>(rand_->GetRandom()) - 2.0f;
 				pos.z -= 5.0f;
 				fireworkParticle->Initialize(modelFireParticle_, camera_, pos);
 				// パーティクルを登録する
 				fireworkParticles_.push_back(fireworkParticle);
-				
+
 			}
 		}
 	}
 
 	// 速度反映
-	worldTransform_.translation_ += velocity_;
+	worldTransform_.translation += velocity_;
 
 	// 画面内に収める
-	Vector3& pos = worldTransform_.translation_;
+	Vector3& pos = worldTransform_.translation;
 	const float radius = 1.0f;
 	pos.x = std::clamp(pos.x, kScreenLeft + radius, kScreenRight - radius);
 	pos.y = std::clamp(pos.y, kScreenBottom + radius, kScreenTop - radius);
@@ -279,10 +293,10 @@ void Player::UpdateAlive() {
 	// t=0 のとき kMinScale、t=1 のとき kMaxScale
 	float scale = kMinScale + t * (kMaxScale - kMinScale);
 
-	// 等方にスケーリング
-	worldTransform_.scale_.x = scale;
-	worldTransform_.scale_.y = scale;
-	worldTransform_.scale_.z = scale;
+	// 等方にスケーリング (scale_ -> scale)
+	worldTransform_.scale.x = scale;
+	worldTransform_.scale.y = scale;
+	worldTransform_.scale.z = scale;
 
 	// 当たり判定用
 	size_ = 2.0f * scale;
@@ -317,8 +331,12 @@ void Player::UpdateRespawn() {
 	t = std::clamp(t, 0.0f, 1.0f);
 
 	// イージングで位置を補間
-	worldTransform_.translation_.x = worldTransform_.EaseOutFloat(t, startPos_.x, endPos_.x);
-	worldTransform_.translation_.y = worldTransform_.EaseOutFloat(t, startPos_.y, endPos_.y);
+	// worldTransform_.EaseOutFloat -> std::lerp (またはMyMath::Lerp) で代用
+	// EaseOut効果をつけたければ t にイージング関数をかける
+	float easedT = 1.0f - std::pow(1.0f - t, 3.0f); // EaseOutCubic的な計算
+
+	worldTransform_.translation.x = std::lerp(startPos_.x, endPos_.x, easedT);
+	worldTransform_.translation.y = std::lerp(startPos_.y, endPos_.y, easedT);
 
 	// 高さによって大きさが変わる
 	ApplyScaleFromHeight();
@@ -345,12 +363,12 @@ void Player::StartRespawn() {
 	isExplode_ = false;
 
 	// 画面外の開始位置（X=画面左より外、Y=目標と同じ高さ）
-	startPos_ = {kScreenLeft - 20.0f, -15.0f, 0.0f};
-	endPos_ = {-27.0f, 0.0f, 0.0f};
+	startPos_ = { kScreenLeft - 20.0f, -15.0f, 0.0f };
+	endPos_ = { -27.0f, 0.0f, 0.0f };
 
 	// 開始位置を設定
-	worldTransform_.translation_ = startPos_;
-	velocity_ = {0.0f, 0.0f, 0.0f};
+	worldTransform_.translation = startPos_;
+	velocity_ = { 0.0f, 0.0f, 0.0f };
 
 	// 高さによって大きさが変わる
 	ApplyScaleFromHeight();
@@ -371,7 +389,7 @@ void Player::UpdateInvincible() {
 
 // 高さによってプレイヤーのサイズが変化
 void Player::ApplyScaleFromHeight() {
-	Vector3& pos = worldTransform_.translation_;
+	Vector3& pos = worldTransform_.translation;
 
 	// 1. Yだけ画面内にクランプ（演出でも通常でも使える）
 	const float radius = 1.0f;
@@ -385,9 +403,9 @@ void Player::ApplyScaleFromHeight() {
 	float s = kMinScale + t * (kMaxScale - kMinScale);
 
 	// 4. 等方スケールに反映
-	worldTransform_.scale_.x = s;
-	worldTransform_.scale_.y = s;
-	worldTransform_.scale_.z = s;
+	worldTransform_.scale.x = s;
+	worldTransform_.scale.y = s;
+	worldTransform_.scale.z = s;
 
 	// 5. サイズと爆発威力も決定
 	size_ = 2.0f * s;
@@ -398,9 +416,10 @@ Vector3 Player::GetWorldPosition() {
 	// ワールド座標を入れる変数
 	Vector3 worldPos;
 	// ワールド行列の平行移動成分を取得
-	worldPos.x = worldTransform_.matWorld_.m[3][0];
-	worldPos.y = worldTransform_.matWorld_.m[3][1];
-	worldPos.z = worldTransform_.matWorld_.m[3][2];
+	// matWorld_ -> matWorld
+	worldPos.x = worldTransform_.matWorld.m[3][0];
+	worldPos.y = worldTransform_.matWorld.m[3][1];
+	worldPos.z = worldTransform_.matWorld.m[3][2];
 
 	return worldPos;
 }
@@ -409,8 +428,8 @@ AABB Player::GetAABB() {
 
 	AABB aabb;
 
-	aabb.min = {worldPos.x - size_ / 2.0f, worldPos.y - size_ / 2.0f, worldPos.z - size_ / 2.0f};
-	aabb.max = {worldPos.x + size_ / 2.0f, worldPos.y + size_ / 2.0f, worldPos.z + size_ / 2.0f};
+	aabb.min = { worldPos.x - size_ / 2.0f, worldPos.y - size_ / 2.0f, worldPos.z - size_ / 2.0f };
+	aabb.max = { worldPos.x + size_ / 2.0f, worldPos.y + size_ / 2.0f, worldPos.z + size_ / 2.0f };
 
 	return aabb;
 }
@@ -433,12 +452,12 @@ void Player::OnCollision(const Enemy* enemy) {
 
 	// デスパーティクルの初期化
 	deathParticle_ = new EnemyDeathParticle();
-	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation_);
+	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation);
 	// 爆発パーティクルを生成
 	for (int32_t i = 0; i < kFireParticleCount; ++i) {
 		FireworkParticle* fireworkParticle = new FireworkParticle();
 		// 爆発パーティクルの初期位置設定
-		Vector3 pos = worldTransform_.translation_;
+		Vector3 pos = worldTransform_.translation;
 		pos.x += static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.y -= static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.z -= 5.0f;
@@ -466,12 +485,12 @@ void Player::OnCollision(const Beam* beam) {
 	state_ = State::kDead;
 	// デスパーティクルの初期化
 	deathParticle_ = new EnemyDeathParticle();
-	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation_);
+	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation);
 	// 爆発パーティクルを生成
 	for (int32_t i = 0; i < kFireParticleCount; ++i) {
 		FireworkParticle* fireworkParticle = new FireworkParticle();
 		// 爆発パーティクルの初期位置設定
-		Vector3 pos = worldTransform_.translation_;
+		Vector3 pos = worldTransform_.translation;
 		pos.x += static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.y -= static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.z -= 5.0f;
@@ -506,12 +525,12 @@ void Player::OnCollision(const Needle* needle) {
 	state_ = State::kDead;
 	// デスパーティクルの初期化
 	deathParticle_ = new EnemyDeathParticle();
-	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation_);
+	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation);
 	// 爆発パーティクルを生成
 	for (int32_t i = 0; i < kFireParticleCount; ++i) {
 		FireworkParticle* fireworkParticle = new FireworkParticle();
 		// 爆発パーティクルの初期位置設定
-		Vector3 pos = worldTransform_.translation_;
+		Vector3 pos = worldTransform_.translation;
 		pos.x += static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.y -= static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.z -= 5.0f;
@@ -538,12 +557,12 @@ void Player::OnCollision(const Punch* punch) {
 	state_ = State::kDead;
 	// デスパーティクルの初期化
 	deathParticle_ = new EnemyDeathParticle();
-	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation_);
+	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation);
 	// 爆発パーティクルを生成
 	for (int32_t i = 0; i < kFireParticleCount; ++i) {
 		FireworkParticle* fireworkParticle = new FireworkParticle();
 		// 爆発パーティクルの初期位置設定
-		Vector3 pos = worldTransform_.translation_;
+		Vector3 pos = worldTransform_.translation;
 		pos.x += static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.y -= static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.z -= 5.0f;
@@ -570,12 +589,12 @@ void Player::OnCollision(const Thunder* thunder) {
 	state_ = State::kDead;
 	// デスパーティクルの初期化
 	deathParticle_ = new EnemyDeathParticle();
-	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation_);
+	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation);
 	// 爆発パーティクルを生成
 	for (int32_t i = 0; i < kFireParticleCount; ++i) {
 		FireworkParticle* fireworkParticle = new FireworkParticle();
 		// 爆発パーティクルの初期位置設定
-		Vector3 pos = worldTransform_.translation_;
+		Vector3 pos = worldTransform_.translation;
 		pos.x += static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.y -= static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.z -= 5.0f;
@@ -588,6 +607,4 @@ void Player::OnCollision(const Thunder* thunder) {
 /// <summary>
 /// イージング
 /// </summary>
-/// <param name="t"></param>
-/// <returns></returns>
-float Player::EaseInOutSine(float turnProgress) { return -(std::cos(std::numbers::pi_v<float> * turnProgress) - 1.0f) * 0.5f; }
+float Player::EaseInOutSine(float turnProgress) { return -(std::cos(std::numbers::pi_v<float> *turnProgress) - 1.0f) * 0.5f; }

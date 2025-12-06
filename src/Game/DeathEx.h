@@ -1,42 +1,21 @@
 #pragma once
-#include <TDEngine.h>
+#include "TDEngine.h"
 
 class DeathEx {
 public:
-	/// <summary>
-	/// 初期化
-	/// </summary>
-	/// <param name="model">モデル</param>
-	/// <param name="position">初期座標</param>
-
 	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position, const TDEngine::Vector3 rotate);
-
-	/// <summary>
-	/// 更新
-	/// </summary>
-
 	void Update();
-
-	/// <summary>
-	/// 描画
-	/// </summary>
-
 	void Draw();
 
 private:
-	// ワールド変換データ
 	TDEngine::WorldTransform worldTransform_;
-	// モデル
 	TDEngine::Model* model_ = nullptr;
-	// モデルのアルファ値
 	float targetAlpha_ = 1.0f;
-	TDEngine::ObjectColor objectColor_;
-	TDEngine::Vector4 color_;
-	// アルファ値が上がり切ったかどうかのフラグ
-	bool isAlphaMax_ = false;
-	// カメラ
-	TDEngine::Camera* camera_ = nullptr;
 
-	// イージング用変数
+	// ObjectColor は削除し、Vector4のみで管理
+	TDEngine::Vector4 color_;
+
+	bool isAlphaMax_ = false;
+	TDEngine::Camera* camera_ = nullptr;
 	float t = 0.0f;
 };

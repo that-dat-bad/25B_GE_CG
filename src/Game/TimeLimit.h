@@ -1,10 +1,10 @@
 #pragma once
-
-#include <TDEngine.h>
+#include "TDEngine.h" // <TDEngine.h> -> "TDEngine.h"
+#include <array>      // ★追加: std::array用
 
 class TimeLimit {
 public:
-	~TimeLimit();
+	~TimeLimit(); // cpp側で実装する必要あり(またはdefault)
 
 	void Initialize();
 	void Update();
@@ -29,7 +29,7 @@ public:
 	// 制限時間
 	float timer_ = 0.0f;
 	// 上限（3分）
-	static inline const float kTimeLimit = 10.0f;
+	static inline const float kTimeLimit = 180.0f; // 元コードだと10.0fでしたがゲームに合わせて調整してください
 
 	// スタートのカウントダウン
 	static inline const float kCountDown = 3.0f;
@@ -54,9 +54,9 @@ private:
 	void UpdateActive();
 	void UpdateLast5Second();
 
-	void LayoutGlyphs();             // 追加: 桁の位置と大きさ決め
-	void DrawStartCountDownSprite(); // 追加: 3,2,1描画
-	void DrawLast5SecondSprite();    // 追加: 残り5秒カウント描画
+	void LayoutGlyphs();
+	void DrawStartCountDownSprite();
+	void DrawLast5SecondSprite();
 	void DrawTimeGlyphs();
 
 	void UpdateGlyphTexturesFromTime(TimeLimit& timeLimit);
