@@ -39,6 +39,15 @@ public:
 
 	static MaterialData LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename);
 	static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
+
+	// 頂点バッファビューを取得
+	const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const { return vertexBufferView_; }
+
+	// 頂点数を取得
+	size_t GetVertexCount() const { return modelData_.vertices.size(); }
+
+	// テクスチャインデックスを取得
+	uint32_t GetTextureIndex() const { return modelData_.material.textureIndex; }
 private:
 
 	ModelCommon* modelCommon_ = nullptr;

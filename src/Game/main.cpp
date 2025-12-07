@@ -1,46 +1,51 @@
 #include "TDEngine.h"
+#include "SceneManager.h"
+#include "DirectXCommon.h"
+#include "ImGuiManager.h"
 
-using namespace TDEngine;
+// Windowsアプリのエントリーポイント
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
-int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
-	TDEngine::Initialize(L"CG2");
+	// 1. エンジンの初期化
+	// ウィンドウタイトル、幅、高さを指定
+	TDEngine::Initialize(L"TDEngine Ported Game", 1280, 720);
 
+	// 2. シーンマネージャの生成と初期化
+	SceneManager* sceneManager = new SceneManager();
+	sceneManager->Initialize();
 
-	Model::LoadFromOBJ("axis.obj"); 
-	Model::LoadFromOBJ("plane.obj");
+	// 3. メインループ
+	// TDEngine::Update() が false を返す（ウィンドウが閉じられる）までループ
+	while (TDEngine::Update()) {
 
-	Object3d* object3d = Object3d::Create();
-	object3d->SetModel("axis.obj"); // 読み込んだモデルをセット
-	object3d->SetTranslate({ -2.0f, 0.0f, 0.0f });
+		// --- 更新処理開始 ---
 
-	Object3d* plane = Object3d::Create();
-	plane->SetModel("plane.obj");
-
-	
-	// メインループ
-	while (true) {
-		if (TDEngine::Update()) break;
-		
+		// ImGui受付開始
 		ImGuiManager::GetInstance()->Begin();
-		// ... Update処理 ...
-		object3d->Update();
-		plane->Update();
 
-		ImGuiManager::GetInstance()->End();
+		// シーン更新
+		sceneManager->Update();
 
+		// --- 描画処理開始 ---
+
+		// DirectX描画前処理 (画面クリア、バリア設定など)
 		DirectXCommon::GetInstance()->PreDraw();
 
-		// ... 描画 ...
-		object3d->Draw();
-		plane->Draw();
+		// シーン描画 (コマンド積み込み)
+		sceneManager->Draw();
 
+		// ImGui描画 (コマンド積み込み)
 		ImGuiManager::GetInstance()->Draw();
+
+		// ImGui終了処理
+		ImGuiManager::GetInstance()->End();
+
+		// DirectX描画後処理 (コマンド実行、フリップ、待機)
 		DirectXCommon::GetInstance()->PostDraw();
 	}
 
-	// 解放
-	delete object3d;
-	delete plane;
+	// 4. 終了処理
+	delete sceneManager;
 	TDEngine::Finalize();
 
 	return 0;

@@ -194,6 +194,24 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Image Include="assets\textures\uvChecker.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Game\FireworkParticle.h" />
+    <ClInclude Include="src\Game\EnemyDeathParticle.h" />
+    <ClInclude Include="src\Game\DeathEx.h" />
+    <ClInclude Include="src\Game\Beam.h" />
+    <ClInclude Include="src\Game\Punch.h" />
+    <ClInclude Include="src\Game\Needle.h" />
+    <ClInclude Include="src\Game\Rand.h" />
+    <ClInclude Include="src\Game\Skydome.h" />
+    <ClInclude Include="src\Game\ChainBomb.h" />
+    <ClInclude Include="src\Game\GameOverScene.h" />
+    <ClInclude Include="src\Game\ClearScene.h" />
+    <ClInclude Include="src\Game\Fade.h" />
+    <ClInclude Include="src\Game\BackGround.h" />
+    <ClInclude Include="src\Game\SceneManager.h" />
+    <ClInclude Include="src\Game\GameScene.h" />
+    <ClInclude Include="src\Game\Enemy.h" />
+    <ClInclude Include="src\Game\Player.h" />
+    <ClInclude Include="src\Game\Collision.h" />
     <ClInclude Include="src\engine\Audio\AudioManager.h" />
     <ClInclude Include="src\engine\base\TDEngine.h" />
     <ClInclude Include="src\engine\Debug\ImguiManager.h" />
@@ -233,9 +251,34 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\Graphics\TextureManager.h" />
     <ClInclude Include="src\engine\Graphics\SrvManager.h" />
     <ClInclude Include="src\engine\Graphics\WorldTransform.h" />
+    <ClInclude Include="src\Game\TitleLogo.h" />
+    <ClInclude Include="src\Game\TitleScene.h" />
+    <ClInclude Include="src\Game\TutorialScene.h" />
+    <ClInclude Include="src\Game\Wind.h" />
+    <ClInclude Include="src\Game\Thunder.h" />
+    <ClInclude Include="src\Game\TimeLimit.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Game\FireworkParticle.cpp" />
+    <ClCompile Include="src\Game\EnemyDeathParticle.cpp" />
+    <ClCompile Include="src\Game\DeathEx.cpp" />
+    <ClCompile Include="src\Game\Beam.cpp" />
+    <ClCompile Include="src\Game\Punch.cpp" />
+    <ClCompile Include="src\Game\Needle.cpp" />
+    <ClCompile Include="src\Game\Rand.cpp" />
+    <ClCompile Include="src\Game\Skydome.cpp" />
+    <ClCompile Include="src\Game\ChainBomb.cpp" />
+    <ClCompile Include="src\Game\GameOverScene.cpp" />
+    <ClCompile Include="src\Game\ClearScene.cpp" />
+    <ClCompile Include="src\Game\Fade.cpp" />
+    <ClCompile Include="src\Game\BackGround.cpp" />
+    <ClCompile Include="src\Game\SceneManager.cpp" />
+    <ClCompile Include="src\Game\GameScene.cpp" />
+    <ClCompile Include="src\Game\Enemy.cpp" />
+    <ClCompile Include="src\Game\Player.cpp" />
+    <ClCompile Include="src\Game\Collision.cpp" />
     <ClCompile Include="src\engine\Audio\AudioManager.cpp" />
+    <ClCompile Include="src\engine\base\Math\MyMath.cpp" />
     <ClCompile Include="src\engine\base\TDEngine.cpp" />
     <ClCompile Include="src\engine\Debug\ImguiManager.cpp" />
     <ClCompile Include="src\engine\Graphics\ParticleEmitter.cpp" />
@@ -294,6 +337,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\engine\Graphics\TextureManager.cpp" />
     <ClCompile Include="src\engine\Graphics\SrvManager.cpp" />
     <ClCompile Include="src\engine\Graphics\WorldTransform.cpp" />
+    <ClCompile Include="src\Game\TitleLogo.cpp" />
+    <ClCompile Include="src\Game\TitleScene.cpp" />
+    <ClCompile Include="src\Game\TutorialScene.cpp" />
+    <ClCompile Include="src\Game\Wind.cpp" />
+    <ClCompile Include="src\Game\Thunder.cpp" />
+    <ClCompile Include="src\Game\TimeLimit.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="external\imgui\LICENSE.txt" />

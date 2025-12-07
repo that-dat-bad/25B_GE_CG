@@ -28,6 +28,13 @@ public:
 		float intensity;
 	};
 
+	struct Material {
+		Vector4 color;
+		int32_t enableLighting;
+		float padding[3];
+		Matrix4x4 uvTransform;
+	};
+
 public:
 
 	// 初期化
@@ -44,7 +51,11 @@ public:
 	void SetModel(Model* model) { model_ = model; }
 	void SetModel(const std::string& filePath);
 	void SetCamera(Camera* camera) { camera_ = camera; }
-
+	void SetColor(const Vector4& color) {
+		if (materialData_) {
+			materialData_->color = color;
+		}
+	}
 	// ゲッター
 	Vector3 GetScale() const { return transform_.scale; }
 	Vector3 GetRotate() const { return transform_.rotate; }
@@ -67,4 +78,8 @@ private:
 	//--平行光源--//
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource_ = nullptr;
 	DirectionalLight* directionalLightData_ = nullptr;
+
+	//マテリアル(色)用リソース
+	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
+	Material* materialData_ = nullptr;
 };
