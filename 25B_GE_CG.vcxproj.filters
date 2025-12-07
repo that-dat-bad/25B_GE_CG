@@ -70,6 +70,7 @@
     <ClCompile Include="src\Game\FireworkParticle.cpp" />
     <ClCompile Include="src\Game\GameOverScene.cpp" />
     <ClCompile Include="src\Game\GameScene.cpp" />
+    <ClCompile Include="src\engine\Graphics\ObjectColor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\Audio\AudioManager.h" />
@@ -136,6 +137,7 @@
     <ClInclude Include="src\Game\FireworkParticle.h" />
     <ClInclude Include="src\Game\GameOverScene.h" />
     <ClInclude Include="src\Game\GameScene.h" />
+    <ClInclude Include="src\engine\Graphics\ObjectColor.h" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="assets\sounds\Alarm01.wav" />

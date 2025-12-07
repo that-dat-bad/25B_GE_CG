@@ -28,7 +28,7 @@ public:
 	/// <summary>
 	/// 初期化
 	/// </summary>
-	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position);
+	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position);
 
 	/// <summary>
 	/// 更新
@@ -41,7 +41,7 @@ public:
 	void Draw();
 
 	// ワールド座標の取得
-	TDEngine::Vector3 GetWorldPosition();
+	MyMath::Vector3 GetWorldPosition();
 	// AABBを取得
 	AABB GetAABB();
 	// 衝突応答
@@ -98,7 +98,7 @@ public:
 
 private:
 	// ワールド変換データ
-	TDEngine::WorldTransform worldTransform_;
+	WorldTransform worldTransform_;
 	// モデル
 	TDEngine::Model* model_ = nullptr;
 	// モデルの向き
@@ -115,13 +115,13 @@ private:
 	float alphaRange_ = 0.5f;
 
 	// ObjectColorはTDEngineにないので削除し、Vector4で管理
-	TDEngine::Vector4 color_;
+	MyMath::Vector4 color_;
 
 	// カメラ
 	TDEngine::Camera* camera_ = nullptr;
 
 	// 速度
-	TDEngine::Vector3 velocity_;
+	MyMath::Vector3 velocity_;
 
 	// キャラクターの当たり判定サイズ
 	static inline const float kWidth = 3.2f;
@@ -188,10 +188,10 @@ private:
 
 	float t = 0.0f;
 
-	TDEngine::Vector3 initPos_ = { 0.0f, 0.0f, 0.0f };
-	TDEngine::Vector3 enemyRotate_ = { 0.0f, 0.0f, 0.0f };
-	TDEngine::Vector3 enemySpeed_ = { 0.0f, 0.0f, 0.0f };
-	TDEngine::Vector3 enemySpeedDecay_ = { 0.0f, 0.0f, 0.0f };
+	MyMath::Vector3 initPos_ = { 0.0f, 0.0f, 0.0f };
+	MyMath::Vector3 enemyRotate_ = { 0.0f, 0.0f, 0.0f };
+	MyMath::Vector3 enemySpeed_ = { 0.0f, 0.0f, 0.0f };
+	MyMath::Vector3 enemySpeedDecay_ = { 0.0f, 0.0f, 0.0f };
 
 	static inline const float attackVelocity = 2.0f;
 	uint32_t attackParameter_ = 0;
@@ -207,7 +207,7 @@ private:
 
 	std::list<Needle*> needles_;
 	static const int kNeedleCount = 4;
-	std::vector<TDEngine::Vector3> needleRotates_ = {
+	std::vector<MyMath::Vector3> needleRotates_ = {
 		{0.0f, 0.0f, 0.0f	                        },
 		{0.0f, 0.0f, std::numbers::pi_v<float> / 4.2f},
 		{0.0f, 0.0f, std::numbers::pi_v<float> / 2.0f},
@@ -217,7 +217,7 @@ private:
 
 	std::list<Thunder*> thunders_;
 	static const int kThunderCount = 4;
-	std::vector<TDEngine::Vector3> thunderPositions_ = {
+	std::vector<MyMath::Vector3> thunderPositions_ = {
 		{-28.0f, 20.0f, 0.0f},
 		{-13.0f, 20.0f, 0.0f},
 		{3.0f,   20.0f, 0.0f},
@@ -227,7 +227,7 @@ private:
 
 	std::list<Punch*> punches_;
 	static const int kPunchCount = 2;
-	std::vector<TDEngine::Vector3> punchPositions_ = {
+	std::vector<MyMath::Vector3> punchPositions_ = {
 		{-10.0f, 0.0f, 0.0f},
 		{-20.0f, 0.0f, 0.0f}
 	};
@@ -235,7 +235,7 @@ private:
 
 	std::list<DeathEx*> deathExs_;
 	static const int kDeathExCount = 3;
-	std::vector<TDEngine::Vector3> deathExRotates_ = {
+	std::vector<MyMath::Vector3> deathExRotates_ = {
 		{0.0f, 0.0f, 0.0f	                        },
 		{0.0f, 0.0f, std::numbers::pi_v<float> / 4.2f},
 		{0.0f, 0.0f, std::numbers::pi_v<float> / 2.2f}
@@ -248,6 +248,6 @@ private:
 
 	float changeColorTimer_ = 0.0f;
 	float blinkSpeed_ = 0.2f;
-	TDEngine::Vector3 originalScale_ = { 2.0f, 2.0f, 2.0f };
-	TDEngine::Vector3 changeScale_ = { 3.0f, 3.0f, 3.0f };
+	MyMath::Vector3 originalScale_ = { 2.0f, 2.0f, 2.0f };
+	MyMath::Vector3 changeScale_ = { 3.0f, 3.0f, 3.0f };
 };

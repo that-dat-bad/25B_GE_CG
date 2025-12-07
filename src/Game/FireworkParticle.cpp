@@ -1,15 +1,13 @@
 #include "FireworkParticle.h"
 #include <algorithm>
 #include <cmath>
-
-using namespace TDEngine;
-using namespace MyMath;
+#include "WorldTransform.h" // 拡張子とパスを修正
 
 // --- ヘルパー関数 (TDEngineのWorldTransformにない機能) ---
 
 // Z軸回転行列の作成
-Matrix4x4 MakeRotateZ(float angle) {
-	Matrix4x4 m = Identity4x4();
+MyMath::Matrix4x4 MakeRotateZ(float angle) {
+	MyMath::Matrix4x4 m = MyMath::Identity4x4();
 	m.m[0][0] = std::cos(angle);
 	m.m[0][1] = std::sin(angle);
 	m.m[1][0] = -std::sin(angle);
@@ -18,7 +16,7 @@ Matrix4x4 MakeRotateZ(float angle) {
 }
 
 // ベクトルと行列の掛け算 (回転適用など)
-Vector3 TransformNormalVec3(const Vector3& v, const Matrix4x4& m) {
+MyMath::Vector3 TransformNormalVec3(const MyMath::Vector3& v, const MyMath::Matrix4x4& m) {
 	return {
 		v.x * m.m[0][0] + v.y * m.m[1][0] + v.z * m.m[2][0],
 		v.x * m.m[0][1] + v.y * m.m[1][1] + v.z * m.m[2][1],
@@ -27,13 +25,13 @@ Vector3 TransformNormalVec3(const Vector3& v, const Matrix4x4& m) {
 }
 
 // ベクトルの加算
-Vector3 AddVec3(const Vector3& a, const Vector3& b) {
+MyMath::Vector3 AddVec3(const MyMath::Vector3& a, const MyMath::Vector3& b) {
 	return { a.x + b.x, a.y + b.y, a.z + b.z };
 }
 
 // --------------------------------------------------------
 
-void FireworkParticle::Initialize(Model* model, Camera* camera, const Vector3& position) {
+void FireworkParticle::Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position) {
 	assert(model);
 	model_ = model;
 	camera_ = camera;
@@ -79,13 +77,13 @@ void FireworkParticle::Update() {
 		}
 
 		// 基本となる速度ベクトル
-		Vector3 velocity = { speed, 0.0f, 0.0f };
+		MyMath::Vector3 velocity = { speed, 0.0f, 0.0f };
 
 		// 回転角を計算する
 		float angle = kAngleUnit * i;
 
 		// Z軸回りの回転行列
-		Matrix4x4 matrixRotation = MakeRotateZ(angle);
+		MyMath::Matrix4x4 matrixRotation = MakeRotateZ(angle);
 
 		// 基本ベクトルを回転させて速度ベクトルを得る
 		velocity = TransformNormalVec3(velocity, matrixRotation);
@@ -98,7 +96,7 @@ void FireworkParticle::Update() {
 	}
 
 	// 行列更新
-	for (WorldTransform& worldTransform : worldTransforms_) {
+	for (auto& worldTransform : worldTransforms_) {
 		worldTransform.UpdateMatrix();
 	}
 }
@@ -113,7 +111,7 @@ void FireworkParticle::Draw() {
 	model_->SetAlpha(color_.w);
 
 	// 全パーティクルを描画
-	for (WorldTransform& worldTransform : worldTransforms_) {
+	for (auto& worldTransform : worldTransforms_) {
 		model_->Draw(worldTransform, *camera_);
 	}
 }

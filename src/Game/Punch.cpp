@@ -13,7 +13,6 @@ Vector3 EaseOutVec3(float t, const Vector3& start, const Vector3& end) {
 		start.z + (end.z - start.z) * t2
 	};
 }
-// EaseInVec3はNeedle.cppで定義したものと同じ（共通化推奨）
 extern Vector3 EaseInVec3(float t, const Vector3& start, const Vector3& end);
 
 
@@ -23,11 +22,11 @@ void Punch::Initialize(Model* model, Camera* camera, const Vector3& position, in
 	camera_ = camera;
 
 	worldTransform_.Initialize();
-	worldTransform_.translation = position;
+	worldTransform_.translation_ = position;
 
 	// 初期位置調整
-	worldTransform_.translation.x = 2.0f;
-	worldTransform_.translation.y = 2.0f;
+	worldTransform_.translation_.x = 2.0f;
+	worldTransform_.translation_.y = 2.0f;
 
 	isPunched = punched;
 	punchedPosition = { position.x - 8.0f, position.y, position.z };
@@ -49,10 +48,10 @@ void Punch::Update() {
 	}
 	else {
 		if (isPunched) {
-			worldTransform_.translation = EaseInVec3(t, worldTransform_.translation, punchedPosition);
+			worldTransform_.translation_ = EaseInVec3(t, worldTransform_.translation_, punchedPosition);
 		}
 		else {
-			worldTransform_.translation = EaseOutVec3(t, worldTransform_.translation, punchedPosition);
+			worldTransform_.translation_ = EaseOutVec3(t, worldTransform_.translation_, punchedPosition);
 		}
 	}
 
@@ -64,7 +63,7 @@ void Punch::Draw() {
 }
 
 Vector3 Punch::GetWorldPosition() {
-	return worldTransform_.translation;
+	return worldTransform_.translation_;
 }
 
 AABB Punch::GetAABB() {

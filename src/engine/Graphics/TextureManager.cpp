@@ -3,6 +3,7 @@
 #include <cassert>
 #include <filesystem> 
 #include "SrvManager.h"
+using namespace TDEngine;
 TextureManager* TextureManager::instance_ = nullptr;
 
 

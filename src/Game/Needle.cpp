@@ -19,12 +19,13 @@ Vector3 NormalizeVec3(const Vector3& v) {
 }
 
 
-void Needle::Initialize(Model* model, Camera* camera, const Vector3& position, const Vector3 rotate) {
+void Needle::Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const Vector3& position, const Vector3 rotate) {
 	assert(model);
 	model_ = model;
 	camera_ = camera;
 
-	worldTransform_.Initialize();
+	worldTransform_.
+		Initialize();
 	worldTransform_.translation = position;
 	worldTransform_.rotation = rotate;
 
@@ -36,7 +37,7 @@ void Needle::Initialize(Model* model, Camera* camera, const Vector3& position, c
 void Needle::Update() {
 	t += 0.01f;
 	// サイズをイージング (EaseIn関数を使用)
-	worldTransform_.scale = EaseInVec3(t, worldTransform_.scale, upScale_);
+	worldTransform_.scale_ = EaseInVec3(t, worldTransform_.scale_, upScale_);
 	worldTransform_.UpdateMatrix();
 }
 
@@ -52,7 +53,7 @@ OBB Needle::GetOBB() {
 	OBB obb;
 	obb.center = GetWorldPosition();
 
-	const Vector3& currentScale = worldTransform_.scale;
+	const Vector3& currentScale = worldTransform_.scale_;
 	obb.size.x = width * currentScale.x;
 	obb.size.y = height * currentScale.y;
 	obb.size.z = width * currentScale.z;

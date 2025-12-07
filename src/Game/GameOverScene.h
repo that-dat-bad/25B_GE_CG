@@ -44,7 +44,7 @@ private:
 	// 背景
 	BackGround* backGround_ = nullptr;
 	// 背景の位置
-	TDEngine::Vector3 pos = { 0.0f, 0.0f, 0.0f };
+	MyMath::Vector3 pos = { 0.0f, 0.0f, 0.0f };
 	// 背景のモデル
 	TDEngine::Model* modelBackground_ = nullptr;
 

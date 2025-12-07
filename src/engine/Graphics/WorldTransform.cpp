@@ -2,6 +2,7 @@
 #include "DirectXCommon.h"
 #include <cassert>
 
+using namespace TDEngine;
 using namespace MyMath;
 
 void WorldTransform::Initialize() {
@@ -9,30 +10,31 @@ void WorldTransform::Initialize() {
 	constBuff_ = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(ConstBufferDataWorldTransform));
 
 	// 定数バッファのマッピング
-	// ※一度マップしたら、Unmapせずに書き込み続ける方式（TDEngine仕様）
 	HRESULT hr = constBuff_->Map(0, nullptr, reinterpret_cast<void**>(&constMap));
 	assert(SUCCEEDED(hr));
 
-	// 初期値で行列更新・転送
-	scale = { 1.0f, 1.0f, 1.0f };
-	rotation = { 0.0f, 0.0f, 0.0f };
-	translation = { 0.0f, 0.0f, 0.0f };
-	matWorld = Identity4x4();
-	TransferMatrix();
+	// 初期値設定
+	scale_ = { 1.0f, 1.0f, 1.0f };
+	rotation_ = { 0.0f, 0.0f, 0.0f };
+	translation_ = { 0.0f, 0.0f, 0.0f };
+	matWorld_ = Identity4x4();
+
+	// 行列更新と転送
+	UpdateMatrix();
 }
 
 void WorldTransform::UpdateMatrix() {
 	// スケール、回転、平行移動行列の計算
-	Matrix4x4 matScale = MakeScaleMatrix(scale);
-	Matrix4x4 matRot = MakeRotateMatrix(rotation); // Euler角(XYZ)から回転行列を作成する関数を使用
-	Matrix4x4 matTrans = MakeTranslateMatrix(translation);
+	Matrix4x4 matScale = MakeScaleMatrix(scale_);
+	Matrix4x4 matRot = MakeRotateMatrix(rotation_);
+	Matrix4x4 matTrans = MakeTranslateMatrix(translation_);
 
 	// ワールド行列の合成
-	matWorld = Multiply(matScale, Multiply(matRot, matTrans));
+	matWorld_ = Multiply(matScale, Multiply(matRot, matTrans));
 
 	// 親があれば親の行列を掛ける
 	if (parent_) {
-		matWorld = Multiply(matWorld, parent_->matWorld);
+		matWorld_ = Multiply(matWorld_, parent_->matWorld_);
 	}
 
 	// GPUへの転送
@@ -41,6 +43,8 @@ void WorldTransform::UpdateMatrix() {
 
 void WorldTransform::TransferMatrix() {
 	if (constMap) {
-		constMap->matWorld = matWorld;
+		constMap->matWorld = matWorld_;
+		// WVPの計算は描画時(Model::Draw)にCameraと合わせて行い、上書きされる想定
+		// ここではとりあえず単位行列などを入れておいても良いが、matWorldだけ更新しておく
 	}
 }

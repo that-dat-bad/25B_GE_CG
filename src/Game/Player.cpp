@@ -20,8 +20,8 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& position) {
 	camera_ = camera;
 
 	worldTransform_.Initialize();
-	worldTransform_.scale = { 1.0f, 1.0f, 1.0f }; // scale_ -> scale
-	worldTransform_.translation = position; // translation_ -> translation
+	worldTransform_.scale_ = { 1.0f, 1.0f, 1.0f }; // scale_ -> scale
+	worldTransform_.translation_ = position; // translation_ -> translation
 
 	ApplyScaleFromHeight();
 
@@ -124,7 +124,7 @@ void Player::UpdateMove() {
 				lrDirection_ = LRDirection::kRight;
 
 				// 旋回開始時の角度を保存 (rotation_ -> rotation)
-				turnFirstRotationY_ = worldTransform_.rotation.y;
+				turnFirstRotationY_ = worldTransform_.rotation_.y;
 				// 旋回タイマーをセット
 				turnTimer_ = kTimeTurn;
 			}
@@ -146,7 +146,7 @@ void Player::UpdateMove() {
 				lrDirection_ = LRDirection::kLeft;
 
 				// 旋回開始時の角度を保存
-				turnFirstRotationY_ = worldTransform_.rotation.y;
+				turnFirstRotationY_ = worldTransform_.rotation_.y;
 				// 旋回タイマーをセット
 				turnTimer_ = kTimeTurn;
 			}
@@ -169,7 +169,7 @@ void Player::UpdateMove() {
 		// 状態に応じた角度を取得
 		float destinationRotationY = destinationRotationYTable[static_cast<uint32_t>(lrDirection_)];
 		// プレイヤーの角度を設定 (rotation_ -> rotation)
-		worldTransform_.rotation.y = std::lerp(turnFirstRotationY_, destinationRotationY, smoothTurnProgress);
+		worldTransform_.rotation_.y = std::lerp(turnFirstRotationY_, destinationRotationY, smoothTurnProgress);
 	}
 
 	if (GetInput()->PushKey(DIK_W) || GetInput()->PushKey(DIK_S)) {
@@ -259,12 +259,12 @@ void Player::UpdateAlive() {
 			respawnTimer_ = kRespawnTimeSelf;
 			// デスパーティクルの初期化 (translation_ -> translation)
 			deathParticle_ = new EnemyDeathParticle();
-			deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation);
+			deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation_);
 			// 爆発パーティクルを生成
 			for (int32_t i = 0; i < kFireParticleCount; ++i) {
 				FireworkParticle* fireworkParticle = new FireworkParticle();
 				// 爆発パーティクルの初期位置設定
-				Vector3 pos = worldTransform_.translation;
+				Vector3 pos = worldTransform_.translation_;
 				pos.x += static_cast<float>(rand_->GetRandom()) - 2.0f;
 				pos.y -= static_cast<float>(rand_->GetRandom()) - 2.0f;
 				pos.z -= 5.0f;
@@ -277,10 +277,10 @@ void Player::UpdateAlive() {
 	}
 
 	// 速度反映
-	worldTransform_.translation += velocity_;
+	worldTransform_.translation_ += velocity_;
 
 	// 画面内に収める
-	Vector3& pos = worldTransform_.translation;
+	Vector3& pos = worldTransform_.translation_;
 	const float radius = 1.0f;
 	pos.x = std::clamp(pos.x, kScreenLeft + radius, kScreenRight - radius);
 	pos.y = std::clamp(pos.y, kScreenBottom + radius, kScreenTop - radius);
@@ -294,9 +294,9 @@ void Player::UpdateAlive() {
 	float scale = kMinScale + t * (kMaxScale - kMinScale);
 
 	// 等方にスケーリング (scale_ -> scale)
-	worldTransform_.scale.x = scale;
-	worldTransform_.scale.y = scale;
-	worldTransform_.scale.z = scale;
+	worldTransform_.scale_.x = scale;
+	worldTransform_.scale_.y = scale;
+	worldTransform_.scale_.z = scale;
 
 	// 当たり判定用
 	size_ = 2.0f * scale;
@@ -335,8 +335,8 @@ void Player::UpdateRespawn() {
 	// EaseOut効果をつけたければ t にイージング関数をかける
 	float easedT = 1.0f - std::pow(1.0f - t, 3.0f); // EaseOutCubic的な計算
 
-	worldTransform_.translation.x = std::lerp(startPos_.x, endPos_.x, easedT);
-	worldTransform_.translation.y = std::lerp(startPos_.y, endPos_.y, easedT);
+	worldTransform_.translation_.x = std::lerp(startPos_.x, endPos_.x, easedT);
+	worldTransform_.translation_.y = std::lerp(startPos_.y, endPos_.y, easedT);
 
 	// 高さによって大きさが変わる
 	ApplyScaleFromHeight();
@@ -367,7 +367,7 @@ void Player::StartRespawn() {
 	endPos_ = { -27.0f, 0.0f, 0.0f };
 
 	// 開始位置を設定
-	worldTransform_.translation = startPos_;
+	worldTransform_.translation_ = startPos_;
 	velocity_ = { 0.0f, 0.0f, 0.0f };
 
 	// 高さによって大きさが変わる
@@ -389,7 +389,7 @@ void Player::UpdateInvincible() {
 
 // 高さによってプレイヤーのサイズが変化
 void Player::ApplyScaleFromHeight() {
-	Vector3& pos = worldTransform_.translation;
+	Vector3& pos = worldTransform_.translation_;
 
 	// 1. Yだけ画面内にクランプ（演出でも通常でも使える）
 	const float radius = 1.0f;
@@ -403,9 +403,9 @@ void Player::ApplyScaleFromHeight() {
 	float s = kMinScale + t * (kMaxScale - kMinScale);
 
 	// 4. 等方スケールに反映
-	worldTransform_.scale.x = s;
-	worldTransform_.scale.y = s;
-	worldTransform_.scale.z = s;
+	worldTransform_.scale_.x = s;
+	worldTransform_.scale_.y = s;
+	worldTransform_.scale_.z = s;
 
 	// 5. サイズと爆発威力も決定
 	size_ = 2.0f * s;
@@ -417,9 +417,9 @@ Vector3 Player::GetWorldPosition() {
 	Vector3 worldPos;
 	// ワールド行列の平行移動成分を取得
 	// matWorld_ -> matWorld
-	worldPos.x = worldTransform_.matWorld.m[3][0];
-	worldPos.y = worldTransform_.matWorld.m[3][1];
-	worldPos.z = worldTransform_.matWorld.m[3][2];
+	worldPos.x = worldTransform_.matWorld_.m[3][0];
+	worldPos.y = worldTransform_.matWorld_.m[3][1];
+	worldPos.z = worldTransform_.matWorld_.m[3][2];
 
 	return worldPos;
 }
@@ -452,12 +452,12 @@ void Player::OnCollision(const Enemy* enemy) {
 
 	// デスパーティクルの初期化
 	deathParticle_ = new EnemyDeathParticle();
-	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation);
+	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation_);
 	// 爆発パーティクルを生成
 	for (int32_t i = 0; i < kFireParticleCount; ++i) {
 		FireworkParticle* fireworkParticle = new FireworkParticle();
 		// 爆発パーティクルの初期位置設定
-		Vector3 pos = worldTransform_.translation;
+		Vector3 pos = worldTransform_.translation_;
 		pos.x += static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.y -= static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.z -= 5.0f;
@@ -485,12 +485,12 @@ void Player::OnCollision(const Beam* beam) {
 	state_ = State::kDead;
 	// デスパーティクルの初期化
 	deathParticle_ = new EnemyDeathParticle();
-	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation);
+	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation_);
 	// 爆発パーティクルを生成
 	for (int32_t i = 0; i < kFireParticleCount; ++i) {
 		FireworkParticle* fireworkParticle = new FireworkParticle();
 		// 爆発パーティクルの初期位置設定
-		Vector3 pos = worldTransform_.translation;
+		Vector3 pos = worldTransform_.translation_;
 		pos.x += static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.y -= static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.z -= 5.0f;
@@ -525,12 +525,12 @@ void Player::OnCollision(const Needle* needle) {
 	state_ = State::kDead;
 	// デスパーティクルの初期化
 	deathParticle_ = new EnemyDeathParticle();
-	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation);
+	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation_);
 	// 爆発パーティクルを生成
 	for (int32_t i = 0; i < kFireParticleCount; ++i) {
 		FireworkParticle* fireworkParticle = new FireworkParticle();
 		// 爆発パーティクルの初期位置設定
-		Vector3 pos = worldTransform_.translation;
+		Vector3 pos = worldTransform_.translation_;
 		pos.x += static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.y -= static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.z -= 5.0f;
@@ -557,12 +557,12 @@ void Player::OnCollision(const Punch* punch) {
 	state_ = State::kDead;
 	// デスパーティクルの初期化
 	deathParticle_ = new EnemyDeathParticle();
-	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation);
+	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation_);
 	// 爆発パーティクルを生成
 	for (int32_t i = 0; i < kFireParticleCount; ++i) {
 		FireworkParticle* fireworkParticle = new FireworkParticle();
 		// 爆発パーティクルの初期位置設定
-		Vector3 pos = worldTransform_.translation;
+		Vector3 pos = worldTransform_.translation_;
 		pos.x += static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.y -= static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.z -= 5.0f;
@@ -589,12 +589,12 @@ void Player::OnCollision(const Thunder* thunder) {
 	state_ = State::kDead;
 	// デスパーティクルの初期化
 	deathParticle_ = new EnemyDeathParticle();
-	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation);
+	deathParticle_->Initialize(modelParticle_, camera_, worldTransform_.translation_);
 	// 爆発パーティクルを生成
 	for (int32_t i = 0; i < kFireParticleCount; ++i) {
 		FireworkParticle* fireworkParticle = new FireworkParticle();
 		// 爆発パーティクルの初期位置設定
-		Vector3 pos = worldTransform_.translation;
+		Vector3 pos = worldTransform_.translation_;
 		pos.x += static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.y -= static_cast<float>(rand_->GetRandom()) - 2.0f;
 		pos.z -= 5.0f;

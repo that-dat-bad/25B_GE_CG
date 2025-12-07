@@ -11,7 +11,7 @@ void Wind::Initialize(Model* model, Camera* camera, const Vector3& position) {
 
 	worldTransform_.Initialize();
 	worldTransform_.translation = position; // translation_ -> translation
-	worldTransform_.scale = { 0.5f, 0.5f, 0.5f }; // scale_ -> scale
+	worldTransform_.scale_ = { 0.5f, 0.5f, 0.5f }; // scale_ -> scale
 
 	model_->SetAlpha(0.5f);
 

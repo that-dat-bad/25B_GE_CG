@@ -12,8 +12,8 @@ public:
 	void Initialize(HINSTANCE hInstance, HWND hwnd);
 	void Update();
 
-	bool pushKey(BYTE keyNumber);
-	bool triggerKey(BYTE keyNumber);
+	bool PushKey(BYTE keyNumber);
+	bool TriggerKey(BYTE keyNumber);
 
 private:
 	ComPtr<IDirectInput8> directInput_;

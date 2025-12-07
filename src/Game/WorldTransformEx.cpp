@@ -1,12 +1,12 @@
 #include <TDEngine.h>
-#include <3d\WorldTransform.h>
+#include <WorldTransform.h>
 #include <cassert>
 using namespace TDEngine;
 
-void WorldTransform::UpdateWorldMatrix(WorldTransform& worldTransform_)
+void TDEngine::WorldTransform::UpdateWorldMatrix(WorldTransform& worldTransform_)
 {
 	// アフィン変換行列の作成
-	worldTransform_.matWorld_ = worldTransform_.MakeAffineMatrix(worldTransform_.scale_, worldTransform_.rotation_, worldTransform_.translation_);
+	worldTransform_.matWorld_ = worldTransform_.MakeAffineMatrix(worldTransform_.scale__, worldTransform_.rotation_, worldTransform_.translation_);
 
 	// 行列を定数バッファに移動
 	worldTransform_.TransferMatrix();

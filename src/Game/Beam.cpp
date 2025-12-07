@@ -23,7 +23,7 @@ void Beam::Initialize(Model* model, Camera* camera, const Vector3& position) {
 }
 
 void Beam::Update() {
-	worldTransform_.scale = AddVec3(worldTransform_.scale, upScale_);
+	worldTransform_.scale_ = AddVec3(worldTransform_.scale_, upScale_);
 	worldTransform_.translation = AddVec3(worldTransform_.translation, beamVelocity_);
 
 	width += (upScale_.x * 1.6f);

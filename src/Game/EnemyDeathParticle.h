@@ -1,5 +1,6 @@
 #pragma once
 #include <TDEngine.h>
+#include "WorldTransform.h"
 
 class EnemyDeathParticle {
 public:
@@ -9,7 +10,7 @@ public:
 	/// <param name="model">モデル</param>
 	/// <param name="position">初期座標</param>
 
-	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position);
+	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position);
 
 	/// <summary>
 	/// 更新
@@ -31,7 +32,7 @@ private:
 	// モデルのアルファ値
 	float targetAlpha_ = 1.0f;
 	TDEngine::ObjectColor objectColor_;
-	TDEngine::Vector4 color_;
+	MyMath::Vector4 color_;
 	// アルファ値が上がり切ったかどうかのフラグ
 	bool isAlphaMax_ = false;
 	// カメラ

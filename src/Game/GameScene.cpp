@@ -51,23 +51,23 @@ void GameScene::Initialize() {
 
 	// 天球の生成
 	skydome_ = new Skydome();
-	modelSkydome_ = Model::CreateFromOBJ("skydome", true);
+	modelSkydome_ = TDEngine::Model::CreateFromOBJ("skydome", true);
 	skydome_->Initialize(modelSkydome_, &camera_);
 
 
 	// プレイヤー
 	player_ = new Player();
-	modelPlayer_ = Model::CreateFromOBJ("player", true);
+	modelPlayer_ = TDEngine::Model::CreateFromOBJ("player", true);
 	player_->Initialize(modelPlayer_, &camera_, playerPos_);
 
 	// 敵の生成
 	enemy_ = new Enemy();
-	modelEnemy_ = Model::CreateFromOBJ("enemy", true);
+	modelEnemy_ = TDEngine::Model::CreateFromOBJ("enemy", true);
 	enemy_->Initialize(modelEnemy_, &camera_, enemyPos_);
 	enemy_->SetPlayer(player_);
 
 	// 連鎖ボム
-	modelChainBomb_ = Model::CreateFromOBJ("bomb", true);
+	modelChainBomb_ = TDEngine::Model::CreateFromOBJ("bomb", true);
 	for (int32_t i = 0; i < 5; ++i) {
 		ChainBomb* chainBomb = new ChainBomb();
 		chainBombPos_ = { -5.0f + i * 5.0f, 0.0f + i * 1.3f, 0 };
@@ -80,7 +80,7 @@ void GameScene::Initialize() {
 
 	// 風の生成
 	wind_ = new Wind();
-	modelWind_ = Model::CreateFromOBJ("wind", true);
+	modelWind_ = TDEngine::Model::CreateFromOBJ("wind", true);
 	wind_->Initialize(modelWind_, &camera_, windPos_);
 
 	// 時間制限

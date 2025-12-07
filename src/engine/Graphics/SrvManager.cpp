@@ -1,6 +1,7 @@
 #include "SrvManager.h"
 #include<cassert>
 #include"DirectXCommon.h"
+using namespace TDEngine;
 const uint32_t SrvManager::kMaxSRVCount_ = 512;
 
 SrvManager* SrvManager::GetInstance() {

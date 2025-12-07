@@ -1,6 +1,6 @@
 #include "BackGround.h"
 
-void BackGround::Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position) {
+void BackGround::Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position) {
 	// nullポインタチェック
 	assert(model);
 

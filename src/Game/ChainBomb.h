@@ -1,8 +1,9 @@
 #pragma once
 #include "AABB.h"
 #include "EnemyDeathParticle.h"
-#include "TDEngine.h" // <TDEngine.h> -> "TDEngine.h"
-#include <vector>     // ★追加: std::vector用
+#include "TDEngine.h"
+#include <vector>
+#include"WorldTransform.h"
 
 class Player;
 class Enemy;
@@ -12,7 +13,7 @@ public:
 	/// <summary>
 	/// 初期化
 	/// </summary>
-	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position);
+	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position);
 	/// <summary>
 	/// 更新
 	/// </summary>
@@ -37,8 +38,8 @@ public:
 	// 敵とのAABB
 	AABB GetAABB(float size);
 
-	const TDEngine::WorldTransform& GetWorldTransform() const { return worldTransform_; }
-	TDEngine::Vector3 GetWorldPosition();
+	const TDEngine::WorldTransform& GetWorldTransform()	 { return worldTransform_; }
+	MyMath::Vector3 GetWorldPosition();
 
 	const bool IsExplode() const { return isExplode_; }
 	const bool IsDestroy() const { return isDestroy_; }
@@ -49,7 +50,7 @@ private:
 	// モデル
 	TDEngine::Model* model_ = nullptr;
 	// モデルサイズ
-	TDEngine::Vector3 size_ = { 2.0f, 2.0f, 2.0f };
+	MyMath::Vector3 size_ = { 2.0f, 2.0f, 2.0f };
 
 	// ワールド変換データ
 	TDEngine::WorldTransform worldTransform_;

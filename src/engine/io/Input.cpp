@@ -59,7 +59,7 @@ void Input::Update()
 
 }
 
-bool Input::pushKey(BYTE keyNumber)
+bool Input::PushKey(BYTE keyNumber)
 {
 	if (keys_[keyNumber])
 	{
@@ -68,7 +68,7 @@ bool Input::pushKey(BYTE keyNumber)
 	return false;
 }
 
-bool Input::triggerKey(BYTE keyNumber)
+bool Input::TriggerKey(BYTE keyNumber)
 {
 	if (!preKeys_[keyNumber]&&keys_[keyNumber])
 	{

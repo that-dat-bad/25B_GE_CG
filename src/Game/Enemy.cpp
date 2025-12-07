@@ -58,8 +58,8 @@ void Enemy::Initialize(Model* model, Camera* camera, const Vector3& position) {
 
 	// ワールドトランスフォームの初期化
 	worldTransform_.Initialize();
-	worldTransform_.translation = position; // translation_ -> translation
-	worldTransform_.scale = originalScale_; // scale_ -> scale
+	worldTransform_.translation_ = position; 
+	worldTransform_.scale_ = originalScale_; 
 
 	// ワールドトランスフォーム更新
 	worldTransform_.UpdateMatrix();
@@ -75,8 +75,8 @@ void Enemy::Initialize(Model* model, Camera* camera, const Vector3& position) {
 	behaviorRequest_ = Behavior::kStart;
 
 	// 初期位置調整（Initialize内）
-	worldTransform_.translation.x = 2.0f;
-	worldTransform_.translation.y = 2.0f;
+	worldTransform_.translation_.x = 2.0f;
+	worldTransform_.translation_.y = 2.0f;
 };
 
 // 更新関数
@@ -93,7 +93,7 @@ void Enemy::Update() {
 		// 状態に応じた角度を取得する
 		float destinationRotationY = destinationRotationYTable[static_cast<uint32_t>(direction_)];
 		// 自キャラの角度を設定する (rotation_ -> rotation)
-		worldTransform_.rotation.y = EaseInFloat(turnTimer_, worldTransform_.rotation.y, destinationRotationY);
+		worldTransform_.rotation_.y = EaseInFloat(turnTimer_, worldTransform_.rotation_.y, destinationRotationY);
 	}
 
 	if (isHit_) {
@@ -156,7 +156,7 @@ void Enemy::BehaviorBoundUpdate() {
 	case Enemy::AttackPhase::kReservoir:
 	default: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackReservoirTimer_) {
@@ -174,24 +174,24 @@ void Enemy::BehaviorBoundUpdate() {
 			}
 		}
 		else {
-			worldTransform_.translation = AddVec3(worldTransform_.translation, enemySpeed_);
+			worldTransform_.translation_ = AddVec3(worldTransform_.translation_, enemySpeed_);
 			worldTransform_.UpdateMatrix();
 			if (enemySpeed_.y <= -2.0f) {
 				if (attackAfterTimer_ >= 0.0f) {
 					attackAfterTimer_--;
-					worldTransform_.translation.y = -20.0f;
+					worldTransform_.translation_.y = -20.0f;
 				}
 				else {
-					if (player_->GetWorldTransform().translation.x >= worldTransform_.translation.x) {
+					if (player_->GetWorldTransform().translation_.x >= worldTransform_.translation_.x) {
 						enemySpeed_.x = 0.5f;
 						direction_ = Direction::kRight;
-						turnFirstRotationY = worldTransform_.rotation.y;
+						turnFirstRotationY = worldTransform_.rotation_.y;
 						turnTimer_ = kTimeTurn;
 					}
 					else {
 						enemySpeed_.x = -0.5f;
 						direction_ = Direction::kLeft;
-						turnFirstRotationY = worldTransform_.rotation.y;
+						turnFirstRotationY = worldTransform_.rotation_.y;
 						turnTimer_ = kTimeTurn;
 					}
 					enemySpeed_.y = 2.0f;
@@ -206,7 +206,7 @@ void Enemy::BehaviorBoundUpdate() {
 	} break;
 	case Enemy::AttackPhase::kLingering: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackLingeringTimer_) {
@@ -215,7 +215,7 @@ void Enemy::BehaviorBoundUpdate() {
 			behaviorRequest_ = Behavior::kRoot;
 			attackPhase_ = AttackPhase::kReservoir;
 			direction_ = Direction::kLeft;
-			turnFirstRotationY = worldTransform_.rotation.y;
+			turnFirstRotationY = worldTransform_.rotation_.y;
 			turnTimer_ = kTimeTurn;
 		}
 	} break;
@@ -241,7 +241,7 @@ void Enemy::BehaviorRoundUpdate() {
 	case Enemy::AttackPhase::kReservoir:
 	default: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackReservoirTimer_) {
@@ -269,19 +269,19 @@ void Enemy::BehaviorRoundUpdate() {
 				attackCount_++;
 				attackAfterTimer_ = 10.0f;
 				direction_ = Direction::kRight;
-				turnFirstRotationY = worldTransform_.rotation.y;
+				turnFirstRotationY = worldTransform_.rotation_.y;
 				turnTimer_ = kTimeTurn;
 			}
 			else {
 				enemySpeed_.y += enemySpeedDecay_.y;
 			}
-			worldTransform_.translation = AddVec3(worldTransform_.translation, enemySpeed_);
+			worldTransform_.translation_ = AddVec3(worldTransform_.translation_, enemySpeed_);
 			worldTransform_.UpdateMatrix();
 		}
 	} break;
 	case Enemy::AttackPhase::kLingering: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackLingeringTimer_) {
@@ -290,7 +290,7 @@ void Enemy::BehaviorRoundUpdate() {
 			behaviorRequest_ = Behavior::kRoot;
 			attackPhase_ = AttackPhase::kReservoir;
 			direction_ = Direction::kLeft;
-			turnFirstRotationY = worldTransform_.rotation.y;
+			turnFirstRotationY = worldTransform_.rotation_.y;
 			turnTimer_ = kTimeTurn;
 		}
 	} break;
@@ -314,14 +314,14 @@ void Enemy::BehaviorBeamUpdate() {
 	case Enemy::AttackPhase::kReservoir:
 	default: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackReservoirTimer_) {
 			attackPhase_ = AttackPhase::kAttack;
 			attackParameter_ = 0;
 			beam_ = new Beam();
-			beam_->Initialize(modelBeam_, camera_, worldTransform_.translation);
+			beam_->Initialize(modelBeam_, camera_, worldTransform_.translation_);
 		}
 	} break;
 	case Enemy::AttackPhase::kAttack: {
@@ -339,7 +339,7 @@ void Enemy::BehaviorBeamUpdate() {
 	} break;
 	case Enemy::AttackPhase::kLingering: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackLingeringTimer_) {
@@ -369,7 +369,7 @@ void Enemy::BehaviorApproachUpdate() {
 	case Enemy::AttackPhase::kReservoir:
 	default: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackReservoirTimer_) {
@@ -377,12 +377,12 @@ void Enemy::BehaviorApproachUpdate() {
 			enemySpeed_ = { 0.0f, 0.0f, -2.0f };
 			attackParameter_ = 0;
 			direction_ = Direction::kFront;
-			turnFirstRotationY = worldTransform_.rotation.y;
+			turnFirstRotationY = worldTransform_.rotation_.y;
 			turnTimer_ = kTimeTurn;
 		}
 	} break;
 	case Enemy::AttackPhase::kAttack: {
-		worldTransform_.translation = AddVec3(worldTransform_.translation, enemySpeed_);
+		worldTransform_.translation_ = AddVec3(worldTransform_.translation_, enemySpeed_);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackRushTimer_) {
@@ -395,7 +395,7 @@ void Enemy::BehaviorApproachUpdate() {
 	} break;
 	case Enemy::AttackPhase::kLingering: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackLingeringTimer_) {
@@ -404,7 +404,7 @@ void Enemy::BehaviorApproachUpdate() {
 			behaviorRequest_ = Behavior::kRoot;
 			attackPhase_ = AttackPhase::kReservoir;
 			direction_ = Direction::kLeft;
-			turnFirstRotationY = worldTransform_.rotation.y;
+			turnFirstRotationY = worldTransform_.rotation_.y;
 			turnTimer_ = kTimeTurn;
 		}
 	} break;
@@ -420,7 +420,7 @@ void Enemy::BehaviorNeedleInitialize() {
 	initPos_ = { 0.0f, 20.0f, 0.0f };
 	t = 0.0f;
 	direction_ = Direction::kFront;
-	turnFirstRotationY = worldTransform_.rotation.y;
+	turnFirstRotationY = worldTransform_.rotation_.y;
 	turnTimer_ = kTimeTurn;
 }
 
@@ -431,7 +431,7 @@ void Enemy::BehaviorNeedleUpdate() {
 	case Enemy::AttackPhase::kReservoir:
 	default: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackReservoirTimer_) {
@@ -439,7 +439,7 @@ void Enemy::BehaviorNeedleUpdate() {
 			attackParameter_ = 0;
 			for (int32_t i = 0; i < kNeedleCount; ++i) {
 				Needle* needle = new Needle();
-				needle->Initialize(modelNeedle_, camera_, worldTransform_.translation, needleRotates_[i]);
+				needle->Initialize(modelNeedle_, camera_, worldTransform_.translation_, needleRotates_[i]);
 				needles_.push_back(needle);
 			}
 		}
@@ -463,7 +463,7 @@ void Enemy::BehaviorNeedleUpdate() {
 	} break;
 	case Enemy::AttackPhase::kLingering: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackLingeringTimer_) {
@@ -472,7 +472,7 @@ void Enemy::BehaviorNeedleUpdate() {
 			behaviorRequest_ = Behavior::kRoot;
 			attackPhase_ = AttackPhase::kReservoir;
 			direction_ = Direction::kLeft;
-			turnFirstRotationY = worldTransform_.rotation.y;
+			turnFirstRotationY = worldTransform_.rotation_.y;
 			turnTimer_ = kTimeTurn;
 		}
 	} break;
@@ -496,7 +496,7 @@ void Enemy::BehaviorThunderUpdate() {
 	case Enemy::AttackPhase::kReservoir:
 	default: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackReservoirTimer_) {
@@ -529,7 +529,7 @@ void Enemy::BehaviorThunderUpdate() {
 	} break;
 	case Enemy::AttackPhase::kLingering: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackLingeringTimer_) {
@@ -559,7 +559,7 @@ void Enemy::BehaviorPunchUpdate() {
 	case Enemy::AttackPhase::kReservoir:
 	default: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackReservoirTimer_) {
@@ -570,7 +570,7 @@ void Enemy::BehaviorPunchUpdate() {
 
 			for (int32_t i = 0; i < kPunchCount; ++i) {
 				Punch* punch = new Punch();
-				punchPositions_[i] = worldTransform_.translation;
+				punchPositions_[i] = worldTransform_.translation_;
 				punchPositions_[i].x -= 5.0f * i;
 				punchPositions_[i].y += 1.0f - (2.0f * i);
 				punch->Initialize(modelPunch_, camera_, punchPositions_[i], i);
@@ -581,13 +581,13 @@ void Enemy::BehaviorPunchUpdate() {
 	case Enemy::AttackPhase::kAttack: {
 		t += 0.025f;
 		if (t >= 1.0f) {
-			initPos_.x = worldTransform_.translation.x - 2.0f;
+			initPos_.x = worldTransform_.translation_.x - 2.0f;
 			t = 0.0f;
 		}
 		else {
-			worldTransform_.translation = EaseInFloat(t, worldTransform_.translation.x, initPos_.x) == 0 ? worldTransform_.translation : LerpVec3(worldTransform_.translation, initPos_, t * t);
+			worldTransform_.translation_ = EaseInFloat(t, worldTransform_.translation_.x, initPos_.x) == 0 ? worldTransform_.translation_ : LerpVec3(worldTransform_.translation_, initPos_, t * t);
 			// 簡易的にLerpVec3を使用
-			worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t * t);
+			worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t * t);
 		}
 
 		for (Punch* punch : punches_) {
@@ -608,7 +608,7 @@ void Enemy::BehaviorPunchUpdate() {
 	} break;
 	case Enemy::AttackPhase::kLingering: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackLingeringTimer_) {
@@ -683,8 +683,8 @@ void Enemy::BehaviorDeathUpdate() {
 	case Enemy::AttackPhase::kReservoir:
 	default: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
-		worldTransform_.rotation = LerpRotate(worldTransform_.rotation, enemyRotate_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
+		worldTransform_.rotation_ = LerpRotate(worldTransform_.rotation_, enemyRotate_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackReservoirTimer_) {
@@ -695,7 +695,7 @@ void Enemy::BehaviorDeathUpdate() {
 	case Enemy::AttackPhase::kAttack: {
 		if (attackParameter_ % 25 == 1) {
 			DeathEx* deathEx = new DeathEx();
-			deathEx->Initialize(modelDeathEx_, camera_, worldTransform_.translation, deathExRotates_[attackParameter_ / 25]);
+			deathEx->Initialize(modelDeathEx_, camera_, worldTransform_.translation_, deathExRotates_[attackParameter_ / 25]);
 			deathExs_.push_back(deathEx);
 		}
 		for (DeathEx* deathEx : deathExs_) {
@@ -716,7 +716,7 @@ void Enemy::BehaviorDeathUpdate() {
 	case Enemy::AttackPhase::kLingering: {
 		if (attackParameter_ % 15 == 1) {
 			EnemyDeathParticle* deathParticle = new EnemyDeathParticle();
-			Vector3 pos = worldTransform_.translation;
+			Vector3 pos = worldTransform_.translation_;
 			pos.x += static_cast<float>(rand_->GetRandom()) - 4.0f;
 			pos.y -= static_cast<float>(rand_->GetRandom()) - 4.0f;
 			pos.z -= 5.0f;
@@ -758,16 +758,16 @@ void Enemy::BehaviorStartInitialize() {
 	initPos_ = { 20.0f, 0.0f, 0.0f };
 	t = 0.0f;
 	direction_ = Direction::kLeft;
-	turnFirstRotationY = worldTransform_.rotation.y;
+	turnFirstRotationY = worldTransform_.rotation_.y;
 	turnTimer_ = kTimeTurn;
 }
 
 void Enemy::BehaviorStartUpdate() {
 	t += 0.01f;
-	worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+	worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 	worldTransform_.UpdateMatrix();
 
-	if (worldTransform_.translation.y <= initPos_.y) {
+	if (worldTransform_.translation_.y <= initPos_.y) {
 		behaviorRequest_ = Behavior::kRoot;
 		attackPhase_ = AttackPhase::kReservoir;
 		if (isUnknown_) {
@@ -786,7 +786,7 @@ void Enemy::BehaviorChangeUpdate() {
 	case Enemy::AttackPhase::kReservoir:
 	default: {
 		t += 0.01f;
-		worldTransform_.translation = LerpVec3(worldTransform_.translation, initPos_, t);
+		worldTransform_.translation_ = LerpVec3(worldTransform_.translation_, initPos_, t);
 		worldTransform_.UpdateMatrix();
 
 		if (attackParameter_ >= attackReservoirTimer_) {
@@ -797,10 +797,10 @@ void Enemy::BehaviorChangeUpdate() {
 	} break;
 	case Enemy::AttackPhase::kAttack: {
 		float rotate = attackParameter_ / attackRushTimer_;
-		worldTransform_.rotation.y = EaseInFloat(rotate, 2.0f, std::numbers::pi_v<float> *2.0f);
+		worldTransform_.rotation_.y = EaseInFloat(rotate, 2.0f, std::numbers::pi_v<float> *2.0f);
 
 		t += 0.02f;
-		worldTransform_.scale = LerpVec3(worldTransform_.scale, changeScale_, t);
+		worldTransform_.scale_ = LerpVec3(worldTransform_.scale_, changeScale_, t);
 
 		float time = attackParameter_ * changeColorTimer_;
 		color_.x = (std::sin(time + 0.0f) * 0.5f) + 0.5f;
@@ -816,7 +816,7 @@ void Enemy::BehaviorChangeUpdate() {
 			attackPhase_ = AttackPhase::kLingering;
 			attackParameter_ = 0;
 			t = 0.0f;
-			worldTransform_.rotation = { 0.0f, 0.0f, 0.0f };
+			worldTransform_.rotation_ = { 0.0f, 0.0f, 0.0f };
 			color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
 			// objectColor_.SetColor(color_); // 削除
 		}
@@ -864,8 +864,8 @@ void Enemy::Draw() {
 	}
 }
 
-TDEngine::Vector3 Enemy::GetWorldPosition() {
-	return worldTransform_.translation;
+MyMath::Vector3 Enemy::GetWorldPosition() {
+	return worldTransform_.translation_;
 }
 
 AABB Enemy::GetAABB() {

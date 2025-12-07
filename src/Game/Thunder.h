@@ -1,14 +1,15 @@
 #pragma once
 #include "AABB.h"
 #include "TDEngine.h"
+#include"WorldTransform.h"
 
 class Thunder {
 public:
-	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position);
+	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position);
 	void Update();
 	void Draw();
 
-	TDEngine::Vector3 GetWorldPosition();
+	MyMath::Vector3 GetWorldPosition();
 	AABB GetAABB();
 	bool IsCollisionDisabled() const { return isCollisionDisabled_; }
 
@@ -16,9 +17,7 @@ private:
 	TDEngine::WorldTransform worldTransform_;
 	TDEngine::Model* model_ = nullptr;
 
-	float targetAlpha_ = 1.0f;
-	// ObjectColorは削除し、Vector4で管理
-	TDEngine::Vector4 color_;
+	MyMath::Vector4 color_;
 
 	bool isAlphaMax_ = false;
 	bool isCollisionDisabled_ = false;

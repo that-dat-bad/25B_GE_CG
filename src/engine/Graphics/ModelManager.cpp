@@ -2,6 +2,9 @@
 #include "ModelCommon.h"
 #include "DirectXCommon.h"
 #include <filesystem>
+
+using namespace TDEngine;
+
 ModelManager* ModelManager::instance_ = nullptr;
 
 ModelManager* ModelManager::GetInstance()

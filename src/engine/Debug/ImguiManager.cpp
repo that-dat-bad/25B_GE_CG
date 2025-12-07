@@ -1,5 +1,6 @@
 #include "ImGuiManager.h"
 #include "../Graphics/SrvManager.h" 
+using namespace TDEngine;
 
 void ImGuiManager::Initialize([[maybe_unused]]WinApp* winApp, [[maybe_unused]] DirectXCommon* dxCommon, [[maybe_unused]] SrvManager* srvManager) {
 #ifdef USE_IMGUI

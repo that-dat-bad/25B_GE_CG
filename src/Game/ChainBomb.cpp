@@ -4,7 +4,7 @@
 
 using namespace TDEngine;
 
-void ChainBomb::Initialize(Model* model, Camera* camera, const Vector3& position) {
+void ChainBomb::Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position) {
 	assert(model);
 	assert(camera);
 
@@ -12,15 +12,15 @@ void ChainBomb::Initialize(Model* model, Camera* camera, const Vector3& position
 	camera_ = camera;
 
 	worldTransform_.Initialize();
-	worldTransform_.translation = position; // translation_ -> translation
+	worldTransform_.translation = position;
 
 	// ワールドトランスフォーム更新
-	worldTransform_.UpdateMatrix(); // UpdateWorldMatrix -> UpdateMatrix
+	worldTransform_.UpdateMatrix();
 
 	explodeTimer_ = kExplodeFrame;
 
 	// デスパーティクルのモデル
-	modelParticle_ = Model::CreateFromOBJ("bombParticle", true);
+	modelParticle_ = TDEngine::Model::CreateFromOBJ("bombParticle", true);
 }
 
 void ChainBomb::Update() {

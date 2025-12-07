@@ -1,5 +1,5 @@
 #pragma once
-class DirectXCommon;
+#include "DirectXCommon.h"
 namespace TDEngine {
 class ModelCommon
 {

@@ -3,7 +3,8 @@
 #include "EnemyDeathParticle.h"
 #include "FireworkParticle.h"
 #include "Rand.h"
-#include "TDEngine.h" // TDEngine統合ヘッダー
+#include "TDEngine.h"
+#include "WorldTransform.h"
 
 class Enemy;
 class Wind;
@@ -17,7 +18,7 @@ public:
 	/// <summary>
 	/// 初期化
 	/// </summary>
-	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position);
+	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position);
 	/// <summary>
 	/// 更新
 	/// </summary>
@@ -36,7 +37,7 @@ public:
 	void OnCollision(const Thunder* thunder);
 
 	const TDEngine::WorldTransform& GetWorldTransform() const { return worldTransform_; }
-	TDEngine::Vector3 GetWorldPosition();
+	MyMath::Vector3 GetWorldPosition();
 	/// <summary>
 	/// 当たり判定
 	/// </summary>
@@ -60,15 +61,15 @@ public:
 	/// <returns></returns>
 	float GetExplosivePower() { return explosivePower_; }
 
-	TDEngine::Vector3 GetVelocity() const { return velocity_; }
+	MyMath::Vector3 GetVelocity() const { return velocity_; }
 
-	void SetPosition(const TDEngine::Vector3& position) { worldTransform_.translation = position; }
+	void SetPosition(const MyMath::Vector3& position) { worldTransform_.translation_ = position; }
 
 	bool IsBlow() const { return isBlow_; }
 	void SetIsBlow(bool isBlow) { isBlow_ = isBlow; }
 
 	// プレイヤーの大きさを取得
-	TDEngine::Vector3 GetScale() const { return worldTransform_.scale; }
+	MyMath::Vector3 GetScale() const { return worldTransform_.scale_; }
 
 	bool IsRespawning() const { return state_ == State::kRespawn; }
 	bool IsInvincible() const { return state_ == State::kInvincible; }
@@ -132,9 +133,9 @@ private:
 	float respawnTimer_ = 0.0f;
 
 	// リスポーンスタート地点
-	TDEngine::Vector3 startPos_ = { 0.0f, 0.0f, 0.0f };
+	MyMath::Vector3 startPos_ = { 0.0f, 0.0f, 0.0f };
 	// リスポーン終了地点
-	TDEngine::Vector3 endPos_ = { 0.0f, 0.0f, 0.0f };
+	MyMath::Vector3 endPos_ = { 0.0f, 0.0f, 0.0f };
 
 	//無敵時間
 	float invincibleTimer_ = 0.0f;
@@ -150,9 +151,9 @@ private:
 	// 最大速度
 	static inline const float kMaxSpeed = 0.3f;
 	// 速度
-	TDEngine::Vector3 velocity_ = {};
+	MyMath::Vector3 velocity_ = {};
 	// 加速度
-	TDEngine::Vector3 acceleration_ = { 0, 0, 0 };
+	MyMath::Vector3 acceleration_ = { 0, 0, 0 };
 	// 加速度定数
 	static inline const float kAcceleration = 0.01f;
 	//無敵時は減速

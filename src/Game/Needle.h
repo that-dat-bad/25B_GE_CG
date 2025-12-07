@@ -1,16 +1,17 @@
 #pragma once
-#include "OBB.h" // 必要ならTDEngine.hに統合してもOK
+#include "OBB.h"
 #include "TDEngine.h"
+#include"WorldTransform.h"
 
 class Needle {
 public:
-	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position, const TDEngine::Vector3 rotate);
+	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position, const MyMath::Vector3 rotate);
 	void Update();
 	void Draw();
 
-	TDEngine::Vector3 GetWorldPosition();
+	MyMath::Vector3 GetWorldPosition();
 	OBB GetOBB();
-	TDEngine::WorldTransform& GetWorldTransform() { return worldTransform_; }
+	WorldTransform& GetWorldTransform() { return worldTransform_; }
 
 private:
 	TDEngine::WorldTransform worldTransform_;
@@ -20,6 +21,6 @@ private:
 	float width = 1.6f;
 	float height = 1.6f;
 
-	TDEngine::Vector3 upScale_ = { 60.0f, 1.0f, 1.0f };
+	MyMath::Vector3 upScale_ = { 60.0f, 1.0f, 1.0f };
 	float t = 0.0f;
 };

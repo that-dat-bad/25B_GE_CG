@@ -55,18 +55,18 @@ private:
 	bool isFinished_ = false;
 
 	// カメラ (KamataEngine::Camera -> Camera)
-	Camera camera_;
+	TDEngine::Camera camera_;
 
 	// 背景
 	BackGround* backGround_ = nullptr;
 	// 背景の位置 (KamataEngine::Vector3 -> Vector3)
 	Vector3 pos = { 0.0f, 0.0f, 0.0f };
 	// 背景のモデル (KamataEngine::Model -> Model)
-	Model* modelBackground_ = nullptr;
+	TDEngine::Model* modelBackground_ = nullptr;
 	// タイトルロゴ
 	TitleLogo* logo_ = nullptr;
 	// タイトルロゴのモデル
-	Model* modelLogo_ = nullptr;
+	TDEngine::Model* modelLogo_ = nullptr;
 
 private:
 	// フェードインの更新

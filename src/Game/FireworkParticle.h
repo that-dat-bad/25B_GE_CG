@@ -2,12 +2,13 @@
 #include "TDEngine.h"
 #include <array>
 #include <numbers>
+#include "WorldTransform.h" 
 
 class FireworkParticle {
 private:
 	// ワールド変換データ
 	// (std::arrayで個数分持つ)
-	std::array<TDEngine::WorldTransform, 16> worldTransforms_; // kNumParticles = 16
+	std::array<TDEngine::WorldTransform, 16> worldTransforms_;
 
 	// モデル
 	TDEngine::Model* model_ = nullptr;
@@ -34,10 +35,10 @@ private:
 	float counter_ = 0.0f;
 
 	// 色の数値 (ObjectColorは廃止し、Vector4で管理)
-	TDEngine::Vector4 color_;
+	MyMath::Vector4 color_;
 
 public:
-	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position);
+	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position);
 	void Update();
 	void Draw();
 	bool IsFinished() { return isFinished_; }

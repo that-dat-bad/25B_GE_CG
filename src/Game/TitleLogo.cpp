@@ -4,7 +4,7 @@
 using namespace TDEngine;
 
 void TitleLogo::Initialize(
-    TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position) {
+    TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position) {
 	// nullポインタチェック
 	assert(model);
 

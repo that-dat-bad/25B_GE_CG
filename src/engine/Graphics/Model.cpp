@@ -1,109 +1,89 @@
 #include "Model.h"
-#include"ModelCommon.h"
-#include"DirectXCommon.h"
-#include"TextureManager.h"
-#include"ModelManager.h"
-#include<cassert>
-#include<map>
-#include<fstream>
-#include<sstream>
-#include <filesystem>
-#include <TDEngine.h>
+#include "ModelCommon.h"
+#include "DirectXCommon.h"
+#include "TextureManager.h"
+#include "ModelManager.h" 
+#include "WorldTransform.h"
+#include "Camera.h"
+#include "ObjectColor.h" // 追加: ObjectColorを使用
+#include "TDEngine.h"    // GetObject3dCommonを使用
+
+#include <cassert>
+#include <fstream>
+#include <sstream>
+#include <filesystem> 
+
 using namespace TDEngine;
+using namespace MyMath;
 
-void TDEngine::Model::LoadFromOBJ(const std::string& modelName) {
+// 静的関数: モデル生成 (ModelManager経由)
+Model* Model::CreateFromOBJ(const std::string& modelName, bool smoothing) {
+	// smoothing引数は現状未使用ですが、互換性のため残します
+	(void)smoothing;
 
+	// マネージャ経由でロード
 	ModelManager::GetInstance()->LoadModel(modelName);
-}
 
-TDEngine::Model* TDEngine::Model::CreateFromOBJ(const std::string& modelName, bool smoothing) {
-	//マネージャ経由で読み込む
-	ModelManager::GetInstance()->LoadModel(modelName);
-
-	//読み込んだモデルのポインタを返す
+	// ロードされたモデルのポインタを返す
 	return ModelManager::GetInstance()->FindModel(modelName);
 }
 
+// 静的関数: ロードのみ
+void Model::LoadFromOBJ(const std::string& modelName) {
+	ModelManager::GetInstance()->LoadModel(modelName);
+}
 
-void TDEngine::Model::Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename)
-{
-
+// 初期化
+void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename) {
 	modelCommon_ = modelCommon;
-	DirectXCommon* dxCommon = modelCommon_->GetDirectXCommon();
 
-	// 1. モデル読み込み
+	// OBJファイルの読み込み
 	modelData_ = LoadObjFile(directorypath, filename);
 
-	// 2. 頂点データの初期化 (GPUリソース作成)
+	// 頂点バッファ生成
+	vertexBuffer_ = modelCommon_->GetDirectXCommon()->CreateBufferResource(sizeof(VertexData) * modelData_.vertices.size());
 
-	// バッファリソース作成 (サイズは読み込んだ頂点数に合わせる)
-	vertexBuffer_ = dxCommon->CreateBufferResource(sizeof(VertexData) * modelData_.vertices.size());
-
-	// VertexBufferViewの作成
+	// 頂点バッファビュー作成
 	vertexBufferView_.BufferLocation = vertexBuffer_->GetGPUVirtualAddress();
 	vertexBufferView_.SizeInBytes = UINT(sizeof(VertexData) * modelData_.vertices.size());
 	vertexBufferView_.StrideInBytes = sizeof(VertexData);
 
-	// データの書き込み
-	vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
-	std::memcpy(vertexData_, modelData_.vertices.data(), sizeof(VertexData) * modelData_.vertices.size());
+	// 頂点データ書き込み
+	VertexData* vertexData = nullptr;
+	vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	std::memcpy(vertexData, modelData_.vertices.data(), sizeof(VertexData) * modelData_.vertices.size());
 	vertexBuffer_->Unmap(0, nullptr);
 
-	// 3. マテリアルの初期化
+	// マテリアル用定数バッファ生成
+	materialResource_ = modelCommon_->GetDirectXCommon()->CreateBufferResource(sizeof(Material));
 
-	materialResource_ = dxCommon->CreateBufferResource(sizeof(Material));
+	// マテリアルデータ初期化・書き込み
 	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
-
-	materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	materialData_->enableLighting = false;
-	materialData_->shininess = 50.0f;
+	materialData_->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	materialData_->enableLighting = 1; // 1:有効 0:無効
+	materialData_->shininess = 1.0f;
 	materialData_->uvTransform = Identity4x4();
-
-	// 6. テクスチャ読み込み
-
-	if (!modelData_.material.textureFilePath.empty()) {
-		TextureManager::GetInstance()->LoadTexture(modelData_.material.textureFilePath);
-		modelData_.material.textureIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath(modelData_.material.textureFilePath);
-	} else {
-		modelData_.material.textureIndex = 0;
-	}
-
 }
 
-void TDEngine::Model::Draw() {
-
-	// コマンドリストの取得
-	ID3D12GraphicsCommandList* commandList = modelCommon_->GetDirectXCommon()->GetCommandList();
-
-	// 頂点バッファの設定
-	commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
-
-	// マテリアルCBufferの設定 (RootParameter Index: 0)
-	commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
-
-
-	// テクスチャ (DescriptorTable) の設定 (RootParameter Index: 2)
-	if (modelData_.material.textureIndex != 0) {
-		D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle = TextureManager::GetInstance()->GetSrvHandleGPU(modelData_.material.textureIndex);
-		commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandle);
-	}
-
-	// 描画コマンド発行
-	commandList->DrawInstanced(UINT(modelData_.vertices.size()), 1, 0, 0);
-
+// 描画 (引数なし版)
+void Model::Draw() {
+	// 基本的には引数あり版を使う想定ですが、安全のため空実装かデフォルト動作を記述
+	// ここでは何もしないか、あるいはデフォルトのカメラ等があればそれを使って描画
 }
 
-void TDEngine::Model::Draw(const WorldTransform& worldTransform, const Camera& camera) {
-	// 1. WVP行列を計算して、WorldTransformの定数バッファに書き込む
-	// (WorldTransformは matWorld しか更新していないので、ここで合成する)
+// ★修正: ObjectColor対応のDraw
+void Model::Draw(const WorldTransform& worldTransform, const Camera& camera, const ObjectColor* objectColor) {
+
+	// 1. WVP行列の計算と転送 (WorldTransform側のバッファ更新)
+	// ※ WorldTransformクラスの仕様に合わせて、ここで計算して書き込む
 	if (worldTransform.constMap) {
-		Matrix4x4 worldViewProjection = Multiply(worldTransform.matWorld, camera.GetViewProjectionMatrix());
+		Matrix4x4 worldViewProjection = Multiply(worldTransform.matWorld_, camera.GetViewProjectionMatrix());
 		worldTransform.constMap->WVP = worldViewProjection;
-		worldTransform.constMap->World = worldTransform.matWorld;
+		worldTransform.constMap->matWorld = worldTransform.matWorld_;
 	}
 
-	// 2. 共通設定のセット (これを忘れると描画されない)
-	// TDEngine::ModelはObject3dCommonの設定を借りることにする
+	// 2. 共通設定 (パイプラインステートなど)
+	// Object3dCommonの設定を流用
 	TDEngine::GetObject3dCommon()->SetupCommonState();
 
 	ID3D12GraphicsCommandList* commandList = modelCommon_->GetDirectXCommon()->GetCommandList();
@@ -111,150 +91,136 @@ void TDEngine::Model::Draw(const WorldTransform& worldTransform, const Camera& c
 	// 3. 頂点バッファセット
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 
-	// 4. 定数バッファセット (WorldTransformが持っているバッファを使う！)
-	// RootParameter[1] が Transform用と想定
+	// 4. マテリアル(色)用の定数バッファセット (RootParameter[0])
+	if (objectColor) {
+		// ObjectColorが指定された場合、そのGPUアドレスを使用
+		commandList->SetGraphicsRootConstantBufferView(0, objectColor->GetGPUVirtualAddress());
+	}
+	else {
+		// 指定なしの場合、モデルが持つデフォルトのマテリアルバッファを使用
+		commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
+	}
+
+	// 5. Transform用の定数バッファセット (RootParameter[1])
 	commandList->SetGraphicsRootConstantBufferView(1, worldTransform.constBuff_->GetGPUVirtualAddress());
 
-	// 5. テクスチャセット
+	// 6. テクスチャセット (RootParameter[2])
 	if (modelData_.material.textureIndex != 0) {
 		D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle = TextureManager::GetInstance()->GetSrvHandleGPU(modelData_.material.textureIndex);
 		commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandle);
 	}
 
-	// 6. 描画
+	// 7. 描画コマンド発行
 	commandList->DrawInstanced(UINT(modelData_.vertices.size()), 1, 0, 0);
 }
 
-TDEngine::Model::MaterialData TDEngine::Model::LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename)
-{
-	MaterialData materialData; // 返却用
-	materialData.textureIndex = 0; // 初期化
-
-	std::map<std::string, std::string> materials; // 名前管理用
-	std::string currentMaterialName;
-	std::string line;
-	std::ifstream file(directoryPath + "/" + filename);
-	assert(file.is_open());
-
-	while (std::getline(file, line)) {
-		std::istringstream s(line);
-		std::string identifier;
-		s >> identifier;
-
-		if (identifier == "newmtl") {
-			s >> currentMaterialName;
-		} else if (identifier == "map_Kd") {
-			std::string textureFileName;
-			s >> textureFileName;
-			// テクスチャパスを保存
-			materialData.textureFilePath = directoryPath + "/" + textureFileName;
-		}
+// 透明度設定 (デフォルトマテリアル用)
+void Model::SetAlpha(float alpha) {
+	if (materialData_) {
+		materialData_->color.w = alpha;
 	}
-	return materialData;
 }
 
-TDEngine::Model::ModelData TDEngine::Model::LoadObjFile(const std::string& directoryPath, const std::string& filename)
-{
-	ModelData modelData; // 返却用
+// OBJファイル読み込み
+Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std::string& filename) {
+	ModelData modelData;
 	std::vector<Vector4> positions;
 	std::vector<Vector3> normals;
 	std::vector<Vector2> texcoords;
 	std::string line;
 
-	// ★修正: std::filesystem を使ってパスを綺麗に結合する
-	// これで "assets" + "/" + "models\\axis.obj" みたいな変なパスになるのを防ぎます
-	std::filesystem::path dir(directoryPath);
-	std::filesystem::path file(filename);
-	std::string fullPath = (dir / file).string();
+	std::ifstream file(directoryPath + "/" + filename);
+	assert(file.is_open());
 
-	// ファイルを開く (変数名を objFile に変更して衝突回避)
-	std::ifstream objFile(fullPath);
-	assert(objFile.is_open());
-
-	// .mtlファイルを読み込むための基準ディレクトリを計算
-	std::string baseDirectory;
-	size_t pos = fullPath.find_last_of('/');
-	if (pos == std::string::npos) {
-		pos = fullPath.find_last_of('\\'); // Windowsの区切り文字(\)も考慮
-	}
-
-	if (pos != std::string::npos) {
-		baseDirectory = fullPath.substr(0, pos);
-	}
-	else {
-		baseDirectory = "";
-	}
-
-	// 行ごとの読み込み
-	while (std::getline(objFile, line)) {
+	while (std::getline(file, line)) {
 		std::string identifier;
 		std::istringstream s(line);
 		s >> identifier;
 
 		if (identifier == "v") {
-			// 頂点位置
 			Vector4 position;
 			s >> position.x >> position.y >> position.z;
 			position.w = 1.0f;
-			position.x *= -1.0f; // 右手系(Blender等) -> 左手系(DirectX)への変換
+			// 座標系の変換 (RH -> LH) 必要に応じてXを反転など
+			position.x *= -1.0f;
 			positions.push_back(position);
 		}
 		else if (identifier == "vt") {
-			// テクスチャ座標
 			Vector2 texcoord;
 			s >> texcoord.x >> texcoord.y;
-			texcoord.y = 1.0f - texcoord.y; // V方向反転
+			texcoord.y = 1.0f - texcoord.y; // Y反転
 			texcoords.push_back(texcoord);
 		}
 		else if (identifier == "vn") {
-			// 法線ベクトル
 			Vector3 normal;
 			s >> normal.x >> normal.y >> normal.z;
-			normal.x *= -1.0f; // 右手系 -> 左手系
+			normal.x *= -1.0f; // 座標系合わせ
 			normals.push_back(normal);
 		}
 		else if (identifier == "f") {
-			// 面情報
 			VertexData triangle[3];
 			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
 				std::string vertexDefinition;
 				s >> vertexDefinition;
 
 				std::istringstream v(vertexDefinition);
-				std::string indexStr;
-				int indices[3] = { 0, 0, 0 }; // 位置, UV, 法線
-				int i = 0;
+				std::string index;
 
-				// スラッシュ区切りでインデックスを読む (例: 1/1/1)
-				while (std::getline(v, indexStr, '/')) {
-					if (!indexStr.empty()) {
-						indices[i] = std::stoi(indexStr);
-					}
-					i++;
+				// 位置
+				std::getline(v, index, '/');
+				triangle[faceVertex].position = positions[std::stoi(index) - 1];
+
+				// UV
+				std::getline(v, index, '/');
+				if (!index.empty()) {
+					triangle[faceVertex].texcoord = texcoords[std::stoi(index) - 1];
 				}
 
-				// インデックスを使って頂点を構築 (OBJは1始まりなので -1 する)
-				triangle[faceVertex].position = positions[indices[0] - 1];
-
-				if (indices[1] != 0) triangle[faceVertex].texcoord = texcoords[indices[1] - 1];
-				else triangle[faceVertex].texcoord = { 0.0f, 0.0f };
-
-				if (indices[2] != 0) triangle[faceVertex].normal = normals[indices[2] - 1];
-				else triangle[faceVertex].normal = { 0.0f, 0.0f, 1.0f };
+				// 法線
+				std::getline(v, index, '/');
+				if (!index.empty()) {
+					triangle[faceVertex].normal = normals[std::stoi(index) - 1];
+				}
 			}
-
-			// 頂点を逆順で登録 (0, 2, 1) することでカリング対策
-			modelData.vertices.push_back(triangle[0]);
+			// 頂点法線の反転等の処理が必要ならここで行う
+			// 三角形を追加
 			modelData.vertices.push_back(triangle[2]);
 			modelData.vertices.push_back(triangle[1]);
+			modelData.vertices.push_back(triangle[0]);
 		}
 		else if (identifier == "mtllib") {
-			// マテリアルファイル読み込み
-			std::string materialFileName;
-			s >> materialFileName;
-			modelData.material = LoadMaterialTemplate(baseDirectory, materialFileName);
+			std::string materialFilename;
+			s >> materialFilename;
+			modelData.material = LoadMaterialTemplate(directoryPath, materialFilename);
 		}
 	}
-
 	return modelData;
+}
+
+// マテリアル読み込み
+Model::MaterialData Model::LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename) {
+	MaterialData materialData;
+	std::string line;
+	std::ifstream file(directoryPath + "/" + filename);
+
+	// マテリアルファイルがない、または開けない場合はデフォルトテクスチャを使用
+	if (!file.is_open()) {
+		// 白画像などをロードして割り当てると良いが、ここでは0(なし)か適当な値を返す
+		materialData.textureIndex = 0;
+		return materialData;
+	}
+
+	while (std::getline(file, line)) {
+		std::string identifier;
+		std::istringstream s(line);
+		s >> identifier;
+
+		if (identifier == "map_Kd") {
+			std::string textureFilename;
+			s >> textureFilename;
+			materialData.textureFilePath = directoryPath + "/" + textureFilename;
+			materialData.textureIndex = TextureManager::Load(materialData.textureFilePath);
+		}
+	}
+	return materialData;
 }

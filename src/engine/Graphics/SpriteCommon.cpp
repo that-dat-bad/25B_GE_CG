@@ -4,6 +4,7 @@
 #include <cassert>
 #include "SrvManager.h"
 using namespace logger;
+using namespace TDEngine;
 
 void SpriteCommon::Initialize(DirectXCommon* dxCommon)
 {

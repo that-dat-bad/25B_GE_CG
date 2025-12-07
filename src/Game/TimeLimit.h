@@ -29,7 +29,7 @@ public:
 	// 制限時間
 	float timer_ = 0.0f;
 	// 上限（3分）
-	static inline const float kTimeLimit = 180.0f; // 元コードだと10.0fでしたがゲームに合わせて調整してください
+	static inline const float kTimeLimit = 180.0f;
 
 	// スタートのカウントダウン
 	static inline const float kCountDown = 3.0f;

@@ -24,7 +24,7 @@ private:
 	float theta_ = 0.0f;
 
 public:
-	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position);
+	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position);
 	void Update();
 	void Draw();
 };

@@ -7,6 +7,7 @@
 #pragma comment(lib, "d3dcompiler.lib")
 
 using namespace MyMath;
+using namespace TDEngine;
 
 ParticleManager* ParticleManager::instance_ = nullptr;
 

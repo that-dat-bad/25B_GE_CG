@@ -15,11 +15,11 @@ using namespace TDEngine;
 
 static WinApp* sWinApp = nullptr;
 static Input* sInput = nullptr;
-static DirectXCommon* sDxCommon = nullptr;
+static ::DirectXCommon* sDxCommon = nullptr;
 static SrvManager* sSrvManager = nullptr;
 static ImGuiManager* sImGuiManager = nullptr;
 static AudioManager* sAudioManager = nullptr;
-static SpriteCommon* sSpriteCommon = nullptr;
+static ::SpriteCommon* sSpriteCommon = nullptr;
 static Object3dCommon* sObject3dCommon = nullptr;
 
 void TDEngine::Initialize(const std::wstring& title, int width, int height) {
@@ -32,7 +32,7 @@ void TDEngine::Initialize(const std::wstring& title, int width, int height) {
 	sInput = new Input();
 	sInput->Initialize(sWinApp->GetInstance(), sWinApp->GetHwnd());
 
-	sDxCommon = DirectXCommon::GetInstance();
+	sDxCommon = ::DirectXCommon::GetInstance();
 	sDxCommon->Initialize(sWinApp);
 
 	sSrvManager = SrvManager::GetInstance();
@@ -57,7 +57,7 @@ void TDEngine::Initialize(const std::wstring& title, int width, int height) {
 	ParticleManager::GetInstance()->Initialize(sDxCommon, sSrvManager);
 
 	// --- 共通設定初期化 ---
-	sSpriteCommon = new SpriteCommon();
+	sSpriteCommon = new ::SpriteCommon();
 	sSpriteCommon->Initialize(sDxCommon);
 
 	sObject3dCommon = new Object3dCommon();

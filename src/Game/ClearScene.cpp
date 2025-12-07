@@ -61,7 +61,6 @@ void ClearScene::UpdateMain() {
 
 	backGround_->Update();
 
-	// ★修正: Input::GetInstance() -> GetInput()
 	if (GetInput()->TriggerKey(DIK_SPACE))
 	{
 		phase_ = Phase::kFadeOut;

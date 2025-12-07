@@ -4,12 +4,12 @@
 using namespace TDEngine;
 using namespace MyMath;
 
-// 簡易イージング (float版)
+// 簡易イージング
 float EaseOutFloatSimple(float t, float start, float end) {
 	return start + (end - start) * (1.0f - (1.0f - t) * (1.0f - t));
 }
 
-void Thunder::Initialize(Model* model, Camera* camera, const Vector3& position) {
+void Thunder::Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position) {
 	assert(model);
 	model_ = model;
 	camera_ = camera;

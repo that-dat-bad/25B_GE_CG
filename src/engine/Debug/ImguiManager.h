@@ -7,33 +7,35 @@
 #include "../Graphics/DirectXCommon.h"
 #include "../base/WinApp.h"
 
-class SrvManager; 
+namespace TDEngine {
+	class SrvManager;
 
-class ImGuiManager {
-public:
+	class ImGuiManager {
+	public:
 
-	static ImGuiManager* GetInstance();
-	~ImGuiManager() = default;
-	// 初期化
-	void Initialize(WinApp* winApp, DirectXCommon* dxCommon, SrvManager* srvManager);
+		static ImGuiManager* GetInstance();
+		~ImGuiManager() = default;
+		// 初期化
+		void Initialize(WinApp* winApp, DirectXCommon* dxCommon, SrvManager* srvManager);
 
-	// 更新処理
-	void Begin();
+		// 更新処理
+		void Begin();
 
-	// 描画処理
-	void End();
+		// 描画処理
+		void End();
 
-	void Draw();
+		void Draw();
 
-	// 終了処理
-	void Finalize();
+		// 終了処理
+		void Finalize();
 
-private:
+	private:
 
-	ImGuiManager() = default;
-	ImGuiManager(const ImGuiManager&) = delete;
-	const ImGuiManager& operator=(const ImGuiManager&) = delete;
+		ImGuiManager() = default;
+		ImGuiManager(const ImGuiManager&) = delete;
+		const ImGuiManager& operator=(const ImGuiManager&) = delete;
 
-	DirectXCommon* dxCommon_ = nullptr;
-	SrvManager* srvManager_ = nullptr;
-};
+		DirectXCommon* dxCommon_ = nullptr;
+		SrvManager* srvManager_ = nullptr;
+	};
+}

@@ -1,7 +1,7 @@
 #include "DeathEx.h"
 
 using namespace TDEngine;
-using namespace MyMath; // 数学関数用
+using namespace MyMath;
 
 // 簡易イージング
 float EaseOutFloatSimple(float t, float start, float end) {
@@ -12,7 +12,7 @@ float LerpFloatSimple(float a, float b, float t) {
 	return a + (b - a) * t;
 }
 
-void DeathEx::Initialize(Model* model, Camera* camera, const Vector3& position, const Vector3 rotate) {
+void DeathEx::Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position, const MyMath::Vector3 rotate) {
 	worldTransform_.translation = position;
 
 	assert(model);
@@ -22,7 +22,7 @@ void DeathEx::Initialize(Model* model, Camera* camera, const Vector3& position, 
 	worldTransform_.Initialize();
 	worldTransform_.translation = position;
 	worldTransform_.rotation = rotate;
-	worldTransform_.scale = { 70.0f, 2.0f, 1.0f };
+	worldTransform_.scale_ = { 70.0f, 2.0f, 1.0f };
 
 	color_ = { 1.0f, 1.0f, 1.0f, 0.0f };
 }

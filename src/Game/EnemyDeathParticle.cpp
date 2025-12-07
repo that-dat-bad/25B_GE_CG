@@ -1,6 +1,6 @@
 #include "EnemyDeathParticle.h"
 
-void EnemyDeathParticle::Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position) {
+void EnemyDeathParticle::Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position) {
 	
 	// nullポインタチェック
 	assert(model);

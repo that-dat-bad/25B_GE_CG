@@ -16,7 +16,7 @@ void TitleScene::Initialize() {
 	// 背景の初期化
 	backGround_ = new BackGround();
 	// 背景のモデル読み込み
-	modelBackground_ = Model::CreateFromOBJ("title", true);
+	modelBackground_ = TDEngine::Model::CreateFromOBJ("title", true);
 
 	// カメラを渡す
 	backGround_->Initialize(modelBackground_, &camera_, pos);
@@ -24,7 +24,7 @@ void TitleScene::Initialize() {
 	// タイトルロゴの初期化
 	logo_ = new TitleLogo();
 	// タイトルロゴのモデル読み込み
-	modelLogo_ = Model::CreateFromOBJ("titleLogo", true);
+	modelLogo_ = TDEngine::Model::CreateFromOBJ("titleLogo", true);
 	logo_->Initialize(modelLogo_, &camera_, pos);
 }
 

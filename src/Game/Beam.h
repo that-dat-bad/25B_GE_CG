@@ -1,14 +1,15 @@
 #pragma once
 #include "TDEngine.h"
 #include "AABB.h"
+#include"WorldTransform.h"
 
 class Beam {
 public:
-	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position);
+	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position);
 	void Update();
 	void Draw();
 
-	TDEngine::Vector3 GetWorldPosition();
+	MyMath::Vector3 GetWorldPosition();
 	AABB GetAABB();
 
 private:
@@ -19,6 +20,6 @@ private:
 	float width = 1.6f;
 	float height = 3.2f;
 
-	TDEngine::Vector3 upScale_ = { 1.0f, 0.0f, 0.0f };
-	TDEngine::Vector3 beamVelocity_ = { -0.5f, 0.0f, 0.0f };
+	MyMath::Vector3 upScale_ = { 1.0f, 0.0f, 0.0f };
+	MyMath::Vector3 beamVelocity_ = { -0.5f, 0.0f, 0.0f };
 };

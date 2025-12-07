@@ -1,5 +1,6 @@
 #include "CameraManager.h"
 #include <cassert>
+using namespace TDEngine;
 
 CameraManager* CameraManager::instance_ = nullptr;
 

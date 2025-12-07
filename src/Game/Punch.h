@@ -1,16 +1,16 @@
 #pragma once
 #include "TDEngine.h"
 #include "AABB.h"
-
+#include"WorldTransform.h"
 class Punch {
 public:
-	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const TDEngine::Vector3& position, int punched);
+	void Initialize(TDEngine::Model* model, TDEngine::Camera* camera, const MyMath::Vector3& position, int punched);
 	void Update();
 	void Draw();
 
-	void SetPosition(const TDEngine::Vector3& position) { worldTransform_.translation = position; }
+	void SetPosition(const MyMath::Vector3& position) { worldTransform_.translation_ = position; }
 
-	TDEngine::Vector3 GetWorldPosition();
+	MyMath::Vector3 GetWorldPosition();
 	AABB GetAABB();
 
 private:
@@ -23,5 +23,5 @@ private:
 	float t = 0.0f;
 
 	bool isPunched;
-	TDEngine::Vector3 punchedPosition;
+	MyMath::Vector3 punchedPosition;
 };

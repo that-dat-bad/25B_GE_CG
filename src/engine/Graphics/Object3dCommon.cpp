@@ -3,6 +3,7 @@
 #include "../base/logger.h"
 using namespace logger;
 #include"SrvManager.h"
+using namespace TDEngine;
 
 void Object3dCommon::Initialize(DirectXCommon* dxCommon)
 {

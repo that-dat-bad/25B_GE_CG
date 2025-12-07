@@ -9,6 +9,7 @@
 #include"ModelManager.h"
 #include"Camera.h"
 #include"TDEngine.h"
+using namespace TDEngine;
 
 Object3d* Object3d::Create() {
 	// 3Dオブジェクトのインスタンスを生成

@@ -24,26 +24,26 @@ private:
 
 private:
 	// カメラ
-	Camera camera_;
+	TDEngine::Camera camera_;
 
 	// プレイヤーのポインタ
 	Player* player_ = nullptr;
 	// プレイヤーのモデル
-	Model* modelPlayer_ = nullptr;
+	TDEngine::Model* modelPlayer_ = nullptr;
 	// プレイヤーの位置
 	const Vector3 playerPos_ = { -27, 0, 0 };
 
 	// 敵
 	Enemy* enemy_ = nullptr;
 	// 敵のモデル
-	Model* modelEnemy_ = nullptr;
+	TDEngine::Model* modelEnemy_ = nullptr;
 	// 敵の位置
 	Vector3 enemyPos_ = { 0, 20, 0 };
 
 	// 連鎖ボム
 	std::vector<ChainBomb*> chainBombs_;
 	// 連鎖ボムのモデル
-	Model* modelChainBomb_ = nullptr;
+	TDEngine::Model* modelChainBomb_ = nullptr;
 	// 連鎖ボムの位置
 	Vector3 chainBombPos_ = { 0, 0, 0 };
 

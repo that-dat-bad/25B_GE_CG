@@ -3,44 +3,50 @@
 #include <d3d12.h>
 #include <wrl/client.h>
 
-struct ConstBufferDataWorldTransform {
-	MyMath::Matrix4x4 WVP;
-	MyMath::Matrix4x4 World;
-};
-/// <summary>
-/// ワールド変換データ
-/// </summary>
-struct WorldTransform {
-	// スケール
-	MyMath::Vector3 scale = { 1.0f, 1.0f, 1.0f };
-	// 回転
-	MyMath::Vector3 rotation = { 0.0f, 0.0f, 0.0f };
-	// 平行移動
-	MyMath::Vector3 translation = { 0.0f, 0.0f, 0.0f };
+namespace TDEngine {
 
-	// ワールド変換行列
-	MyMath::Matrix4x4 matWorld = MyMath::Identity4x4();
-
-	// 親となるワールド変換へのポインタ
-	const WorldTransform* parent_ = nullptr;
-
-	// 定数バッファ
-	Microsoft::WRL::ComPtr<ID3D12Resource> constBuff_;
-	// マッピング済みアドレス
-	ConstBufferDataWorldTransform* constMap = nullptr;
+	// 定数バッファ用データ構造
+	struct ConstBufferDataWorldTransform {
+		MyMath::Matrix4x4 matWorld; // ワールド行列
+		MyMath::Matrix4x4 WVP;      // ViewProjection込み行列 (シェーダーで必要)
+	};
 
 	/// <summary>
-	/// 初期化
+	/// ワールド変換データ
 	/// </summary>
-	void Initialize();
+	class WorldTransform {
+		MyMath::Vector3 scale_ = { 1.0f, 1.0f, 1.0f };
+		MyMath::Vector3 rotation_ = { 0.0f, 0.0f, 0.0f };
+		MyMath::Vector3 translation_ = { 0.0f, 0.0f, 0.0f };
 
-	/// <summary>
-	/// 行列を更新する
-	/// </summary>
-	void UpdateMatrix();
+		MyMath::Matrix4x4 matWorld_ = MyMath::Identity4x4();
 
-	/// <summary>
-	/// 定数バッファにデータを転送する
-	/// </summary>
-	void TransferMatrix();
-};
+		const WorldTransform* parent_ = nullptr;
+
+		// 定数バッファ
+		Microsoft::WRL::ComPtr<ID3D12Resource> constBuff_;
+		// マッピング済みアドレス
+		ConstBufferDataWorldTransform* constMap = nullptr;
+
+		/// <summary>
+		/// 初期化
+		/// </summary>
+		void Initialize();
+
+		/// <summary>
+		/// 行列を更新する
+		/// </summary>
+		void UpdateMatrix();
+
+		// 互換性用: UpdateWorldMatrixという名前で呼ばれてもUpdateMatrixに流す
+		void UpdateWorldMatrix() { UpdateMatrix(); }
+		// 引数ありで呼ばれる場合の互換性 (worldTransform_.UpdateWorldMatrix(worldTransform_) の対策)
+		void UpdateWorldMatrix(const WorldTransform& /*dummy*/) { UpdateMatrix(); }
+
+		/// <summary>
+		/// 定数バッファにデータを転送する
+		/// </summary>
+		void TransferMatrix();
+	};
+
+}
