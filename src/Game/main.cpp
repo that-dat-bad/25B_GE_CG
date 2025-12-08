@@ -6,15 +6,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	TDEngine::Initialize(L"CG2");
 
 
-	Model::LoadFromOBJ("axis.obj"); 
-	Model::LoadFromOBJ("plane.obj");
+	Model::LoadFromOBJ("assets/models/axis.obj"); 
+	Model::LoadFromOBJ("assets/models/plane.obj");
 
 	Object3d* object3d = Object3d::Create();
-	object3d->SetModel("axis.obj"); // 読み込んだモデルをセット
+	object3d->SetModel("assets/models/axis.obj"); // 読み込んだモデルをセット
 	object3d->SetTranslate({ -2.0f, 0.0f, 0.0f });
 
 	Object3d* plane = Object3d::Create();
-	plane->SetModel("plane.obj");
+	plane->SetModel("assets/models/plane.obj");
 
 	
 	// メインループ
