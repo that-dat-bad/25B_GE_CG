@@ -85,6 +85,12 @@ void GameScene::Initialize() {
 
 // 更新処理
 void GameScene::Update() {
+
+		if (skydome_) {
+    skydome_->Update();
+  }
+
+
 	switch (phase_) {
 	case Phase::kFadeIn:
 		UpdateFadeIn();
@@ -226,8 +232,6 @@ void GameScene::CheckAllCollisions() {
 void GameScene::UpdateFadeIn() {
 	if (fade_) fade_->Update();
 
-	if (skydome_) skydome_->Update();
-
 	if (fade_ && fade_->IsFinished()) {
 		phase_ = Phase::kMain;
 		fade_->Stop();
@@ -236,7 +240,6 @@ void GameScene::UpdateFadeIn() {
 
 // メインの更新
 void GameScene::UpdateMain() {
-	if (skydome_) skydome_->Update();
 
 	if (enemy_ && !enemy_->IsDeath()) {
 		if (timeLimit_) timeLimit_->Update();
