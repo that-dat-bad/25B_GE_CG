@@ -1,272 +1,163 @@
 #include "Enemy.h"
-#include "Player.h"
 #include "ChainBomb.h"
+#include "Player.h"
+#include "ModelManager.h"
+#include "CameraManager.h"
+#include "TextureManager.h"
+
+// 攻撃クラスのヘッダー
 #include "Beam.h"
 #include "Needle.h"
 #include "Thunder.h"
 #include "Punch.h"
 #include "DeathEx.h"
 #include "EnemyDeathParticle.h"
-#include "Rand.h"
-#include "Model.h"
-
-#include <cmath>
-#include <algorithm>
-#include <numbers>
 
 using namespace MyMath;
 
+// ---------------------------------------------------------
+// デストラクタ
+// ---------------------------------------------------------
 Enemy::~Enemy() {
+	if (object3d_) delete object3d_;
+	if (rand_) delete rand_;
 	if (beam_) delete beam_;
+
 	for (auto p : needles_) delete p;
 	for (auto p : thunders_) delete p;
 	for (auto p : punches_) delete p;
 	for (auto p : deathExs_) delete p;
 	for (auto p : deathParticles_) delete p;
-	if (rand_) delete rand_;
-	if (object3d_) delete object3d_;
 }
 
+// ---------------------------------------------------------
+// 初期化
+// ---------------------------------------------------------
 void Enemy::Initialize(const Vector3& position) {
-	// Object3d生成	
-	std::string path = "./Resources/Enemy/Enemy.obj";
-	Model::LoadFromOBJ(path);
+	// モデル読み込み (Resources/enemy.obj 前提)
+	std::string modelPath = "Resources/enemy.obj";
+	ModelManager::GetInstance()->LoadModel(modelPath);
+
+	// Object3d生成
 	object3d_ = Object3d::Create();
-	object3d_->SetModel(path);
+	object3d_->SetModel(modelPath);
 	object3d_->SetTranslate(position);
 	object3d_->SetScale(originalScale_);
-	object3d_->SetColor({ 1, 1, 1, 1 });
 
-	// パラメータ初期化
-	hp_ = 100.0f; // 仮置き
+	// 色初期化
 	color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
+	object3d_->SetColor(color_);
 
-	// 乱数
+	// ランダム生成器
 	rand_ = new Rand();
 	rand_->Initialize();
 	rand_->RandomInitialize();
-	randomValue_ = static_cast<int>(rand_->GetRandom());
-	behaviorRequest_ = Behavior::kStart;
+	randomValue = static_cast<int>(rand_->GetRandom());
 
-	// 攻撃データの初期化 (元コードのコンストラクタ/メンバ初期化相当)
-	needleRotates_ = {
-		{0.0f, 0.0f, 0.0f},
-		{0.0f, 0.0f, 3.14159f / 4.2f},
-		{0.0f, 0.0f, 3.14159f / 2.0f},
-		{0.0f, 0.0f, 3.14159f / 1.3f}
-	};
-	// ... thunderPositions_, punchPositions_ も同様に初期化 ...
-	thunderPositions_ = {
-		{-28.0f, 20.0f, 0.0f}, {-13.0f, 20.0f, 0.0f}, {3.0f, 20.0f, 0.0f}, {16.0f, 20.0f, 0.0f}
-	};
+	// 初期行動
+	behaviorRequest_ = Behavior::kStart;
 }
 
+// ---------------------------------------------------------
+// 更新
+// ---------------------------------------------------------
 void Enemy::Update() {
+
 	// 旋回制御
 	if (turnTimer_ > 0.0f) {
-		if (turnTimer_ <= 1.0f) turnTimer_ += 0.01f; // 元コードのロジック踏襲
+		if (turnTimer_ <= 1.0f) {
+			turnTimer_ += 0.01f;
+		}
 
 		float destinationRotationYTable[] = {
-			3.14159f * 1.5f, // Left? (元コードのテーブル順序に依存)
-			3.14159f * 0.5f,
-			3.14159f
+			std::numbers::pi_v<float> *3.0f / 2.0f, // kLeft
+			std::numbers::pi_v<float> / 2.0f,        // kRight
+			std::numbers::pi_v<float>                // kFront
 		};
-		float destRotY = destinationRotationYTable[static_cast<int>(direction_)];
 
+		// 状態に応じた角度を取得
+		float destinationRotationY = destinationRotationYTable[static_cast<uint32_t>(direction_)];
+
+		// 現在の回転を取得して補間
 		Vector3 rot = object3d_->GetRotate();
-		rot.y = EaseIn(turnTimer_, rot.y, destRotY); // 簡易補間
+		// worldTransform_.EaseInFloat -> MyMath::EaseIn
+		// EaseIn(t, start, end) を使用
+		rot.y = EaseIn(turnTimer_, turnFirstRotationY, destinationRotationY);
 		object3d_->SetRotate(rot);
 	}
 
-	if (isHit_) HitTimer();
+	if (isHit_) {
+		HitTimer();
+	}
 
-	// ステート遷移
+	// 振る舞い変更リクエスト処理
 	if (behaviorRequest_ != Behavior::kUnknown) {
 		behavior_ = behaviorRequest_;
+		// 各振る舞いの初期化
 		switch (behavior_) {
-		case Behavior::kRoot: BehaviorRootInitialize(); break;
-		case Behavior::kBound: BehaviorBoundInitialize(); break;
-		case Behavior::kRound: BehaviorRoundInitialize(); break;
-		case Behavior::kBeam: BehaviorBeamInitialize(); break;
+		case Behavior::kRoot:     BehaviorRootInitialize(); break;
+		case Behavior::kBound:    BehaviorBoundInitialize(); break;
+		case Behavior::kRound:    BehaviorRoundInitialize(); break;
+		case Behavior::kBeam:     BehaviorBeamInitialize(); break;
 		case Behavior::kApproach: BehaviorApproachInitialize(); break;
-		case Behavior::kNeedle: BehaviorNeedleInitialize(); break;
-		case Behavior::kThunder: BehaviorThunderInitialize(); break;
-		case Behavior::kPunch: BehaviorPunchInitialize(); break;
-		case Behavior::kDeath: BehaviorDeathInitialize(); break;
-		case Behavior::kChange: BehaviorChangeInitialize(); break;
-		case Behavior::kStart: BehaviorStartInitialize(); break;
+		case Behavior::kNeedle:   BehaviorNeedleInitialize(); break;
+		case Behavior::kThunder:  BehaviorThunderInitialize(); break;
+		case Behavior::kPunch:    BehaviorPunchInitialize(); break;
+		case Behavior::kDeath:    BehaviorDeathInitialize(); break;
+		case Behavior::kChange:   BehaviorChangeInitialize(); break;
+		case Behavior::kStart:    BehaviorStartInitialize(); break;
 		}
 		behaviorRequest_ = Behavior::kUnknown;
 	}
 
-	// ステート更新実行
+	// 各振る舞いの更新
 	switch (behavior_) {
-	case Enemy::Behavior::kRoot:
-		// 通常行動の初期化
-		BehaviorRootInitialize();
-		break;
-	case Enemy::Behavior::kBound:
-		// 跳ね回るの初期化
-		BehaviorBoundInitialize();
-		break;
-	case Enemy::Behavior::kRound:
-		// 往復の初期化
-		BehaviorRoundInitialize();
-		break;
-	case Enemy::Behavior::kBeam:
-		// ビーム攻撃の初期化
-		BehaviorBeamInitialize();
-		break;
-	case Enemy::Behavior::kApproach:
-		// 接近の初期化
-		BehaviorApproachInitialize();
-		break;
-	case Enemy::Behavior::kNeedle:
-		// 針攻撃の初期化
-		BehaviorNeedleInitialize();
-		break;
-	case Enemy::Behavior::kThunder:
-		// 雷攻撃の初期化
-		BehaviorThunderInitialize();
-		break;
-	case Enemy::Behavior::kPunch:
-		// 連続パンチの初期化
-		BehaviorPunchInitialize();
-		break;
-	case Enemy::Behavior::kDeath:
-		// デス演出の初期化
-		BehaviorDeathInitialize();
-		break;
-	case Enemy::Behavior::kChange:
-		// 形態変化の初期化
-		BehaviorChangeInitialize();
-		break;
-	case Enemy::Behavior::kStart:
-		// 開始演出の初期化
-		BehaviorStartInitialize();
-		break;
+	case Behavior::kRoot:     BehaviorRootUpdate(); break;
+	case Behavior::kBound:    BehaviorBoundUpdate(); break;
+	case Behavior::kRound:    BehaviorRoundUpdate(); break;
+	case Behavior::kBeam:     BehaviorBeamUpdate(); break;
+	case Behavior::kApproach: BehaviorApproachUpdate(); break;
+	case Behavior::kNeedle:   BehaviorNeedleUpdate(); break;
+	case Behavior::kThunder:  BehaviorThunderUpdate(); break;
+	case Behavior::kPunch:    BehaviorPunchUpdate(); break;
+	case Behavior::kDeath:    BehaviorDeathUpdate(); break;
+	case Behavior::kChange:   BehaviorChangeUpdate(); break;
+	case Behavior::kStart:    BehaviorStartUpdate(); break;
 	}
 
-	// 行列更新
+	// Object3d更新
 	if (object3d_) object3d_->Update();
 }
 
+// ---------------------------------------------------------
+// 描画
+// ---------------------------------------------------------
 void Enemy::Draw() {
-	if (!isDead_) {
-		if (isHit_) {
-			// 点滅
-			if (hitTimer_ % 2 == 0) object3d_->Draw();
+	if (isDead_) return;
+
+	// ヒット時の点滅処理
+	if (isHit_) {
+		if (hitTimer_ % 2 == 0) {
+			if (object3d_) object3d_->Draw();
 		}
-		else {
-			object3d_->Draw();
-		}
-
-		if (beam_) beam_->Draw();
-		for (auto p : needles_) p->Draw();
-		for (auto p : thunders_) p->Draw();
-		for (auto p : punches_) p->Draw();
-		for (auto p : deathExs_) p->Draw();
-		for (auto p : deathParticles_) p->Draw();
+	} else {
+		if (object3d_) object3d_->Draw();
 	}
+
+	// 各攻撃オブジェクト描画
+	if (beam_) beam_->Draw();
+	for (auto p : needles_) if (p) p->Draw();
+	for (auto p : thunders_) if (p) p->Draw();
+	for (auto p : punches_) if (p) p->Draw();
+
+	// エフェクト描画
+	for (auto p : deathExs_) if (p) p->Draw();
+	for (auto p : deathParticles_) if (p) p->Draw();
 }
 
-void Enemy::BehaviorStartInitialize() {
-	initPos_ = { 20.0f, 0.0f, 0.0f };
-	t_ = 0.0f;
-	direction_ = Direction::kLeft;
-	// turnFirstRotationY = ...
-}
-
-void Enemy::BehaviorStartUpdate() {
-	t_ += 0.01f;
-	Vector3 currentPos = object3d_->GetTranslate();
-	Vector3 newPos = Lerp(currentPos, initPos_, t_);
-	object3d_->SetTranslate(newPos);
-
-	if (newPos.y <= initPos_.y) {
-		behaviorRequest_ = isUnknown_ ? Behavior::kUnknown : Behavior::kRoot;
-		attackPhase_ = AttackPhase::kReservoir;
-	}
-}
-
-void Enemy::BehaviorRootInitialize() {
-	attackParameter_ = 0;
-	attackAfterTimer_ = 20.0f;
-}
-
-void Enemy::BehaviorRootUpdate() {
-	attackParameter_++;
-	if (attackParameter_ >= attackAfterTimer_) {
-		// 行動抽選ロジック (元コードの通り)
-		randomValue_ = static_cast<int>(rand_->GetRandom());
-
-		// 簡易移植: 条件分岐は元コードを参照して記述
-		// ...
-		// テスト用に適当な行動へ遷移させる例:
-		if (!isChangeStart_ && hp_ <= halfHp_) {
-			isChangeStart_ = true;
-			behaviorRequest_ = Behavior::kChange;
-			return;
-		}
-
-		// 抽選結果適用
-		// behaviorRequest_ = ...
-	}
-}
-
-// ... 他のBehavior関数も同様に、
-// worldTransform_.translation_ を object3d_->SetTranslate/GetTranslate に、
-// worldTransform_.Add などを MyMath::Add に書き換えて実装します。
-
-void Enemy::OnCollision(const Player* player) {
-	if (behavior_ == Behavior::kDeath || isHit_) return;
-	isCollisionDisabled_ = true;
-	PlayerHitDamage(*player);
-}
-
-void Enemy::PlayerHitDamage(const Player& player) {
-	// ダメージ計算
-	hp_ -= player.GetScale().x * 10.0f;
-	isHit_ = true;
-	hitTimer_ = hitTimerMax_;
-	if (hp_ <= 0) behaviorRequest_ = Behavior::kDeath;
-}
-
-void Enemy::BombHitDamage() {
-	hp_ -= 10.0f;
-	isHit_ = true;
-	hitTimer_ = hitTimerMax_;
-	if (hp_ <= 0) behaviorRequest_ = Behavior::kDeath;
-}
-
-void Enemy::HitTimer() {
-	hitTimer_--;
-	if (hitTimer_ <= 0) {
-		isHit_ = false;
-		hitTimer_ = hitTimerMax_;
-	}
-}
-
-Vector3 Enemy::GetWorldPosition() const {
-	return object3d_->GetTranslate();
-}
-
-AABB Enemy::GetAABB() {
-	Vector3 pos = GetWorldPosition();
-	AABB aabb;
-	aabb.min = { pos.x - kWidth / 2.0f, pos.y - kHeight / 2.0f, pos.z - kWidth / 2.0f };
-	aabb.max = { pos.x + kWidth / 2.0f, pos.y + kHeight / 2.0f, pos.z + kWidth / 2.0f };
-	return aabb;
-}
-
-// ChainBombとの衝突
-void Enemy::OnCollision(const ChainBomb* chainBomb) {
-	// ChainBomb側のゲッターが必要 (IsExplodeなど)
-	// if (!chainBomb->IsExplode()) return; 
-	// BombHitDamage();
-}
-
-
+// ---------------------------------------------------------
+// Behavior: Bound (跳ね回る)
+// ---------------------------------------------------------
 void Enemy::BehaviorBoundInitialize() {
 	attackParameter_ = 0;
 	attackReservoirTimer_ = 40.0f;
@@ -276,75 +167,73 @@ void Enemy::BehaviorBoundInitialize() {
 	initPos_ = { 36.0f, -20.0f, 0.0f };
 	attackCount_ = 0;
 	enemySpeedDecay_ = { 0.0f, 0.1f, 0.0f };
-	t_ = 0.0f;
+	t = 0.0f;
 }
 
 void Enemy::BehaviorBoundUpdate() {
 	attackParameter_++;
+	Vector3 pos = object3d_->GetTranslate();
 
 	switch (attackPhase_) {
 	case AttackPhase::kReservoir:
-	default: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+	default:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackReservoirTimer_) {
 			attackPhase_ = AttackPhase::kAttack;
 			attackParameter_ = 0;
 			enemySpeed_ = { -0.5f, 2.0f, 0.0f };
 		}
-	} break;
-	case AttackPhase::kAttack: {
+		break;
+
+	case AttackPhase::kAttack:
 		if (attackCount_ >= 3) {
 			if (attackParameter_ >= attackRushTimer_) {
 				attackPhase_ = AttackPhase::kLingering;
 				attackParameter_ = 0;
-				t_ = 0.0f;
+				t = 0.0f;
 			}
-		}
-		else {
-			Vector3 currentPos = object3d_->GetTranslate();
-			object3d_->SetTranslate(Add(currentPos, enemySpeed_));
+		} else {
+			pos = Add(pos, enemySpeed_);
+			object3d_->SetTranslate(pos);
 
 			if (enemySpeed_.y <= -2.0f) {
 				if (attackAfterTimer_ >= 0.0f) {
 					attackAfterTimer_--;
-					Vector3 pos = object3d_->GetTranslate();
 					pos.y = -20.0f;
 					object3d_->SetTranslate(pos);
-				}
-				else {
+				} else {
 					Vector3 playerPos = player_->GetWorldPosition();
 					Vector3 myPos = object3d_->GetTranslate();
-					Vector3 rot = object3d_->GetRotate();
+					Vector3 myRot = object3d_->GetRotate();
 
 					if (playerPos.x >= myPos.x) {
 						enemySpeed_.x = 0.5f;
 						direction_ = Direction::kRight;
-						turnFirstRotationY_ = rot.y;
+						turnFirstRotationY = myRot.y;
 						turnTimer_ = kTimeTurn;
-					}
-					else {
+					} else {
 						enemySpeed_.x = -0.5f;
 						direction_ = Direction::kLeft;
-						turnFirstRotationY_ = rot.y;
+						turnFirstRotationY = myRot.y;
 						turnTimer_ = kTimeTurn;
 					}
 					enemySpeed_.y = 2.0f;
 					attackCount_++;
 					attackAfterTimer_ = 10.0f;
 				}
-			}
-			else {
+			} else {
 				enemySpeed_.y -= enemySpeedDecay_.y;
 			}
 		}
-	} break;
-	case AttackPhase::kLingering: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+		break;
+
+	case AttackPhase::kLingering:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackLingeringTimer_) {
 			prePreBehavior_ = preBehavior_;
@@ -352,13 +241,18 @@ void Enemy::BehaviorBoundUpdate() {
 			behaviorRequest_ = Behavior::kRoot;
 			attackPhase_ = AttackPhase::kReservoir;
 			direction_ = Direction::kLeft;
-			turnFirstRotationY_ = object3d_->GetRotate().y;
+
+			Vector3 rot = object3d_->GetRotate();
+			turnFirstRotationY = rot.y;
 			turnTimer_ = kTimeTurn;
 		}
-	} break;
+		break;
 	}
 }
 
+// ---------------------------------------------------------
+// Behavior: Round (往復)
+// ---------------------------------------------------------
 void Enemy::BehaviorRoundInitialize() {
 	attackParameter_ = 0;
 	attackReservoirTimer_ = 40.0f;
@@ -368,34 +262,35 @@ void Enemy::BehaviorRoundInitialize() {
 	initPos_ = { 36.0f, 20.0f, 0.0f };
 	attackCount_ = 0;
 	enemySpeedDecay_ = { 0.0f, 0.1f, 0.0f };
-	t_ = 0.0f;
+	t = 0.0f;
 }
 
 void Enemy::BehaviorRoundUpdate() {
 	attackParameter_++;
+	Vector3 pos = object3d_->GetTranslate();
 
 	switch (attackPhase_) {
 	case AttackPhase::kReservoir:
-	default: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+	default:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackReservoirTimer_) {
 			attackPhase_ = AttackPhase::kAttack;
 			attackParameter_ = 0;
 			enemySpeed_ = { -1.8f, -2.0f, 0.0f };
 		}
-	} break;
-	case AttackPhase::kAttack: {
+		break;
+
+	case AttackPhase::kAttack:
 		if (attackCount_ >= 2) {
 			if (attackParameter_ >= attackRushTimer_) {
 				attackPhase_ = AttackPhase::kLingering;
 				attackParameter_ = 0;
-				t_ = 0.0f;
+				t = 0.0f;
 			}
-		}
-		else {
+		} else {
 			if (enemySpeed_.y >= 1.9f) {
 				if (attackAfterTimer_ >= 0.0f) {
 					attackAfterTimer_--;
@@ -407,20 +302,21 @@ void Enemy::BehaviorRoundUpdate() {
 				attackAfterTimer_ = 10.0f;
 
 				direction_ = Direction::kRight;
-				turnFirstRotationY_ = object3d_->GetRotate().y;
+				Vector3 rot = object3d_->GetRotate();
+				turnFirstRotationY = rot.y;
 				turnTimer_ = kTimeTurn;
-			}
-			else {
+			} else {
 				enemySpeed_.y += enemySpeedDecay_.y;
 			}
-			Vector3 currentPos = object3d_->GetTranslate();
-			object3d_->SetTranslate(Add(currentPos, enemySpeed_));
+			pos = Add(pos, enemySpeed_);
+			object3d_->SetTranslate(pos);
 		}
-	} break;
-	case AttackPhase::kLingering: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+		break;
+
+	case AttackPhase::kLingering:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackLingeringTimer_) {
 			prePreBehavior_ = preBehavior_;
@@ -428,13 +324,17 @@ void Enemy::BehaviorRoundUpdate() {
 			behaviorRequest_ = Behavior::kRoot;
 			attackPhase_ = AttackPhase::kReservoir;
 			direction_ = Direction::kLeft;
-			turnFirstRotationY_ = object3d_->GetRotate().y;
+			Vector3 rot = object3d_->GetRotate();
+			turnFirstRotationY = rot.y;
 			turnTimer_ = kTimeTurn;
 		}
-	} break;
+		break;
 	}
 }
 
+// ---------------------------------------------------------
+// Behavior: Beam (ビーム)
+// ---------------------------------------------------------
 void Enemy::BehaviorBeamInitialize() {
 	attackParameter_ = 0;
 	attackReservoirTimer_ = 40.0f;
@@ -442,42 +342,47 @@ void Enemy::BehaviorBeamInitialize() {
 	attackLingeringTimer_ = 40.0f;
 	attackAfterTimer_ = 10.0f;
 	initPos_ = { 36.0f, -5.0f, 0.0f };
-	t_ = 0.0f;
+	t = 0.0f;
 }
 
 void Enemy::BehaviorBeamUpdate() {
 	attackParameter_++;
+	Vector3 pos = object3d_->GetTranslate();
 
 	switch (attackPhase_) {
 	case AttackPhase::kReservoir:
-	default: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+	default:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackReservoirTimer_) {
 			attackPhase_ = AttackPhase::kAttack;
 			attackParameter_ = 0;
+
+			// Beam生成
 			beam_ = new Beam();
-			beam_->Initialize(object3d_->GetTranslate());
+			beam_->Initialize(pos);
 		}
-	} break;
-	case AttackPhase::kAttack: {
+		break;
+
+	case AttackPhase::kAttack:
 		if (beam_) beam_->Update();
 
 		if (attackParameter_ >= attackRushTimer_) {
 			attackPhase_ = AttackPhase::kLingering;
 			attackParameter_ = 0;
-			t_ = 0.0f;
+			t = 0.0f;
 			initPos_ = { 0.0f, 0.0f, 0.0f };
 			delete beam_;
 			beam_ = nullptr;
 		}
-	} break;
-	case AttackPhase::kLingering: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+		break;
+
+	case AttackPhase::kLingering:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackLingeringTimer_) {
 			prePreBehavior_ = preBehavior_;
@@ -485,57 +390,65 @@ void Enemy::BehaviorBeamUpdate() {
 			behaviorRequest_ = Behavior::kRoot;
 			attackPhase_ = AttackPhase::kReservoir;
 		}
-	} break;
+		break;
 	}
 }
 
-// エラーが出ていた箇所
+// ---------------------------------------------------------
+// Behavior: Approach (接近)
+// ---------------------------------------------------------
 void Enemy::BehaviorApproachInitialize() {
 	attackParameter_ = 0;
 	enemySpeed_ = { 0.0f, 0.0f, 1.0f };
 	attackReservoirTimer_ = 40.0f;
 	attackRushTimer_ = 50.0f;
 	attackLingeringTimer_ = 40.0f;
-	Vector3 playerPos = player_->GetWorldPosition();
-	initPos_ = { playerPos.x, playerPos.y, 20.0f };
-	t_ = 0.0f;
+
+	Vector3 pPos = player_->GetWorldPosition();
+	initPos_ = { pPos.x, pPos.y, 20.0f };
+	t = 0.0f;
 }
 
 void Enemy::BehaviorApproachUpdate() {
 	attackParameter_++;
+	Vector3 pos = object3d_->GetTranslate();
 
 	switch (attackPhase_) {
 	case AttackPhase::kReservoir:
-	default: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+	default:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackReservoirTimer_) {
 			attackPhase_ = AttackPhase::kAttack;
 			enemySpeed_ = { 0.0f, 0.0f, -2.0f };
 			attackParameter_ = 0;
+
 			direction_ = Direction::kFront;
-			turnFirstRotationY_ = object3d_->GetRotate().y;
+			Vector3 rot = object3d_->GetRotate();
+			turnFirstRotationY = rot.y;
 			turnTimer_ = kTimeTurn;
 		}
-	} break;
-	case AttackPhase::kAttack: {
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Add(currentPos, enemySpeed_));
+		break;
+
+	case AttackPhase::kAttack:
+		pos = Add(pos, enemySpeed_);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackRushTimer_) {
 			attackPhase_ = AttackPhase::kLingering;
 			enemySpeed_ = { 0.0f, 1.0f, 0.0f };
 			attackParameter_ = 0;
-			t_ = 0.0f;
+			t = 0.0f;
 			initPos_ = { 36.0f, 0.0f, 0.0f };
 		}
-	} break;
-	case AttackPhase::kLingering: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+		break;
+
+	case AttackPhase::kLingering:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackLingeringTimer_) {
 			prePreBehavior_ = preBehavior_;
@@ -543,13 +456,18 @@ void Enemy::BehaviorApproachUpdate() {
 			behaviorRequest_ = Behavior::kRoot;
 			attackPhase_ = AttackPhase::kReservoir;
 			direction_ = Direction::kLeft;
-			turnFirstRotationY_ = object3d_->GetRotate().y;
+
+			Vector3 rot = object3d_->GetRotate();
+			turnFirstRotationY = rot.y;
 			turnTimer_ = kTimeTurn;
 		}
-	} break;
+		break;
 	}
 }
 
+// ---------------------------------------------------------
+// Behavior: Needle (針)
+// ---------------------------------------------------------
 void Enemy::BehaviorNeedleInitialize() {
 	attackParameter_ = 0;
 	attackReservoirTimer_ = 40.0f;
@@ -557,52 +475,53 @@ void Enemy::BehaviorNeedleInitialize() {
 	attackLingeringTimer_ = 40.0f;
 	attackAfterTimer_ = 10.0f;
 	initPos_ = { 0.0f, 20.0f, 0.0f };
-	t_ = 0.0f;
+	t = 0.0f;
+
 	direction_ = Direction::kFront;
-	turnFirstRotationY_ = object3d_->GetRotate().y;
+	Vector3 rot = object3d_->GetRotate();
+	turnFirstRotationY = rot.y;
 	turnTimer_ = kTimeTurn;
 }
 
 void Enemy::BehaviorNeedleUpdate() {
 	attackParameter_++;
+	Vector3 pos = object3d_->GetTranslate();
 
 	switch (attackPhase_) {
 	case AttackPhase::kReservoir:
-	default: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+	default:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackReservoirTimer_) {
 			attackPhase_ = AttackPhase::kAttack;
 			attackParameter_ = 0;
-			for (size_t i = 0; i < needleRotates_.size(); ++i) { // needleRotates_はInitializeで設定済み
+			for (int32_t i = 0; i < kNeedleCount; ++i) {
 				Needle* needle = new Needle();
-				needle->Initialize(object3d_->GetTranslate(), needleRotates_[i]);
+				needle->Initialize(pos, needleRotates_[i]);
 				needles_.push_back(needle);
 			}
 		}
-	} break;
-	case AttackPhase::kAttack: {
-		for (Needle* needle : needles_) {
-			needle->Update();
-		}
+		break;
+
+	case AttackPhase::kAttack:
+		for (Needle* needle : needles_) needle->Update();
 
 		if (attackParameter_ >= attackRushTimer_) {
 			attackPhase_ = AttackPhase::kLingering;
 			attackParameter_ = 0;
-			t_ = 0.0f;
+			t = 0.0f;
 			initPos_ = { 0.0f, 0.0f, 0.0f };
-			for (Needle* needle : needles_) {
-				delete needle;
-			}
+			for (Needle* needle : needles_) delete needle;
 			needles_.clear();
 		}
-	} break;
-	case AttackPhase::kLingering: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+		break;
+
+	case AttackPhase::kLingering:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackLingeringTimer_) {
 			prePreBehavior_ = preBehavior_;
@@ -610,13 +529,17 @@ void Enemy::BehaviorNeedleUpdate() {
 			behaviorRequest_ = Behavior::kRoot;
 			attackPhase_ = AttackPhase::kReservoir;
 			direction_ = Direction::kLeft;
-			turnFirstRotationY_ = object3d_->GetRotate().y;
+			Vector3 rot = object3d_->GetRotate();
+			turnFirstRotationY = rot.y;
 			turnTimer_ = kTimeTurn;
 		}
-	} break;
+		break;
 	}
 }
 
+// ---------------------------------------------------------
+// Behavior: Thunder (雷)
+// ---------------------------------------------------------
 void Enemy::BehaviorThunderInitialize() {
 	attackParameter_ = 0;
 	attackReservoirTimer_ = 40.0f;
@@ -624,51 +547,52 @@ void Enemy::BehaviorThunderInitialize() {
 	attackLingeringTimer_ = 40.0f;
 	attackAfterTimer_ = 10.0f;
 	initPos_ = { 36.0f, 0.0f, 0.0f };
-	t_ = 0.0f;
+	t = 0.0f;
 }
 
 void Enemy::BehaviorThunderUpdate() {
 	attackParameter_++;
+	Vector3 pos = object3d_->GetTranslate();
 
 	switch (attackPhase_) {
 	case AttackPhase::kReservoir:
-	default: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+	default:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackReservoirTimer_) {
 			attackPhase_ = AttackPhase::kAttack;
 			attackParameter_ = 0;
 		}
-	} break;
-	case AttackPhase::kAttack: {
+		break;
+
+	case AttackPhase::kAttack:
 		if (attackParameter_ >= attackRushTimer_) {
 			attackPhase_ = AttackPhase::kLingering;
 			attackParameter_ = 0;
-			t_ = 0.0f;
+			t = 0.0f;
 			initPos_ = { 0.0f, 0.0f, 0.0f };
 			for (Thunder* thunder : thunders_) delete thunder;
 			thunders_.clear();
 		}
 
 		if (attackParameter_ % 50 == 1) {
-			size_t index = attackParameter_ / 50;
-			if (index < thunderPositions_.size()) {
+			size_t idx = attackParameter_ / 50;
+			if (idx < thunderPositions_.size()) {
 				Thunder* thunder = new Thunder();
-				thunder->Initialize(thunderPositions_[index]);
+				thunder->Initialize(thunderPositions_[idx]);
 				thunders_.push_back(thunder);
 			}
 		}
 
-		for (Thunder* thunder : thunders_) {
-			thunder->Update();
-		}
-	} break;
-	case AttackPhase::kLingering: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+		for (Thunder* thunder : thunders_) thunder->Update();
+		break;
+
+	case AttackPhase::kLingering:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackLingeringTimer_) {
 			prePreBehavior_ = preBehavior_;
@@ -676,10 +600,13 @@ void Enemy::BehaviorThunderUpdate() {
 			behaviorRequest_ = Behavior::kRoot;
 			attackPhase_ = AttackPhase::kReservoir;
 		}
-	} break;
+		break;
 	}
 }
 
+// ---------------------------------------------------------
+// Behavior: Punch (連続パンチ)
+// ---------------------------------------------------------
 void Enemy::BehaviorPunchInitialize() {
 	attackParameter_ = 0;
 	attackReservoirTimer_ = 40.0f;
@@ -687,44 +614,45 @@ void Enemy::BehaviorPunchInitialize() {
 	attackLingeringTimer_ = 40.0f;
 	attackAfterTimer_ = 10.0f;
 	initPos_ = { 24.0f, -5.0f, 0.0f };
-	t_ = 0.0f;
+	t = 0.0f;
 }
 
 void Enemy::BehaviorPunchUpdate() {
 	attackParameter_++;
+	Vector3 pos = object3d_->GetTranslate();
 
 	switch (attackPhase_) {
 	case AttackPhase::kReservoir:
-	default: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+	default:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackReservoirTimer_) {
 			attackPhase_ = AttackPhase::kAttack;
 			attackParameter_ = 0;
 			initPos_ = { 22.0f, -5.0f, 0.0f };
-			t_ = 0.0f;
+			t = 0.0f;
 
-			for (int i = 0; i < 2; ++i) { // kPunchCount = 2
+			for (int32_t i = 0; i < kPunchCount; ++i) {
 				Punch* punch = new Punch();
-				Vector3 pPos = object3d_->GetTranslate();
-				pPos.x -= 5.0f * i;
-				pPos.y += 1.0f - (2.0f * i);
-				punch->Initialize(pPos, i);
+				punchPositions_[i] = pos;
+				punchPositions_[i].x -= 5.0f * i;
+				punchPositions_[i].y += 1.0f - (2.0f * i);
+				punch->Initialize(punchPositions_[i], i);
 				punches_.push_back(punch);
 			}
 		}
-	} break;
-	case AttackPhase::kAttack: {
-		t_ += 0.025f;
-		if (t_ >= 1.0f) {
-			initPos_.x = object3d_->GetTranslate().x - 2.0f;
-			t_ = 0.0f;
-		}
-		else {
-			Vector3 currentPos = object3d_->GetTranslate();
-			object3d_->SetTranslate(EaseIn(t_, currentPos, initPos_));
+		break;
+
+	case AttackPhase::kAttack:
+		t += 0.025f;
+		if (t >= 1.0f) {
+			initPos_.x = pos.x - 2.0f;
+			t = 0.0f;
+		} else {
+			pos = EaseIn(t, pos, initPos_);
+			object3d_->SetTranslate(pos);
 		}
 
 		for (Punch* punch : punches_) punch->Update();
@@ -732,16 +660,17 @@ void Enemy::BehaviorPunchUpdate() {
 		if (attackParameter_ >= attackRushTimer_) {
 			attackPhase_ = AttackPhase::kLingering;
 			attackParameter_ = 0;
-			t_ = 0.0f;
+			t = 0.0f;
 			initPos_ = { 0.0f, 0.0f, 0.0f };
 			for (Punch* punch : punches_) delete punch;
 			punches_.clear();
 		}
-	} break;
-	case AttackPhase::kLingering: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+		break;
+
+	case AttackPhase::kLingering:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackLingeringTimer_) {
 			prePreBehavior_ = preBehavior_;
@@ -749,10 +678,61 @@ void Enemy::BehaviorPunchUpdate() {
 			behaviorRequest_ = Behavior::kRoot;
 			attackPhase_ = AttackPhase::kReservoir;
 		}
-	} break;
+		break;
 	}
 }
 
+// ---------------------------------------------------------
+// Behavior: Root (通常行動)
+// ---------------------------------------------------------
+void Enemy::BehaviorRootInitialize() {
+	attackParameter_ = 0;
+	attackAfterTimer_ = 20.0f;
+}
+
+void Enemy::BehaviorRootUpdate() {
+	attackParameter_++;
+
+	if (attackParameter_ >= attackAfterTimer_) {
+		randomValue = static_cast<int>(rand_->GetRandom());
+
+		if (static_cast<Behavior>(randomValue) == preBehavior_ ||
+			static_cast<Behavior>(randomValue) == prePreBehavior_) {
+			return;
+		}
+
+		if (isChangeStart_ && !isChanged_) {
+			behaviorRequest_ = Behavior::kChange;
+			return;
+		}
+
+		if (isChanged_) {
+			if (hp_ <= halfHp_) {
+				if (!canUseThunder_) {
+					if (randomValue == static_cast<int>(Behavior::kThunder)) return;
+				}
+				if (randomValue == static_cast<int>(Behavior::kNeedle) ||
+					randomValue == static_cast<int>(Behavior::kThunder) ||
+					randomValue == static_cast<int>(Behavior::kPunch) ||
+					randomValue == static_cast<int>(Behavior::kBeam)) {
+					behaviorRequest_ = static_cast<Behavior>(randomValue);
+					return;
+				}
+			}
+		} else {
+			if (randomValue == static_cast<int>(Behavior::kApproach) ||
+				randomValue == static_cast<int>(Behavior::kBound) ||
+				randomValue == static_cast<int>(Behavior::kRound)) {
+				behaviorRequest_ = static_cast<Behavior>(randomValue);
+				return;
+			}
+		}
+	}
+}
+
+// ---------------------------------------------------------
+// Behavior: Death (死亡演出)
+// ---------------------------------------------------------
 void Enemy::BehaviorDeathInitialize() {
 	attackParameter_ = 0;
 	attackReservoirTimer_ = 40.0f;
@@ -761,71 +741,80 @@ void Enemy::BehaviorDeathInitialize() {
 	attackAfterTimer_ = 10.0f;
 	initPos_ = { 20.0f, 0.0f, 0.0f };
 	enemyRotate_ = { 1.0f, 1.0f, 1.0f };
-	t_ = 0.0f;
+	t = 0.0f;
 }
 
 void Enemy::BehaviorDeathUpdate() {
 	attackParameter_++;
+	Vector3 pos = object3d_->GetTranslate();
+	Vector3 rot = object3d_->GetRotate();
 
 	switch (attackPhase_) {
 	case AttackPhase::kReservoir:
-	default: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+	default:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
-		Vector3 currentRot = object3d_->GetRotate();
-		object3d_->SetRotate(Lerp(currentRot, enemyRotate_, t_));
+		rot = Lerp(rot, enemyRotate_, t);
+		object3d_->SetRotate(rot);
 
 		if (attackParameter_ >= attackReservoirTimer_) {
 			attackPhase_ = AttackPhase::kAttack;
 			attackParameter_ = 0;
 		}
-	} break;
-	case AttackPhase::kAttack: {
+		break;
+
+	case AttackPhase::kAttack:
 		if (attackParameter_ % 25 == 1) {
-			size_t index = attackParameter_ / 25;
-			if (index < deathExRotates_.size()) { // deathExRotates_はInitializeで初期化が必要
+			size_t idx = attackParameter_ / 25;
+			if (idx < deathExRotates_.size()) {
 				DeathEx* deathEx = new DeathEx();
-				deathEx->Initialize(object3d_->GetTranslate(), deathExRotates_[index]);
+				deathEx->Initialize(pos, deathExRotates_[idx]);
 				deathExs_.push_back(deathEx);
 			}
 		}
+
 		for (DeathEx* deathEx : deathExs_) deathEx->Update();
 
 		if (attackParameter_ >= attackRushTimer_) {
 			attackPhase_ = AttackPhase::kLingering;
 			attackParameter_ = 0;
-			t_ = 0.0f;
+			t = 0.0f;
 			for (DeathEx* deathEx : deathExs_) delete deathEx;
 			deathExs_.clear();
 		}
-	} break;
-	case AttackPhase::kLingering: {
+		break;
+
+	case AttackPhase::kLingering:
 		if (attackParameter_ % 15 == 1) {
 			EnemyDeathParticle* deathParticle = new EnemyDeathParticle();
-			Vector3 pos = object3d_->GetTranslate();
-			pos.x += static_cast<float>(rand_->GetRandom()) - 4.0f;
-			pos.y -= static_cast<float>(rand_->GetRandom()) - 4.0f;
-			pos.z -= 5.0f;
-			deathParticle->Initialize(pos);
+			Vector3 pPos = pos;
+			pPos.x += static_cast<float>(rand_->GetRandom()) - 4.0f;
+			pPos.y -= static_cast<float>(rand_->GetRandom()) - 4.0f;
+			pPos.z -= 5.0f;
+			deathParticle->Initialize(pPos);
 			deathParticles_.push_back(deathParticle);
 		}
+
 		for (EnemyDeathParticle* deathParticle : deathParticles_) deathParticle->Update();
 
 		if (color_.w > targetAlpha_) {
-			t_ += 0.001f;
-			color_.w = Lerp(color_.w, targetAlpha_, t_);
+			t += 0.001f;
+			color_.w = Lerp(color_.w, targetAlpha_, t);
 			object3d_->SetColor(color_);
 		}
 
 		if (attackParameter_ >= attackLingeringTimer_) {
 			isDead_ = true;
 		}
-	} break;
+		break;
 	}
 }
 
+// ---------------------------------------------------------
+// Behavior: Change (形態変化)
+// ---------------------------------------------------------
 void Enemy::BehaviorChangeInitialize() {
 	attackParameter_ = 0;
 	attackReservoirTimer_ = 40.0f;
@@ -836,52 +825,59 @@ void Enemy::BehaviorChangeInitialize() {
 	blinkSpeed_ = 0.2f;
 	initPos_ = { 20.0f, 0.0f, 0.0f };
 	enemyRotate_ = { 1.0f, 1.0f, 1.0f };
-	t_ = 0.0f;
+	t = 0.0f;
 }
 
 void Enemy::BehaviorChangeUpdate() {
 	attackParameter_++;
+	Vector3 pos = object3d_->GetTranslate();
 
 	switch (attackPhase_) {
 	case AttackPhase::kReservoir:
-	default: {
-		t_ += 0.01f;
-		Vector3 currentPos = object3d_->GetTranslate();
-		object3d_->SetTranslate(Lerp(currentPos, initPos_, t_));
+	default:
+		t += 0.01f;
+		pos = Lerp(pos, initPos_, t);
+		object3d_->SetTranslate(pos);
 
 		if (attackParameter_ >= attackReservoirTimer_) {
 			attackPhase_ = AttackPhase::kAttack;
 			attackParameter_ = 0;
-			t_ = 0.0f;
+			t = 0.0f;
 		}
-	} break;
+		break;
+
 	case AttackPhase::kAttack: {
 		float rotate = (float)attackParameter_ / attackRushTimer_;
 		Vector3 rot = object3d_->GetRotate();
-		rot.y = EaseIn(2.0f, 3.14159f * 2.0f, rotate);
+		rot.y = EaseIn(rotate, 2.0f, std::numbers::pi_v<float> *2.0f);
 		object3d_->SetRotate(rot);
 
-		t_ += 0.02f;
-		object3d_->SetScale(Lerp(object3d_->GetScale(), changeScale_, t_));
+		t += 0.02f;
+		Vector3 scale = object3d_->GetScale();
+		scale = Lerp(scale, changeScale_, t);
+		object3d_->SetScale(scale);
 
 		float time = attackParameter_ * changeColorTimer_;
 		color_.x = (std::sin(time + 0.0f) * 0.5f) + 0.5f;
 		color_.y = (std::sin(time + 2.094f) * 0.5f) + 0.5f;
 		color_.z = (std::sin(time + 4.189f) * 0.5f) + 0.5f;
+
 		targetAlpha_ = (std::sin(time * blinkSpeed_) * 0.5f) + 0.5f * alphaRange_ + minAlpha_;
-		color_.w = EaseOut(t_, color_.w, targetAlpha_);
+		color_.w = EaseOut(t, color_.w, targetAlpha_);
 		object3d_->SetColor(color_);
 
 		if (attackParameter_ >= attackRushTimer_) {
 			attackPhase_ = AttackPhase::kLingering;
 			attackParameter_ = 0;
-			t_ = 0.0f;
-			object3d_->SetRotate({ 0,0,0 });
-			color_ = { 1,1,1,1 };
+			t = 0.0f;
+			object3d_->SetRotate({ 0.0f, 0.0f, 0.0f });
+			color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
 			object3d_->SetColor(color_);
 		}
-	} break;
-	case AttackPhase::kLingering: {
+		break;
+	}
+
+	case AttackPhase::kLingering:
 		if (attackParameter_ >= attackLingeringTimer_) {
 			prePreBehavior_ = preBehavior_;
 			preBehavior_ = behavior_;
@@ -889,6 +885,107 @@ void Enemy::BehaviorChangeUpdate() {
 			behaviorRequest_ = Behavior::kRoot;
 			attackPhase_ = AttackPhase::kReservoir;
 		}
-	} break;
+		break;
 	}
+}
+
+// ---------------------------------------------------------
+// Behavior: Start (開始演出)
+// ---------------------------------------------------------
+void Enemy::BehaviorStartInitialize() {
+	initPos_ = { 20.0f, 0.0f, 0.0f };
+	t = 0.0f;
+	direction_ = Direction::kLeft;
+
+	Vector3 rot = object3d_->GetRotate();
+	turnFirstRotationY = rot.y;
+	turnTimer_ = kTimeTurn;
+}
+
+void Enemy::BehaviorStartUpdate() {
+	t += 0.01f;
+	Vector3 pos = object3d_->GetTranslate();
+	pos = Lerp(pos, initPos_, t);
+	object3d_->SetTranslate(pos);
+
+	if (pos.y <= initPos_.y) {
+		behaviorRequest_ = Behavior::kRoot;
+		attackPhase_ = AttackPhase::kReservoir;
+
+		if (isUnknown_) {
+			behaviorRequest_ = Behavior::kUnknown;
+		} else {
+			behaviorRequest_ = Behavior::kRoot;
+		}
+	}
+}
+
+// ---------------------------------------------------------
+// その他ユーティリティ
+// ---------------------------------------------------------
+Vector3 Enemy::GetWorldPosition() {
+	if (object3d_) return object3d_->GetTranslate();
+	return { 0,0,0 };
+}
+
+AABB Enemy::GetAABB() {
+	Vector3 worldPos = GetWorldPosition();
+	return {
+		{worldPos.x - kWidth / 2.0f, worldPos.y - kHeight / 2.0f, worldPos.z - kWidth / 2.0f},
+		{worldPos.x + kWidth / 2.0f, worldPos.y + kHeight / 2.0f, worldPos.z + kWidth / 2.0f}
+	};
+}
+
+void Enemy::OnCollision(const Player* player) {
+	if (behavior_ == Behavior::kDeath || isHit_) return;
+	isCollisionDisabled_ = true;
+	PlayerHitDamage(*player);
+}
+
+void Enemy::PlayerHitDamage(const Player& player) {
+	if (behavior_ == Behavior::kDeath || behavior_ == Behavior::kChange || behavior_ == Behavior::kStart) return;
+
+	if (!isChangeStart_) {
+		if (hp_ <= halfHp_) {
+			isChangeStart_ = true;
+			return;
+		}
+	}
+	if (hp_ <= 0) {
+		behaviorRequest_ = Behavior::kDeath;
+		isCollisionDisabled_ = true;
+		return;
+	}
+
+	hp_ -= 20.0f; // プレイヤーの攻撃力(仮)
+	isHit_ = true;
+}
+
+void Enemy::BombHitDamage() {
+	hp_ -= 10;
+	isHit_ = true;
+
+	if (!isChangeStart_) {
+		if (hp_ <= halfHp_) {
+			behaviorRequest_ = Behavior::kChange;
+			isChangeStart_ = true;
+		}
+	}
+	if (hp_ <= 0) {
+		behaviorRequest_ = Behavior::kDeath;
+	}
+}
+
+void Enemy::HitTimer() {
+	hitTimer_--;
+	if (hitTimer_ <= 0) {
+		isHit_ = false;
+		hitTimer_ = hitTimerMax_;
+	}
+}
+
+void Enemy::OnCollision(const ChainBomb* chainBomb) {
+	if (chainBomb->IsDestroy()) return;
+	if (!chainBomb->IsExplode()) return;
+	BombHitDamage();
 }

@@ -1,22 +1,24 @@
 #pragma once
-#include "Math/MyMath.h"
 #include "Object3d.h"
 #include "Collision.h"
+#include "Math/MyMath.h"
+#include "Rand.h"
+
+// 攻撃・エフェクトクラスのヘッダー
+// (これらはTDEngine用に移植済みである前提です)
+#include "Beam.h"
+#include "Needle.h"
+#include "Thunder.h"
+#include "Punch.h"
+#include "DeathEx.h"
+#include "EnemyDeathParticle.h"
+
 #include <list>
 #include <vector>
-#include <memory>
+#include <numbers>
 
-// 前方宣言
 class Player;
-class GameScene;
 class ChainBomb;
-class Beam;
-class Needle;
-class Punch;
-class Thunder;
-class EnemyDeathParticle;
-class DeathEx;
-class Rand;
 
 // 敵の向き
 enum class Direction {
@@ -27,69 +29,121 @@ enum class Direction {
 
 class Enemy {
 public:
+	// デストラクタ
 	~Enemy();
 
-	// 初期化
+	/// <summary>
+	/// 初期化
+	/// </summary>
+	/// <param name="position">初期座標</param>
+	// Model* や Camera* はObject3dが内部で管理するため引数から削除
 	void Initialize(const MyMath::Vector3& position);
 
-	// 更新
+	/// <summary>
+	/// 更新
+	/// </summary>
 	void Update();
 
-	// 描画
+	/// <summary>
+	/// 描画
+	/// </summary>
 	void Draw();
 
-	// 衝突応答
-	void OnCollision(const Player* player);
-	void OnCollision(const ChainBomb* chainBomb);
-
-	// ゲッター・セッター
-	MyMath::Vector3 GetWorldPosition() const;
+	// ワールド座標の取得
+	MyMath::Vector3 GetWorldPosition();
+	// AABBを取得
 	AABB GetAABB();
-	bool IsDead() const { return isDead_; }
-	bool IsCollisionDisabled() const { return isCollisionDisabled_; }
-	bool IsDeath() const { return behavior_ == Behavior::kDeath; }
 
+	// 衝突応答
+	void OnCollision(const Player* player_);
+	void OnCollision(const ChainBomb* chainBomb_);
+
+	// デスフラグの取得
+	bool IsDead() const { return isDead_; }
+
+	// プレイヤーのポインタのセッター
 	void SetPlayer(Player* player) { player_ = player; }
+
+	// 攻撃のポインタのゲッター
+	Beam* GetBeam() { return beam_; }
+	std::list<Needle*> GetNeedles() { return needles_; }
+	std::list<Punch*> GetPunches() { return punches_; }
+	std::list<Thunder*> GetThunders() { return thunders_; }
+
 	void SetThunderEnabled(bool enabled) { canUseThunder_ = enabled; }
+
+	// 振る舞いリクエストを決定
 	void SetRequest(bool isUnknown) { isUnknown_ = isUnknown; }
 
-	// 攻撃オブジェクト取得 (Collision判定用)
-	Beam* GetBeam() const { return beam_; }
-	const std::list<Needle*>& GetNeedles() const { return needles_; }
-	const std::list<Punch*>& GetPunches() const { return punches_; }
-	const std::list<Thunder*>& GetThunders() const { return thunders_; }
+private:
+	// --- 行動制御メソッド ---
+	void BehaviorRootUpdate();
+	void BehaviorRootInitialize();
+	void BehaviorBoundInitialize();
+	void BehaviorBoundUpdate();
+	void BehaviorRoundInitialize();
+	void BehaviorRoundUpdate();
+	void BehaviorBeamInitialize();
+	void BehaviorBeamUpdate();
+	void BehaviorApproachInitialize();
+	void BehaviorApproachUpdate();
+	void BehaviorNeedleInitialize();
+	void BehaviorNeedleUpdate();
+	void BehaviorThunderInitialize();
+	void BehaviorThunderUpdate();
+	void BehaviorPunchInitialize();
+	void BehaviorPunchUpdate();
+	void BehaviorDeathUpdate();
+	void BehaviorDeathInitialize();
+	void BehaviorChangeUpdate();
+	void BehaviorChangeInitialize();
+	void BehaviorStartInitialize();
+	void BehaviorStartUpdate();
+
+	// HP処理
+	void PlayerHitDamage(const Player& player);
+	void BombHitDamage();
+	void HitTimer();
 
 private:
-	// TDEngine用 Object3d
+	// --- TDEngine用オブジェクト ---
 	Object3d* object3d_ = nullptr;
 
-	// パラメータ
+	// モデルの向き
+	Direction direction_ = Direction::kLeft;
+	float turnFirstRotationY = 0.0f;
+	float turnTimer_ = 0.0f;
+	static inline const float kTimeTurn = 0.3f;
+
+	// 色制御
+	float targetAlpha_ = 0.0f;
+	float minAlpha_ = 0.5f;
+	float alphaRange_ = 0.5f;
+	MyMath::Vector4 color_ = { 1,1,1,1 };
+
+	// 速度
 	MyMath::Vector3 velocity_ = {};
+
+	// キャラクターの当たり判定サイズ
 	static inline const float kWidth = 3.2f;
 	static inline const float kHeight = 3.2f;
 
-	float hp_ = 100.0f; // 初期値適当（元コードではInitializeで設定されていなかったので）
-	float halfHp_ = 50.0f;
+	// HP
+	float hp_ = 0;
+	float halfHp_ = 50;
 
-	// ヒット演出
-	int hitTimer_ = 0;
-	static const int hitTimerMax_ = 10; // 元コードのロジックに合わせて調整
+	// ヒットタイマー
+	int hitTimer_ = 100;
+	int hitTimerMax_ = 100;
 	bool isHit_ = false;
 
 	// 状態フラグ
 	bool isChangeStart_ = false;
-	bool isChanged_ = false; // 初期状態はfalse, 変化後にtrue
+	bool isChanged_ = true;
 	bool isDead_ = false;
 	bool isCollisionDisabled_ = false;
-	bool canUseThunder_ = true;
 
-	// 旋回制御
-	Direction direction_ = Direction::kLeft;
-	float turnFirstRotationY_ = 0.0f;
-	float turnTimer_ = 0.0f;
-	static inline const float kTimeTurn = 0.3f;
-
-	// 行動パターン
+	// 振る舞い定義
 	enum class Behavior {
 		kRoot, kBound, kRound, kBeam, kApproach,
 		kNeedle, kThunder, kPunch, kDeath, kChange, kStart, kUnknown
@@ -97,75 +151,83 @@ private:
 	Behavior behavior_ = Behavior::kStart;
 	Behavior behaviorRequest_ = Behavior::kStart;
 	bool isUnknown_ = false;
+	bool canUseThunder_ = true;
 
 	// 攻撃フェーズ
 	enum class AttackPhase { kReservoir, kAttack, kLingering };
 	AttackPhase attackPhase_ = AttackPhase::kReservoir;
 
-	// タイマー系
-	float attackReservoirTimer_ = 0.0f;
-	float attackRushTimer_ = 0.0f;
-	float attackLingeringTimer_ = 0.0f;
-	float attackAfterTimer_ = 0.0f;
-	uint32_t attackParameter_ = 0;
-	uint32_t attackCount_ = 0;
+	// 各種タイマー
+	float attackReservoirTimer_ = 40.0f;
+	float attackRushTimer_ = 50.0f;
+	float attackLingeringTimer_ = 40.0f;
+	float attackAfterTimer_ = 10.0f;
 
-	// 制御用変数
+	// ランダム
 	Rand* rand_ = nullptr;
-	int randomValue_ = 0;
+	int randomValue = 0;
+
+	// 行動履歴
 	Behavior preBehavior_ = Behavior::kUnknown;
 	Behavior prePreBehavior_ = Behavior::kUnknown;
-	float t_ = 0.0f; // 補間用
 
-	MyMath::Vector3 initPos_ = {};
-	MyMath::Vector3 enemyRotate_ = {};
-	MyMath::Vector3 enemySpeed_ = {};
-	MyMath::Vector3 enemySpeedDecay_ = {};
+	// 補間用
+	float t = 0.0f;
+
+	// 座標・回転制御
+	MyMath::Vector3 initPos_ = { 0.0f, 0.0f, 0.0f };
+	MyMath::Vector3 enemyRotate_ = { 0.0f, 0.0f, 0.0f };
+	MyMath::Vector3 enemySpeed_ = { 0.0f, 0.0f, 0.0f };
+	MyMath::Vector3 enemySpeedDecay_ = { 0.0f, 0.0f, 0.0f };
+	static inline const float attackVelocity = 2.0f;
+
+	uint32_t attackParameter_ = 0;
+	uint32_t attackCount_ = 0;
 
 	// プレイヤー参照
 	Player* player_ = nullptr;
 
-	// 攻撃オブジェクト
+	// --- 攻撃オブジェクト ---
+	// ※Modelポインタは各クラス内部でロードさせるため削除
+
 	Beam* beam_ = nullptr;
+
 	std::list<Needle*> needles_;
+	static const int kNeedleCount = 4;
+	std::vector<MyMath::Vector3> needleRotates_ = {
+		{0.0f, 0.0f, 0.0f},
+		{0.0f, 0.0f, std::numbers::pi_v<float> / 4.2f},
+		{0.0f, 0.0f, std::numbers::pi_v<float> / 2.0f},
+		{0.0f, 0.0f, std::numbers::pi_v<float> / 1.3f}
+	};
+
 	std::list<Thunder*> thunders_;
+	static const int kThunderCount = 4;
+	std::vector<MyMath::Vector3> thunderPositions_ = {
+		{-28.0f, 20.0f, 0.0f}, {-13.0f, 20.0f, 0.0f},
+		{3.0f,   20.0f, 0.0f}, {16.0f,  20.0f, 0.0f}
+	};
+
 	std::list<Punch*> punches_;
+	static const int kPunchCount = 2;
+	std::vector<MyMath::Vector3> punchPositions_ = {
+		{-10.0f, 0.0f, 0.0f}, {-20.0f, 0.0f, 0.0f}
+	};
 
-	// エフェクト
 	std::list<DeathEx*> deathExs_;
-	std::list<EnemyDeathParticle*> deathParticles_;
+	static const int kDeathExCount = 3;
+	std::vector<MyMath::Vector3> deathExRotates_ = {
+		{0.0f, 0.0f, 0.0f},
+		{0.0f, 0.0f, std::numbers::pi_v<float> / 4.2f},
+		{0.0f, 0.0f, std::numbers::pi_v<float> / 2.2f}
+	};
 
-	// 変身演出用
+	std::list<EnemyDeathParticle*> deathParticles_;
+	static const int kDeathParticleCount = 5;
+
+	// 演出パラメータ
 	float changeColorTimer_ = 0.0f;
 	float blinkSpeed_ = 0.2f;
 	MyMath::Vector3 originalScale_ = { 2.0f, 2.0f, 2.0f };
 	MyMath::Vector3 changeScale_ = { 3.0f, 3.0f, 3.0f };
-	MyMath::Vector4 color_ = { 1,1,1,1 };
-	float targetAlpha_ = 0.0f;
-	float minAlpha_ = 0.5f;
-	float alphaRange_ = 0.5f;
-
-	// 攻撃設定データ（角度など）
-	std::vector<MyMath::Vector3> needleRotates_;
-	std::vector<MyMath::Vector3> thunderPositions_;
-	std::vector<MyMath::Vector3> punchPositions_;
-	std::vector<MyMath::Vector3> deathExRotates_;
-
-private:
-	// 各ステートの初期化・更新メソッド
-	void BehaviorRootInitialize();   void BehaviorRootUpdate();
-	void BehaviorBoundInitialize();  void BehaviorBoundUpdate();
-	void BehaviorRoundInitialize();  void BehaviorRoundUpdate();
-	void BehaviorBeamInitialize();   void BehaviorBeamUpdate();
-	void BehaviorApproachInitialize(); void BehaviorApproachUpdate();
-	void BehaviorNeedleInitialize(); void BehaviorNeedleUpdate();
-	void BehaviorThunderInitialize(); void BehaviorThunderUpdate();
-	void BehaviorPunchInitialize();  void BehaviorPunchUpdate();
-	void BehaviorDeathInitialize();  void BehaviorDeathUpdate();
-	void BehaviorChangeInitialize(); void BehaviorChangeUpdate();
-	void BehaviorStartInitialize();  void BehaviorStartUpdate();
-
-	void PlayerHitDamage(const Player& player);
-	void BombHitDamage();
-	void HitTimer();
 };
