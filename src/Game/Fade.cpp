@@ -1,6 +1,6 @@
 #include "Fade.h"
-#include "TextureManager.h" // TextureManager::LoadTexture
-#include "TDEngine.h"     // SpriteCommon
+#include "TextureManager.h"
+#include "TDEngine.h"
 #include <algorithm>
 
 Fade::~Fade() {
@@ -8,8 +8,7 @@ Fade::~Fade() {
 }
 
 void Fade::Initialize() {
-	// テクスチャ読み込み (パスは環境に合わせて調整してください)
-TextureManager::LoadTexture("./Resources/fade.png"); 
+	TextureManager::LoadTexture("./Resources/fade.png");
 
 	// スプライト生成
 	sprite_ = Sprite::Create("./Resources/fade.png", { 640.0f, 360.0f }, { 0,0,0,1 }, { 0.5f, 0.5f });
@@ -27,7 +26,6 @@ void Fade::Update() {
 
 void Fade::Draw() {
 	if (status_ == Status::kNone || !sprite_) return;
-	// SpriteCommonのセットアップはScene側で一括で行う想定だが、ここでも呼べる
 	sprite_->Draw(TDEngine::GetSpriteCommon()->GetDirectXCommon());
 }
 

@@ -150,10 +150,6 @@ uint32_t TextureManager::GetTextureIndexByFilePath(const std::string& filePath) 
 	}
 
 	// --- フルパスを取得して表示 ---
-
-	// 相対パスから絶対パス(フルパス)へ変換
-	// std::filesystem::path は例外を投げることがあるので try-catch で囲むのが安全ですが、
-	// ここでは簡易的にエラーコード版を使用します
 	std::error_code ec;
 	std::filesystem::path fullPath = std::filesystem::absolute(filePath, ec);
 

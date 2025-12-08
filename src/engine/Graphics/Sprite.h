@@ -12,7 +12,7 @@ class DirectXCommon;
 class Sprite
 {
 public:
-	static Sprite* Create(const std::string& textureFilePath, Vector2 position = { 0,0 }, Vector4 color = { 1,1,1,1 }, Vector2 anchorpoint = { 0.5f, 0.5f }, bool isFlipX = false, bool isFlipY = false);
+	static Sprite* Create(const std::string& textureFilePath, Vector2 position = { 0,0 }, Vector4 color = { 1,1,1,1 }, Vector2 anchorpoint = { 0, 0 }, bool isFlipX = false, bool isFlipY = false);
 
 public:
 	void Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon, std::string textureFilePath);

@@ -75,16 +75,17 @@ void TitleScene::UpdateFadeOut() {
 	if (fade_->IsFinished()) {
 		isFinished_ = true;
 	}
-	if (backGround_) backGround_->Update();
-	if (logo_) logo_->Update();
+	if (backGround_) { backGround_->Update(); }
+	if (logo_) {
+		logo_->Update();
+	}
 }
 
 void TitleScene::UpdateSelect() {
 	// キー入力で遷移先を選択
 	if (TDEngine::GetInput()->pushKey(DIK_A)) {
 		select_ = Select::kTutorial;
-	}
-	else if (TDEngine::GetInput()->pushKey(DIK_D)) {
+	} else if (TDEngine::GetInput()->pushKey(DIK_D)) {
 		select_ = Select::kGame;
 	}
 }

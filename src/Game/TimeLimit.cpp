@@ -16,10 +16,12 @@ void TimeLimit::Initialize() {
 
 	// パス準備
 	for (int i = 0; i < 10; ++i) {
-		digitTexturePaths_.push_back("./Resources/number/" + std::to_string(i) + ".png");
+		std::string path = "Resources/number/" + std::to_string(i) + ".png";
+		digitTexturePaths_.push_back(path);
+		TextureManager::LoadTexture(path);
 	}
 	colonTexturePath_ = "./Resources/number/dot.png";
-
+	TextureManager::LoadTexture(colonTexturePath_);
 	// Sprite生成 (初期テクスチャは0番)
 	for (int i = 0; i < kMaxGlyphs; ++i) {
 		glyphs_[i] = Sprite::Create(digitTexturePaths_[0], { 0,0 }, { 1,1,1,1 });

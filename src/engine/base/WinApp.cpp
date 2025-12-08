@@ -72,14 +72,15 @@ void WinApp::Initialize(const std::wstring& title) {
 
 bool WinApp::ProcessMessage() {
 	MSG msg{};
-	if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
+		if (msg.message == WM_QUIT) {
+			return true;
+		}
 	}
 
-	if (msg.message == WM_QUIT) {
-		return true;
-	}
+
 
 	return false;
 }

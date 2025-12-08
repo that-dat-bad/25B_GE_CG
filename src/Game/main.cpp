@@ -2,50 +2,83 @@
 #include "SceneManager.h"
 #include "DirectXCommon.h"
 #include "ImGuiManager.h"
+#include "CameraManager.h"
+#include "Math/MyMath.h" 
 
-// Windowsアプリのエントリーポイント
+using namespace MyMath; 
+
+
+void UpdateDebugCamera() {
+	Input* input = TDEngine::GetInput();
+	Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
+
+	if (!camera || !input) return;
+
+	// 現在の情報を取得
+	Vector3 rot = camera->GetRotate();
+	Vector3 pos = camera->GetTranslate();
+
+	// 回転行列を作成（移動方向の計算用）
+	Matrix4x4 matRot = MakeRotateMatrix(rot);
+	Vector3 cameraX = { matRot.m[0][0], matRot.m[0][1], matRot.m[0][2] }; // 右方向
+	Vector3 cameraY = { matRot.m[1][0], matRot.m[1][1], matRot.m[1][2] }; // 上方向
+	Vector3 cameraZ = { matRot.m[2][0], matRot.m[2][1], matRot.m[2][2] }; // 前方向
+
+	// --- 1. 回転 (右クリック) ---
+	if (input->PushMouse(1)) {
+		float rotateSpeed = 0.005f;
+		rot.y += input->GetMouseMoveX() * rotateSpeed; // Y軸回転 (左右)
+		rot.x += input->GetMouseMoveY() * rotateSpeed; // X軸回転 (上下)
+	}
+
+	// --- 2. 平行移動 (中クリック or Shift+右クリック) ---
+	if (input->PushMouse(2) || (input->PushMouse(1) && input->pushKey(DIK_LSHIFT))) {
+		float panSpeed = 0.05f;
+		// カメラの向きに合わせて移動
+		Vector3 moveX = Multiply(-(float)input->GetMouseMoveX() * panSpeed, cameraX);
+		Vector3 moveY = Multiply((float)input->GetMouseMoveY() * panSpeed, cameraY);
+
+		pos = Add(pos, moveX);
+		pos = Add(pos, moveY);
+	}
+
+	// --- 3. ズーム/前後移動 (ホイール) ---
+	long wheel = input->GetWheel();
+	if (wheel != 0) {
+		float zoomSpeed = 0.02f;
+		Vector3 moveZ = Multiply((float)wheel * zoomSpeed, cameraZ);
+		pos = Add(pos, moveZ);
+	}
+
+	// 結果を反映
+	camera->SetRotate(rot);
+	camera->SetTranslate(pos);
+
+	// 行列を即座に更新して反映
+	camera->Update();
+}
+
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
-	// 1. エンジンの初期化
-	// ウィンドウタイトル、幅、高さを指定
-	TDEngine::Initialize(L"TDEngine Ported Game", 1280, 720);
-
-	// 2. シーンマネージャの生成と初期化
+	TDEngine::Initialize(L"TDEngine Game", 1280, 720);
 	SceneManager* sceneManager = new SceneManager();
 	sceneManager->Initialize();
 
-	// 3. メインループ
 	while (TDEngine::Update()) {
 
-		// --- 更新処理開始 ---
-
-		// ImGui受付開始
 		ImGuiManager::GetInstance()->Begin();
 
 		// シーン更新
 		sceneManager->Update();
+		UpdateDebugCamera();
 
-		// --- 描画処理開始 ---
-
-		// DirectX描画前処理 (画面クリア、バリア設定など)
 		DirectXCommon::GetInstance()->PreDraw();
-
-		// シーン描画 (コマンド積み込み)
 		sceneManager->Draw();
-
-
-		// ImGui終了処理
 		ImGuiManager::GetInstance()->End();
-
-
-		// ImGui描画 (コマンド積み込み)
 		ImGuiManager::GetInstance()->Draw();
-
-		// DirectX描画後処理 (コマンド実行、フリップ、待機)
 		DirectXCommon::GetInstance()->PostDraw();
 	}
 
-	// 4. 終了処理
 	delete sceneManager;
 	TDEngine::Finalize();
 

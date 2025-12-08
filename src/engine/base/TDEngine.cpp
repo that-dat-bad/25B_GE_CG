@@ -99,7 +99,7 @@ bool TDEngine::Update() {
 	}
 
 	// 入力更新
-	sInput->Update();
+ 	sInput->Update();
 
 	// カメラ更新
 	CameraManager::GetInstance()->Update();
