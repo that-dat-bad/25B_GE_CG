@@ -3,7 +3,7 @@
 #include "../../../external/DirectXTex/DirectXTex.h"
 #include <wrl/client.h>
 #include <d3d12.h>
-#include<unordered_map>
+#include <unordered_map>
 
 
 class SrvManager;
@@ -15,13 +15,16 @@ public:
 	static TextureManager* GetInstance();
 
 	// 初期化
-	void Initialize(DirectXCommon* dxCommon,SrvManager* srvManager);
+	void Initialize(DirectXCommon* dxCommon, SrvManager* srvManager);
 
 	// 終了処理
 	void Finalize();
 
 	// テクスチャ読み込み
-	void LoadTexture(const std::string& filePath);
+	uint32_t Load(const std::string& filePath);
+
+	// テクスチャ読み込み
+	static uint32_t LoadTexture(const std::string& filePath);
 
 	// SRVハンドル(GPU)を取得
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(uint32_t textureIndex);
@@ -34,8 +37,6 @@ public:
 	const DirectX::TexMetadata& GetMetaData(uint32_t textureIndex);
 
 private:
-
-
 
 	static TextureManager* instance_;
 	TextureManager() = default;
@@ -53,9 +54,11 @@ private:
 		D3D12_CPU_DESCRIPTOR_HANDLE srvHandleCPU;
 		D3D12_GPU_DESCRIPTOR_HANDLE srvHandleGPU;
 	};
-	std::unordered_map<std::string,TextureData> textureDatas_;
+	std::unordered_map<std::string, TextureData> textureDatas_;
 
 	DirectXCommon* dxCommon_ = nullptr;
 	SrvManager* srvManager_ = nullptr;
-
 };
+
+
+using Texture = TextureManager;

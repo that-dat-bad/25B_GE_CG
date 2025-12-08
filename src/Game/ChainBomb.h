@@ -1,0 +1,44 @@
+#pragma once
+#include "Object3d.h"
+#include "Collision.h"
+#include "EnemyDeathParticle.h"
+#include <vector>
+
+class Player;
+class Enemy;
+
+class ChainBomb {
+public:
+	~ChainBomb();
+	void Initialize(const MyMath::Vector3& position);
+	void Update();
+	void Draw();
+
+	// 連鎖爆発ロジック
+	void ExplodeAround(const std::vector<ChainBomb*>& allChainBombs, float chainExplosionRadius);
+	void Explode();
+
+	// 衝突応答
+	void OnCollision(const Player* player);
+	void OnCollision(const Enemy* enemy);
+
+	// ゲッター
+	MyMath::Vector3 GetWorldPosition() const;
+	AABB GetAABB();
+	AABB GetAABB(float size); // 引数あり版（プレイヤーサイズ考慮など）
+
+	bool IsExplode() const { return isExplode_; }
+	bool IsDestroy() const { return isDestroy_; }
+
+private:
+	Object3d* object3d_ = nullptr;
+	MyMath::Vector3 size_ = { 2.0f, 2.0f, 2.0f };
+
+	bool isExplode_ = false;
+	bool isDestroy_ = false;
+
+	static const int kExplodeFrame = 30;
+	int explodeTimer_ = kExplodeFrame;
+
+	EnemyDeathParticle* deathParticle_ = nullptr;
+};

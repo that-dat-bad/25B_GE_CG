@@ -2,10 +2,27 @@
 #include"ModelCommon.h"
 #include"DirectXCommon.h"
 #include"TextureManager.h"
+#include"ModelManager.h"
 #include<cassert>
 #include<map>
 #include<fstream>
 #include<sstream>
+#include <filesystem>
+
+void Model::LoadFromOBJ(const std::string& modelName) {
+
+	ModelManager::GetInstance()->LoadModel(modelName);
+}
+
+Model* Model::CreateFromOBJ(const std::string& modelName, bool smoothing) {
+	//マネージャ経由で読み込む
+	ModelManager::GetInstance()->LoadModel(modelName);
+
+	//読み込んだモデルのポインタを返す
+	return ModelManager::GetInstance()->FindModel(modelName);
+}
+
+
 void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename)
 {
 
@@ -74,29 +91,41 @@ void Model::Draw() {
 
 }
 
-Model::MaterialData Model::LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename)
-{
-	MaterialData materialData; // 返却用
-	materialData.textureIndex = 0; // 初期化
+Model::MaterialData Model::LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename) {
+	MaterialData materialData;
+	materialData.textureIndex = 0;
 
-	std::map<std::string, std::string> materials; // 名前管理用
-	std::string currentMaterialName;
+	// パスを構築 (generic_stringで区切り文字を統一)
+	std::filesystem::path dir(directoryPath);
+	std::filesystem::path file(filename);
+	std::string fullPath = (dir / file).generic_string();
+
+	std::ifstream mtlFile(fullPath);
+
+	// ファイルが開けなかった場合のエラーチェックを追加
+	if (!mtlFile.is_open()) {
+		std::string msg = "Failed to open .mtl file!\nPath: " + fullPath;
+		MessageBoxA(nullptr, msg.c_str(), "Model Error", MB_OK | MB_ICONERROR);
+		assert(false);
+		return materialData;
+	}
+
 	std::string line;
-	std::ifstream file(directoryPath + "/" + filename);
-	assert(file.is_open());
-
-	while (std::getline(file, line)) {
+	while (std::getline(mtlFile, line)) {
 		std::istringstream s(line);
 		std::string identifier;
 		s >> identifier;
 
-		if (identifier == "newmtl") {
-			s >> currentMaterialName;
-		} else if (identifier == "map_Kd") {
+		// テクスチャファイル名 (map_Kd)
+		if (identifier == "map_Kd") {
 			std::string textureFileName;
 			s >> textureFileName;
+
+			// ディレクトリパスと結合してテクスチャのフルパスを作る
+			std::string texturePath = (dir / textureFileName).generic_string();
+
 			// テクスチャパスを保存
-			materialData.textureFilePath = directoryPath + "/" + textureFileName;
+			materialData.textureFilePath = texturePath;
 		}
 	}
 	return materialData;
@@ -110,45 +139,60 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 	std::vector<Vector2> texcoords;
 	std::string line;
 
-	std::string fullPath = filename;
-	if (!directoryPath.empty()) {
-		fullPath = directoryPath + "/" + filename;
-	}
-	std::ifstream file(fullPath);
-	assert(file.is_open());
+	// ★修正: std::filesystem を使ってパスを綺麗に結合する
+	// これで "assets" + "/" + "models\\axis.obj" みたいな変なパスになるのを防ぎます
+	std::filesystem::path dir(directoryPath);
+	std::filesystem::path file(filename);
+	std::string fullPath = (dir / file).generic_string();
+
+	// ファイルを開く (変数名を objFile に変更して衝突回避)
+	std::ifstream objFile(fullPath);
+	assert(objFile.is_open());
+
+	// .mtlファイルを読み込むための基準ディレクトリを計算
 	std::string baseDirectory;
 	size_t pos = fullPath.find_last_of('/');
+	if (pos == std::string::npos) {
+		pos = fullPath.find_last_of('\\'); // Windowsの区切り文字(\)も考慮
+	}
+
 	if (pos != std::string::npos) {
 		baseDirectory = fullPath.substr(0, pos);
-	} else {
-		baseDirectory = ""; // ルート直下の場合
 	}
-	//std::ifstream file(directoryPath + "/" + filename);
-	//assert(file.is_open());
+	else {
+		baseDirectory = "";
+	}
 
-	while (std::getline(file, line)) {
+	// 行ごとの読み込み
+	while (std::getline(objFile, line)) {
 		std::string identifier;
 		std::istringstream s(line);
 		s >> identifier;
 
 		if (identifier == "v") {
+			// 頂点位置
 			Vector4 position;
 			s >> position.x >> position.y >> position.z;
 			position.w = 1.0f;
-			position.x *= -1.0f; // RH->LH
+			position.x *= -1.0f; // 右手系(Blender等) -> 左手系(DirectX)への変換
 			positions.push_back(position);
-		} else if (identifier == "vt") {
+		}
+		else if (identifier == "vt") {
+			// テクスチャ座標
 			Vector2 texcoord;
 			s >> texcoord.x >> texcoord.y;
-			texcoord.y = 1.0f - texcoord.y; // V-flip
+			texcoord.y = 1.0f - texcoord.y; // V方向反転
 			texcoords.push_back(texcoord);
-		} else if (identifier == "vn") {
+		}
+		else if (identifier == "vn") {
+			// 法線ベクトル
 			Vector3 normal;
 			s >> normal.x >> normal.y >> normal.z;
-			normal.x *= -1.0f; // RH->LH
+			normal.x *= -1.0f; // 右手系 -> 左手系
 			normals.push_back(normal);
-		} else if (identifier == "f") {
-			// 面データの読み込み
+		}
+		else if (identifier == "f") {
+			// 面情報
 			VertexData triangle[3];
 			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
 				std::string vertexDefinition;
@@ -156,9 +200,10 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 
 				std::istringstream v(vertexDefinition);
 				std::string indexStr;
-				int indices[3] = { 0, 0, 0 };
+				int indices[3] = { 0, 0, 0 }; // 位置, UV, 法線
 				int i = 0;
 
+				// スラッシュ区切りでインデックスを読む (例: 1/1/1)
 				while (std::getline(v, indexStr, '/')) {
 					if (!indexStr.empty()) {
 						indices[i] = std::stoi(indexStr);
@@ -166,7 +211,7 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 					i++;
 				}
 
-				// 頂点構築
+				// インデックスを使って頂点を構築 (OBJは1始まりなので -1 する)
 				triangle[faceVertex].position = positions[indices[0] - 1];
 
 				if (indices[1] != 0) triangle[faceVertex].texcoord = texcoords[indices[1] - 1];
@@ -175,15 +220,16 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 				if (indices[2] != 0) triangle[faceVertex].normal = normals[indices[2] - 1];
 				else triangle[faceVertex].normal = { 0.0f, 0.0f, 1.0f };
 			}
-			// 逆順登録 (カリング対策)
+
+			// 頂点を逆順で登録 (0, 2, 1) することでカリング対策
 			modelData.vertices.push_back(triangle[0]);
 			modelData.vertices.push_back(triangle[2]);
 			modelData.vertices.push_back(triangle[1]);
-		} else if (identifier == "mtllib") {
+		}
+		else if (identifier == "mtllib") {
+			// マテリアルファイル読み込み
 			std::string materialFileName;
 			s >> materialFileName;
-			// マテリアル読み込み
-			//modelData.material = LoadMaterialTemplate(directoryPath, materialFileName);
 			modelData.material = LoadMaterialTemplate(baseDirectory, materialFileName);
 		}
 	}

@@ -12,12 +12,13 @@ public:
 	static ModelManager* GetInstance();
 	void Initialize(DirectXCommon* dxCommon);
 	void Finalize();
-
+	~ModelManager() = default;
 	/// <summary>
 	/// モデルファイルの読み込み
 	/// </summary>
 	/// <param name="filePath"></param>
 	void LoadModel(const std::string& filePath);
+	void LoadModel(const std::string& directoryPath, const std::string& filename);
 
 	/// <summary>
 	/// モデルの検索
@@ -28,7 +29,7 @@ public:
 private:
 	static ModelManager* instance_;
 	ModelManager() = default;
-	~ModelManager() = default;
+
 	ModelManager(const ModelManager&) = delete;
 	ModelManager& operator=(const ModelManager&) = delete;
 	ModelCommon* modelCommon_ = nullptr;

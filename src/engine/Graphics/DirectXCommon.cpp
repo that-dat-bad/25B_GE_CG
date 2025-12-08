@@ -4,13 +4,13 @@
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #include <cassert>
-#include"../base/StringUtility.h"
-#include"../base/Logger.h"
+#include"StringUtility.h"
+#include"Logger.h"
 #include <format>
 #include<thread>
 #include "../../../external/DirectXTex/DirectXTex.h"
 #include "../../../external/DirectXTex/d3dx12.h"
-#include"../Graphics/SrvManager.h"
+#include"SrvManager.h"
 
 using namespace logger;
 using namespace StringUtility;
@@ -501,4 +501,10 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 	return intermediateResource;
 }
 
-
+DirectXCommon* DirectXCommon::GetInstance() {
+	static DirectXCommon* instance = nullptr;
+	if (instance == nullptr) {
+		instance = new DirectXCommon();
+	}
+	return instance;
+}

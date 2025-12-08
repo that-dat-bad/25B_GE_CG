@@ -15,11 +15,17 @@ public:
 	bool pushKey(BYTE keyNumber);
 	bool triggerKey(BYTE keyNumber);
 
+
+	bool PushMouse(int buttonNumber) const; // 0:左, 1:右, 2:中
+	long GetMouseMoveX() const;
+	long GetMouseMoveY() const;
+	long GetWheel() const;
 private:
 	ComPtr<IDirectInput8> directInput_;
 	ComPtr<IDirectInputDevice8> keyboard_;
 	ComPtr<IDirectInputDevice8> mouse_;
 	BYTE keys_[256] = {};
 	BYTE preKeys_[256] = {};
+	DIMOUSESTATE2 mouseState_ = {};
 };
 
