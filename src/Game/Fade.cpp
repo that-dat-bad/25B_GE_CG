@@ -9,10 +9,10 @@ Fade::~Fade() {
 
 void Fade::Initialize() {
 	// テクスチャ読み込み (パスは環境に合わせて調整してください)
-	// TextureManager::LoadTexture("Resources/fade.png"); 
+TextureManager::LoadTexture("./Resources/fade.png"); 
 
 	// スプライト生成
-	sprite_ = Sprite::Create("Resources/fade.png", { 640.0f, 360.0f }, { 0,0,0,1 }, { 0.5f, 0.5f });
+	sprite_ = Sprite::Create("./Resources/fade.png", { 640.0f, 360.0f }, { 0,0,0,1 }, { 0.5f, 0.5f });
 	sprite_->SetSize({ 0.0f, 0.0f });
 	isActive_ = false;
 }

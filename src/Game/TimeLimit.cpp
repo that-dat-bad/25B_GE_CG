@@ -16,9 +16,9 @@ void TimeLimit::Initialize() {
 
 	// パス準備
 	for (int i = 0; i < 10; ++i) {
-		digitTexturePaths_.push_back("Resources/number/" + std::to_string(i) + ".png");
+		digitTexturePaths_.push_back("./Resources/number/" + std::to_string(i) + ".png");
 	}
-	colonTexturePath_ = "Resources/number/dot.png";
+	colonTexturePath_ = "./Resources/number/dot.png";
 
 	// Sprite生成 (初期テクスチャは0番)
 	for (int i = 0; i < kMaxGlyphs; ++i) {

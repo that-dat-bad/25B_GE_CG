@@ -59,7 +59,7 @@ void TitleScene::UpdateFadeIn() {
 }
 
 void TitleScene::UpdateMain() {
-	if (TDEngine::GetInput()->triggerKey(DIK_SPACE)) { // TriggerKey相当に変更
+	if (TDEngine::GetInput()->triggerKey(DIK_SPACE)) {
 		if (select_ != Select::kNone) {
 			phase_ = Phase::kFadeOut;
 			fade_->Start(Fade::Status::kFadeOut, duration_);

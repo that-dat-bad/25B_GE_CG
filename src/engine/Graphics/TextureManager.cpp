@@ -3,6 +3,7 @@
 #include <cassert>
 #include <filesystem> 
 #include "SrvManager.h"
+#include <comdef.h>
 TextureManager* TextureManager::instance_ = nullptr;
 
 
@@ -12,6 +13,14 @@ std::wstring ConvertString(const std::string& str) {
 	std::wstring wstrTo(size_needed, 0);
 	MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
 	return wstrTo;
+}
+
+std::string ConvertWString(const std::wstring& wstr) {
+	if (wstr.empty()) return std::string();
+	int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.length(), NULL, 0, NULL, NULL);
+	std::string strTo(size_needed, 0);
+	WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.length(), &strTo[0], size_needed, NULL, NULL);
+	return strTo;
 }
 
 TextureManager* TextureManager::GetInstance() {
@@ -54,7 +63,31 @@ uint32_t TextureManager::Load(const std::string& filePath) {
 
 	hr = DirectX::LoadFromWICFile(wFilePath.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
 	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) {
+		// エラーコードを文字列に変換
+		_com_error err(hr);
+		std::wstring errMsgW = err.ErrorMessage();
+		std::string errMsgA = ConvertWString(errMsgW); // ここで新しい変換関数を使用
 
+		// 簡易的な文字列変換 (wstring -> string)
+		int size_needed = WideCharToMultiByte(CP_UTF8, 0, errMsgW.c_str(), (int)errMsgW.length(), NULL, 0, NULL, NULL);
+		std::string message(size_needed, 0);
+		WideCharToMultiByte(CP_UTF8, 0, errMsgW.c_str(), (int)errMsgW.length(), &message[0], size_needed, NULL, NULL);
+
+		// フルパス取得
+		std::filesystem::path fullPath = std::filesystem::absolute(filePath);
+
+		std::string fullMessage =
+			"Texture Load Failed!\n\n"
+			"Path: " + fullPath.string() + "\n\n"
+			"Error Code: 0x" + std::format("{:X}", (unsigned long)hr) + "\n"
+			"Message: " + message;
+
+		MessageBoxA(nullptr, fullMessage.c_str(), "TextureManager Error", MB_OK | MB_ICONERROR);
+
+		assert(false);
+		return 0;
+	}
 	DirectX::ScratchImage mipImages;
 	if (DirectX::IsCompressed(image.GetMetadata().format)) {
 		mipImages = std::move(image);
@@ -116,7 +149,30 @@ uint32_t TextureManager::GetTextureIndexByFilePath(const std::string& filePath) 
 		return textureDatas_[filePath].srvIndex;
 	}
 
-	assert(false && "Texture not found.");
+	// --- フルパスを取得して表示 ---
+
+	// 相対パスから絶対パス(フルパス)へ変換
+	// std::filesystem::path は例外を投げることがあるので try-catch で囲むのが安全ですが、
+	// ここでは簡易的にエラーコード版を使用します
+	std::error_code ec;
+	std::filesystem::path fullPath = std::filesystem::absolute(filePath, ec);
+
+	std::string pathString;
+	if (!ec) {
+		pathString = fullPath.string(); // 正常に取得できた場合
+	} else {
+		pathString = filePath + " (Failed to get absolute path)"; // 失敗時は元のパス
+	}
+
+	std::string errorMessage = "Texture not found!\n\nPath:\n" + pathString;
+
+	// メッセージボックスで表示
+	MessageBoxA(nullptr, errorMessage.c_str(), "TextureManager Error", MB_OK | MB_ICONERROR);
+
+	// アサートで停止
+	assert(false);
+	// ---------------------------
+
 	return 0;
 }
 

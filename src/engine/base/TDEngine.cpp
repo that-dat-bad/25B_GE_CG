@@ -94,9 +94,8 @@ void TDEngine::Initialize(const std::wstring& title, int width, int height) {
 }
 
 bool TDEngine::Update() {
-	// ウィンドウメッセージ処理
 	if (sWinApp->ProcessMessage()) {
-		return true;
+		return false;
 	}
 
 	// 入力更新
@@ -106,7 +105,7 @@ bool TDEngine::Update() {
 	CameraManager::GetInstance()->Update();
 
 
-	return false;
+	return true;
 }
 
 void TDEngine::Finalize() {

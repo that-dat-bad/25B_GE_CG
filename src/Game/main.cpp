@@ -15,7 +15,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	sceneManager->Initialize();
 
 	// 3. メインループ
-	// TDEngine::Update() が false を返す（ウィンドウが閉じられる）までループ
 	while (TDEngine::Update()) {
 
 		// --- 更新処理開始 ---
@@ -34,11 +33,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// シーン描画 (コマンド積み込み)
 		sceneManager->Draw();
 
-		// ImGui描画 (コマンド積み込み)
-		ImGuiManager::GetInstance()->Draw();
 
 		// ImGui終了処理
 		ImGuiManager::GetInstance()->End();
+
+
+		// ImGui描画 (コマンド積み込み)
+		ImGuiManager::GetInstance()->Draw();
 
 		// DirectX描画後処理 (コマンド実行、フリップ、待機)
 		DirectXCommon::GetInstance()->PostDraw();
