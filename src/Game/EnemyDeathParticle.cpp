@@ -1,12 +1,14 @@
 #include "EnemyDeathParticle.h"
-
+#include "Model.h"
 using namespace MyMath;
 
 EnemyDeathParticle::~EnemyDeathParticle() { if (object3d_) delete object3d_; }
 
 void EnemyDeathParticle::Initialize(const Vector3& position) {
+	std::string path = "./Resources/deathParticle/deathParticle.obj";
+	Model::LoadFromOBJ(path);
 	object3d_ = Object3d::Create();
-	object3d_->SetModel("deathParticle.obj"); // 元コードのモデル名
+	object3d_->SetModel(path);
 	object3d_->SetTranslate(position);
 
 	color_ = { 1.0f, 1.0f, 1.0f, 1.0f };

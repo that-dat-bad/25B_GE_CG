@@ -1,12 +1,14 @@
 #include "DeathEx.h"
-
+#include "Model.h"
 using namespace MyMath;
 
 DeathEx::~DeathEx() { if (object3d_) delete object3d_; }
 
 void DeathEx::Initialize(const Vector3& position, const Vector3& rotate) {
+	std::string path = "./Resources/deathEx/deathEx.obj";
+	Model::LoadFromOBJ(path);
 	object3d_ = Object3d::Create();
-	object3d_->SetModel("deathEx.obj");
+	object3d_->SetModel(path);
 	object3d_->SetTranslate(position);
 	object3d_->SetRotate(rotate);
 	object3d_->SetScale({ 70.0f, 2.0f, 1.0f });

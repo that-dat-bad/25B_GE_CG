@@ -1,5 +1,6 @@
 #include "Thunder.h"
-#include <algorithm> // for clamp if needed
+#include <algorithm>
+#include "Model.h"
 
 using namespace MyMath;
 
@@ -8,8 +9,10 @@ Thunder::~Thunder() {
 }
 
 void Thunder::Initialize(const Vector3& position) {
+	std::string path = "./Resources/Thunder/Thunder.obj";
+	Model::LoadFromOBJ(path);
 	object3d_ = Object3d::Create();
-	object3d_->SetModel("Thunder.obj");
+	object3d_->SetModel(path);
 	object3d_->SetTranslate(position);
 	color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
 }

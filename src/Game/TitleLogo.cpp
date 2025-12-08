@@ -11,7 +11,6 @@ void TitleLogo::Initialize(const MyMath::Vector3& position) {
 	std::string path = "./Resources/titleLogo/titleLogo.obj";
 	Model::LoadFromOBJ(path);
 	object3d_ = Object3d::Create();
-	object3d_ = Object3d::Create();
 	object3d_->SetModel(path);
 	object3d_->SetTranslate(position);
 	basePosition_ = position;

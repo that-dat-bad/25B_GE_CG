@@ -1,5 +1,5 @@
 #include "Wind.h"
-
+#include "Model.h"
 using namespace MyMath;
 
 Wind::~Wind() {
@@ -7,8 +7,10 @@ Wind::~Wind() {
 }
 
 void Wind::Initialize(const Vector3& position) {
+	std::string path = "./Resources/wind/wind.obj";
+	Model::LoadFromOBJ(path);
 	object3d_ = Object3d::Create();
-	object3d_->SetModel("wind.obj");
+	object3d_->SetModel(path);
 	object3d_->SetTranslate(position);
 	object3d_->SetScale({ 0.5f, 0.5f, 0.5f });
 

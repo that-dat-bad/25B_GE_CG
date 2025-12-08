@@ -1,12 +1,14 @@
 #include "Needle.h"
-
+#include"Model.h"
 using namespace MyMath;
 
 Needle::~Needle() { if (object3d_) delete object3d_; }
 
 void Needle::Initialize(const Vector3& position, const Vector3& rotate) {
+	std::string path = "./Resources/needle/needle.obj";
+	Model::LoadFromOBJ(path);
 	object3d_ = Object3d::Create();
-	object3d_->SetModel("needle.obj");
+	object3d_->SetModel(path);
 	object3d_->SetTranslate(position);
 	object3d_->SetRotate(rotate);
 }

@@ -16,9 +16,11 @@ using namespace MyMath;
 using namespace TDEngine;
 
 void Player::Initialize(const Vector3& position) {
+	std::string path = "./Resources/Player/Player.obj";
+	Model::LoadFromOBJ(path);
 	// Object3d生成
 	object3d_ = Object3d::Create();
-	object3d_->SetModel("player");
+	object3d_->SetModel(path);
 
 	// 初期座標設定
 	object3d_->SetTranslate(position);

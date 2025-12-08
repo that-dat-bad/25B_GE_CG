@@ -10,9 +10,7 @@ TutorialScene::~TutorialScene() {
 }
 
 void TutorialScene::Initialize() {
-	CameraManager::GetInstance()->CreateCamera("TutorialCamera");
-	CameraManager::GetInstance()->SetActiveCamera("TutorialCamera");
-	CameraManager::GetInstance()->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -50.0f });
+	CameraManager::GetInstance()->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -90.0f });
 
 	skydome_ = new Skydome();
 	skydome_->Initialize();
@@ -23,7 +21,7 @@ void TutorialScene::Initialize() {
 	enemy_ = new Enemy();
 	enemy_->Initialize({ 0.0f, 20.0f, 0.0f });
 	enemy_->SetPlayer(player_);
-	enemy_->SetRequest(true); // 振る舞いリクエスト
+	enemy_->SetRequest(true);
 
 	fade_ = new Fade();
 	fade_->Initialize();

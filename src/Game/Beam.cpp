@@ -1,4 +1,5 @@
 #include "Beam.h"
+#include "Model.h"
 
 using namespace MyMath;
 
@@ -7,8 +8,10 @@ Beam::~Beam() {
 }
 
 void Beam::Initialize(const Vector3& position) {
+	std::string path = "./Resources/beam/beam.obj";
+	Model::LoadFromOBJ(path);
 	object3d_ = Object3d::Create();
-	object3d_->SetModel("beam.obj");
+	object3d_->SetModel(path);
 	object3d_->SetTranslate(position);
 	object3d_->SetScale({ 1.0f, 1.0f, 1.0f });
 }

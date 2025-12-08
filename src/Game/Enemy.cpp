@@ -8,6 +8,7 @@
 #include "DeathEx.h"
 #include "EnemyDeathParticle.h"
 #include "Rand.h"
+#include "Model.h"
 
 #include <cmath>
 #include <algorithm>
@@ -27,9 +28,11 @@ Enemy::~Enemy() {
 }
 
 void Enemy::Initialize(const Vector3& position) {
-	// Object3d生成
+	// Object3d生成	
+	std::string path = "./Resources/Enemy/Enemy.obj";
+	Model::LoadFromOBJ(path);
 	object3d_ = Object3d::Create();
-	object3d_->SetModel("enemy");
+	object3d_->SetModel(path);
 	object3d_->SetTranslate(position);
 	object3d_->SetScale(originalScale_);
 	object3d_->SetColor({ 1, 1, 1, 1 });
@@ -98,13 +101,50 @@ void Enemy::Update() {
 
 	// ステート更新実行
 	switch (behavior_) {
-	case Behavior::kRoot: BehaviorRootUpdate(); break;
-	case Behavior::kBound: BehaviorBoundUpdate(); break;
-		// ... 他のステートも同様に呼び出し ...
-	case Behavior::kBeam: BehaviorBeamUpdate(); break;
-	case Behavior::kStart: BehaviorStartUpdate(); break;
-	case Behavior::kDeath: BehaviorDeathUpdate(); break;
-		// (省略部分は元コードのswitch文と同様)
+	case Enemy::Behavior::kRoot:
+		// 通常行動の初期化
+		BehaviorRootInitialize();
+		break;
+	case Enemy::Behavior::kBound:
+		// 跳ね回るの初期化
+		BehaviorBoundInitialize();
+		break;
+	case Enemy::Behavior::kRound:
+		// 往復の初期化
+		BehaviorRoundInitialize();
+		break;
+	case Enemy::Behavior::kBeam:
+		// ビーム攻撃の初期化
+		BehaviorBeamInitialize();
+		break;
+	case Enemy::Behavior::kApproach:
+		// 接近の初期化
+		BehaviorApproachInitialize();
+		break;
+	case Enemy::Behavior::kNeedle:
+		// 針攻撃の初期化
+		BehaviorNeedleInitialize();
+		break;
+	case Enemy::Behavior::kThunder:
+		// 雷攻撃の初期化
+		BehaviorThunderInitialize();
+		break;
+	case Enemy::Behavior::kPunch:
+		// 連続パンチの初期化
+		BehaviorPunchInitialize();
+		break;
+	case Enemy::Behavior::kDeath:
+		// デス演出の初期化
+		BehaviorDeathInitialize();
+		break;
+	case Enemy::Behavior::kChange:
+		// 形態変化の初期化
+		BehaviorChangeInitialize();
+		break;
+	case Enemy::Behavior::kStart:
+		// 開始演出の初期化
+		BehaviorStartInitialize();
+		break;
 	}
 
 	// 行列更新
@@ -129,10 +169,6 @@ void Enemy::Draw() {
 		for (auto p : deathParticles_) p->Draw();
 	}
 }
-
-// -----------------------------------------------------
-// 以下、各Behaviorの実装 (例として一部抜粋して移植)
-// -----------------------------------------------------
 
 void Enemy::BehaviorStartInitialize() {
 	initPos_ = { 20.0f, 0.0f, 0.0f };

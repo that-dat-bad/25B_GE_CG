@@ -1,6 +1,6 @@
 #include "Punch.h"
 #include <algorithm>
-
+#include "Model.h"
 using namespace MyMath;
 
 Punch::~Punch() {
@@ -8,8 +8,10 @@ Punch::~Punch() {
 }
 
 void Punch::Initialize(const Vector3& position, int punched) {
+	std::string path = "./Resources/punch/punch.obj";
+	Model::LoadFromOBJ(path);
 	object3d_ = Object3d::Create();
-	object3d_->SetModel("punch.obj");
+	object3d_->SetModel(path);
 	object3d_->SetTranslate(position);
 	object3d_->SetScale({ 1.0f, 1.0f, 1.0f });
 
