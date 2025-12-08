@@ -37,7 +37,7 @@ void Object3d::Initialize(Object3dCommon* object3dCommon) {
 	materialResource_ = dxCommon->CreateBufferResource(sizeof(Material));
 	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
 	materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f }; // 白で初期化
-	materialData_->enableLighting = true; // ライティング有効
+	materialData_->enableLighting = false; // ライティング有効
 	materialData_->uvTransform = Identity4x4();
 
 	// 4. Transform初期値設定

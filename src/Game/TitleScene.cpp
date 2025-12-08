@@ -11,10 +11,9 @@ TitleScene::~TitleScene() {
 
 void TitleScene::Initialize() {
 	// カメラ設定
-	CameraManager::GetInstance()->CreateCamera("TitleCamera");
-	CameraManager::GetInstance()->SetActiveCamera("TitleCamera");
 	Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
-	camera->SetTranslate({ 0.0f, 0.0f, -50.0f });
+	camera->SetTranslate({ 0.0f, 0.0f, -90.0f });
+	camera->SetRotate({ 0.0f, 0.0f, 0.0f });
 
 	// 背景
 	backGround_ = new BackGround();

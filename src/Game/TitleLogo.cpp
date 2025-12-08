@@ -1,14 +1,18 @@
 #include "TitleLogo.h"
 #include <cmath>
-#include <numbers> // std::numbers::pi_v
+#include <numbers>
+#include "Model.h"
 
 TitleLogo::~TitleLogo() {
 	if (object3d_) delete object3d_;
 }
 
 void TitleLogo::Initialize(const MyMath::Vector3& position) {
+	std::string path = "./Resources/titleLogo/titleLogo.obj";
+	Model::LoadFromOBJ(path);
 	object3d_ = Object3d::Create();
-	object3d_->SetModel("titleLogo.obj");
+	object3d_ = Object3d::Create();
+	object3d_->SetModel(path);
 	object3d_->SetTranslate(position);
 	basePosition_ = position;
 }

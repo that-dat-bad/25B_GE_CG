@@ -63,7 +63,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	TDEngine::Initialize(L"TDEngine Game", 1280, 720);
 	SceneManager* sceneManager = new SceneManager();
 	sceneManager->Initialize();
-
 	while (TDEngine::Update()) {
 
 		ImGuiManager::GetInstance()->Begin();
