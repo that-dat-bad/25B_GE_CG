@@ -47,8 +47,8 @@ void ModelManager::LoadModel(const std::string& filePath) {
 	}
 
 	std::filesystem::path pathObj(filePath);
-	std::string directoryPath = pathObj.parent_path().string(); // 例: "Resources"
-	std::string filename = pathObj.filename().string();         // 例: "player.obj"
+	std::string directoryPath = pathObj.parent_path().generic_string(); // 例: "Resources"
+	std::string filename = pathObj.filename().generic_string();         // 例: "player.obj"
 
 	// モデル生成
 	std::unique_ptr<Model> model = std::make_unique<Model>();

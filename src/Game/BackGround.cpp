@@ -14,7 +14,7 @@ void BackGround::Initialize(const std::string& modelName, const MyMath::Vector3&
 }
 
 void BackGround::Update() {
-	if (object3d_) object3d_->Update();
+	if (object3d_) { object3d_->Update(); }
 }
 
 void BackGround::Draw() {

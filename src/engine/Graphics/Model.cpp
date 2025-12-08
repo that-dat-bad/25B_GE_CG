@@ -91,29 +91,41 @@ void Model::Draw() {
 
 }
 
-Model::MaterialData Model::LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename)
-{
-	MaterialData materialData; // 返却用
-	materialData.textureIndex = 0; // 初期化
+Model::MaterialData Model::LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename) {
+	MaterialData materialData;
+	materialData.textureIndex = 0;
 
-	std::map<std::string, std::string> materials; // 名前管理用
-	std::string currentMaterialName;
+	// パスを構築 (generic_stringで区切り文字を統一)
+	std::filesystem::path dir(directoryPath);
+	std::filesystem::path file(filename);
+	std::string fullPath = (dir / file).generic_string();
+
+	std::ifstream mtlFile(fullPath);
+
+	// ファイルが開けなかった場合のエラーチェックを追加
+	if (!mtlFile.is_open()) {
+		std::string msg = "Failed to open .mtl file!\nPath: " + fullPath;
+		MessageBoxA(nullptr, msg.c_str(), "Model Error", MB_OK | MB_ICONERROR);
+		assert(false);
+		return materialData;
+	}
+
 	std::string line;
-	std::ifstream file(directoryPath + "/" + filename);
-	assert(file.is_open());
-
-	while (std::getline(file, line)) {
+	while (std::getline(mtlFile, line)) {
 		std::istringstream s(line);
 		std::string identifier;
 		s >> identifier;
 
-		if (identifier == "newmtl") {
-			s >> currentMaterialName;
-		} else if (identifier == "map_Kd") {
+		// テクスチャファイル名 (map_Kd)
+		if (identifier == "map_Kd") {
 			std::string textureFileName;
 			s >> textureFileName;
+
+			// ディレクトリパスと結合してテクスチャのフルパスを作る
+			std::string texturePath = (dir / textureFileName).generic_string();
+
 			// テクスチャパスを保存
-			materialData.textureFilePath = directoryPath + "/" + textureFileName;
+			materialData.textureFilePath = texturePath;
 		}
 	}
 	return materialData;
@@ -131,7 +143,7 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 	// これで "assets" + "/" + "models\\axis.obj" みたいな変なパスになるのを防ぎます
 	std::filesystem::path dir(directoryPath);
 	std::filesystem::path file(filename);
-	std::string fullPath = (dir / file).string();
+	std::string fullPath = (dir / file).generic_string();
 
 	// ファイルを開く (変数名を objFile に変更して衝突回避)
 	std::ifstream objFile(fullPath);
