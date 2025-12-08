@@ -23,8 +23,7 @@ Model* Model::CreateFromOBJ(const std::string& modelName, bool smoothing) {
 }
 
 
-void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename)
-{
+void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename) {
 
 	modelCommon_ = modelCommon;
 	DirectXCommon* dxCommon = modelCommon_->GetDirectXCommon();
@@ -91,36 +90,47 @@ void Model::Draw() {
 
 }
 
-Model::MaterialData Model::LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename)
-{
-	MaterialData materialData; // 返却用
-	materialData.textureIndex = 0; // 初期化
+Model::MaterialData Model::LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename) {
+	MaterialData materialData;
+	materialData.textureIndex = 0;
 
-	std::map<std::string, std::string> materials; // 名前管理用
-	std::string currentMaterialName;
+	// パスを構築 (generic_stringで区切り文字を統一)
+	std::filesystem::path dir(directoryPath);
+	std::filesystem::path file(filename);
+	std::string fullPath = (dir / file).generic_string();
+
+	std::ifstream mtlFile(fullPath);
+
+	// ファイルが開けなかった場合のエラーチェックを追加
+	if (!mtlFile.is_open()) {
+		std::string msg = "Failed to open .mtl file!\nPath: " + fullPath;
+		MessageBoxA(nullptr, msg.c_str(), "Model Error", MB_OK | MB_ICONERROR);
+		assert(false);
+		return materialData;
+	}
+
 	std::string line;
-	std::ifstream file(directoryPath + "/" + filename);
-	assert(file.is_open());
-
-	while (std::getline(file, line)) {
+	while (std::getline(mtlFile, line)) {
 		std::istringstream s(line);
 		std::string identifier;
 		s >> identifier;
 
-		if (identifier == "newmtl") {
-			s >> currentMaterialName;
-		} else if (identifier == "map_Kd") {
+		// テクスチャファイル名 (map_Kd)
+		if (identifier == "map_Kd") {
 			std::string textureFileName;
 			s >> textureFileName;
+
+			// ディレクトリパスと結合してテクスチャのフルパスを作る
+			std::string texturePath = (dir / textureFileName).generic_string();
+
 			// テクスチャパスを保存
-			materialData.textureFilePath = directoryPath + "/" + textureFileName;
+			materialData.textureFilePath = texturePath;
 		}
 	}
 	return materialData;
 }
 
-Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std::string& filename)
-{
+Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std::string& filename) {
 	ModelData modelData; // 返却用
 	std::vector<Vector4> positions;
 	std::vector<Vector3> normals;
@@ -131,7 +141,7 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 	// これで "assets" + "/" + "models\\axis.obj" みたいな変なパスになるのを防ぎます
 	std::filesystem::path dir(directoryPath);
 	std::filesystem::path file(filename);
-	std::string fullPath = (dir / file).string();
+	std::string fullPath = (dir / file).generic_string();
 
 	// ファイルを開く (変数名を objFile に変更して衝突回避)
 	std::ifstream objFile(fullPath);
@@ -146,8 +156,7 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 
 	if (pos != std::string::npos) {
 		baseDirectory = fullPath.substr(0, pos);
-	}
-	else {
+	} else {
 		baseDirectory = "";
 	}
 
@@ -164,22 +173,19 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 			position.w = 1.0f;
 			position.x *= -1.0f; // 右手系(Blender等) -> 左手系(DirectX)への変換
 			positions.push_back(position);
-		}
-		else if (identifier == "vt") {
+		} else if (identifier == "vt") {
 			// テクスチャ座標
 			Vector2 texcoord;
 			s >> texcoord.x >> texcoord.y;
 			texcoord.y = 1.0f - texcoord.y; // V方向反転
 			texcoords.push_back(texcoord);
-		}
-		else if (identifier == "vn") {
+		} else if (identifier == "vn") {
 			// 法線ベクトル
 			Vector3 normal;
 			s >> normal.x >> normal.y >> normal.z;
 			normal.x *= -1.0f; // 右手系 -> 左手系
 			normals.push_back(normal);
-		}
-		else if (identifier == "f") {
+		} else if (identifier == "f") {
 			// 面情報
 			VertexData triangle[3];
 			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
@@ -213,8 +219,7 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 			modelData.vertices.push_back(triangle[0]);
 			modelData.vertices.push_back(triangle[2]);
 			modelData.vertices.push_back(triangle[1]);
-		}
-		else if (identifier == "mtllib") {
+		} else if (identifier == "mtllib") {
 			// マテリアルファイル読み込み
 			std::string materialFileName;
 			s >> materialFileName;
