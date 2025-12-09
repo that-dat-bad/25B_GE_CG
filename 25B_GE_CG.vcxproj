@@ -194,6 +194,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Image Include="assets\textures\uvChecker.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Game\EnemyHPGauge.h" />
     <ClInclude Include="src\Game\FireworkParticle.h" />
     <ClInclude Include="src\Game\EnemyDeathParticle.h" />
     <ClInclude Include="src\Game\DeathEx.h" />
@@ -259,6 +260,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\Game\TimeLimit.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Game\EnemyHPGauge.cpp" />
     <ClCompile Include="src\Game\FireworkParticle.cpp" />
     <ClCompile Include="src\Game\EnemyDeathParticle.cpp" />
     <ClCompile Include="src\Game\DeathEx.cpp" />

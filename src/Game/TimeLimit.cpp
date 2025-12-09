@@ -10,26 +10,27 @@ TimeLimit::~TimeLimit() {
 }
 
 void TimeLimit::Initialize() {
-	phase_ = Phase::kStartCountDown;
-	timer_ = kTimeLimit;
-	countDown_ = 3.0f;
+  phase_ = Phase::kStartCountDown;
+  timer_ = kTimeLimit;
+  countDown_ = 3.0f;
 
-	// パス準備
-	for (int i = 0; i < 10; ++i) {
-		std::string path = "Resources/number/" + std::to_string(i) + ".png";
-		digitTexturePaths_.push_back(path);
-		TextureManager::LoadTexture(path);
-	}
-	colonTexturePath_ = "./Resources/number/dot.png";
-	TextureManager::LoadTexture(colonTexturePath_);
-	// Sprite生成 (初期テクスチャは0番)
-	for (int i = 0; i < kMaxGlyphs; ++i) {
-		glyphs_[i] = Sprite::Create(digitTexturePaths_[0], { 0,0 }, { 1,1,1,1 });
-	}
-	centerDigit_ = Sprite::Create(digitTexturePaths_[0], { 640, 300 }, { 1,1,1,1 }, { 0.5f, 0.5f });
+  // パス準備
+  for (int i = 0; i < 10; ++i) {
+    std::string path = "Resources/number/" + std::to_string(i) + ".png";
+    digitTexturePaths_.push_back(path);
+    TextureManager::LoadTexture(path);
+  }
+  colonTexturePath_ = "Resources/number/dot.png";
+  TextureManager::LoadTexture(colonTexturePath_);
+  // Sprite生成 (初期テクスチャは0番)
+  for (int i = 0; i < kMaxGlyphs; ++i) {
+    glyphs_[i] = Sprite::Create(digitTexturePaths_[0], {0, 0}, {1, 1, 1, 1});
+  }
+  centerDigit_ = Sprite::Create(digitTexturePaths_[0], {640, 300}, {1, 1, 1, 1},
+                                {0.5f, 0.5f});
 
-	LayoutGlyphs();
-	UpdateGlyphTexturesFromTime();
+  UpdateGlyphTexturesFromTime();
+  LayoutGlyphs({32, 64});
 }
 
 void TimeLimit::Update() {
@@ -42,11 +43,13 @@ void TimeLimit::Update() {
 	case Phase::kActive:
 		timer_ -= dt;
 		UpdateGlyphTexturesFromTime();
+        LayoutGlyphs({32, 64});
 		if (timer_ <= 5.0f) phase_ = Phase::kLast5Second;
 		break;
 	case Phase::kLast5Second:
 		timer_ -= dt;
 		UpdateGlyphTexturesFromTime();
+        LayoutGlyphs({256, 256});
 		if (timer_ <= 0.0f) phase_ = Phase::kTimeUp;
 		break;
 	case Phase::kTimeUp:
@@ -75,12 +78,12 @@ void TimeLimit::Draw() {
 		// 背景のデカ文字
 		int n = std::clamp((int)std::ceil(timer_), 1, 5);
 		centerDigit_->SetTexture(digitTexturePaths_[n]);
-		centerDigit_->SetSize({ 512, 512 });
+		centerDigit_->SetSize({ 256, 256 });
 		centerDigit_->SetColor({ 1, 1, 1, 0.35f });
 		centerDigit_->Draw(dxCommon);
 
-		// 前面タイマー
-		for (auto s : glyphs_) if (s) s->Draw(dxCommon);
+		//// 前面タイマー
+		//for (auto s : glyphs_) if (s) s->Draw(dxCommon);
 	}
 	else if (phase_ == Phase::kActive) {
 		for (auto s : glyphs_) if (s) s->Draw(dxCommon);
@@ -113,10 +116,10 @@ void TimeLimit::UpdateGlyphTexturesFromTime() {
 	}
 }
 
-void TimeLimit::LayoutGlyphs() {
+void TimeLimit::LayoutGlyphs(Vector2 size) {
 
 Vector2 basePos{ 100.0f, 50.0f };
-	float mainW = 32.0f, mainH = 64.0f;
+    float mainW = size.x, mainH = size.y;
 	float fracScale = 0.7f;
 
 	// 整数部

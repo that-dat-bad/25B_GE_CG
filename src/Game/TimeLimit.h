@@ -18,7 +18,7 @@ public:
 	Phase phase_ = Phase::kStartCountDown;
 
 	float timer_ = 0.0f;
-	static inline const float kTimeLimit = 180.0f; // 短め？（元コード通り）
+	static inline const float kTimeLimit = 120.0f; // 短め？（元コード通り）
 	float countDown_ = 3.0f;
 
 private:
@@ -36,6 +36,6 @@ private:
 	void UpdateActive();
 	void UpdateLast5Second();
 
-	void LayoutGlyphs();
+	void LayoutGlyphs(Vector2 size);
 	void UpdateGlyphTexturesFromTime();
 };

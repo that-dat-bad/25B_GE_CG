@@ -11,6 +11,7 @@ class Wind;
 class Skydome;
 class TimeLimit;
 class Fade;
+class EnemyHPGauge;
 
 class GameScene {
 public:
@@ -55,10 +56,12 @@ private:
 	Enemy* enemy_ = nullptr;
 	MyMath::Vector3 enemyPos_ = { 0.0f, 20.0f, 0.0f };
 
+	EnemyHPGauge *hpGauge_ = nullptr;
+
 	std::vector<ChainBomb*> chainBombs_;
 
 	Wind* wind_ = nullptr;
-	MyMath::Vector3 windPos_ = { 12.2f, -10.0f, 0.0f };
+	MyMath::Vector3 windPos_ = { 12.4f, -10.0f, 0.0f };
 
 	Skydome* skydome_ = nullptr;
 

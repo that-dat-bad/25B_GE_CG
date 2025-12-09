@@ -71,6 +71,7 @@
     <ClCompile Include="src\Game\EnemyDeathParticle.cpp" />
     <ClCompile Include="src\Game\FireworkParticle.cpp" />
     <ClCompile Include="src\Game\Rand.cpp" />
+    <ClCompile Include="src\Game\EnemyHPGauge.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\Audio\AudioManager.h" />
@@ -136,6 +137,7 @@
     <ClInclude Include="src\Game\EnemyDeathParticle.h" />
     <ClInclude Include="src\Game\FireworkParticle.h" />
     <ClInclude Include="src\Game\Rand.h" />
+    <ClInclude Include="src\Game\EnemyHPGauge.h" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="assets\sounds\Alarm01.wav" />

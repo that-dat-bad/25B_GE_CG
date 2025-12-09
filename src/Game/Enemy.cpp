@@ -48,6 +48,8 @@ void Enemy::Initialize(const Vector3& position) {
 	color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
 	object3d_->SetColor(color_);
 
+	object3d_->Update();
+
 	// ランダム生成器
 	rand_ = new Rand();
 	rand_->Initialize();
@@ -959,12 +961,13 @@ void Enemy::PlayerHitDamage(const Player& player) {
 		}
 	}
 	if (hp_ <= 0) {
+        hp_ = 0;
 		behaviorRequest_ = Behavior::kDeath;
 		isCollisionDisabled_ = true;
 		return;
 	}
 
-	hp_ -= player.GetScale().x * 10.0f; // プレイヤーの攻撃力(仮)
+	hp_ -= player.GetScale().x * 3.0f; // プレイヤーの攻撃力(仮)
 	isHit_ = true;
 }
 

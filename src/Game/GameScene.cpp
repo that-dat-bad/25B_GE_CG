@@ -15,6 +15,7 @@
 #include "Needle.h"
 #include "Punch.h"
 #include "Thunder.h"
+#include "EnemyHPGauge.h"
 // ImGui
 #include "ImGuiManager.h"
 
@@ -32,6 +33,7 @@ GameScene::~GameScene() {
 	delete skydome_;
 	delete timeLimit_;
 	delete fade_;
+    delete hpGauge_;
 }
 
 // 初期化処理
@@ -59,10 +61,13 @@ void GameScene::Initialize() {
 	enemy_->Initialize(enemyPos_);
 	enemy_->SetPlayer(player_); // 敵にプレイヤー情報を渡す
 
+	hpGauge_ = new EnemyHPGauge();
+	hpGauge_->Initialize();
+
 	// 連鎖ボムの初期化
 	for (int32_t i = 0; i < 5; ++i) {
 		ChainBomb* chainBomb = new ChainBomb();
-		Vector3 chainBombPos = { -5.0f + i * 5.0f, 0.0f + i * 1.3f, 0.0f };
+		Vector3 chainBombPos = { -5.0f + i * 7.0f, 10.0f - i * 1.3f, 0.0f };
 		chainBomb->Initialize(chainBombPos);
 		chainBombs_.push_back(chainBomb);
 	}
@@ -70,6 +75,7 @@ void GameScene::Initialize() {
 	// 風の初期化
 	wind_ = new Wind();
 	wind_->Initialize(windPos_);
+        wind_->Update();
 
 	// UI: 時間制限
 	timeLimit_ = new TimeLimit();
@@ -86,9 +92,9 @@ void GameScene::Initialize() {
 // 更新処理
 void GameScene::Update() {
 
-		if (skydome_) {
-    skydome_->Update();
-  }
+	if (skydome_) {
+     skydome_->Update();
+    }
 
 
 	switch (phase_) {
@@ -146,6 +152,7 @@ void GameScene::Draw() {
 	// UI類
 	if (timeLimit_) timeLimit_->Draw();
 	if (fade_) fade_->Draw();
+    if (hpGauge_) hpGauge_->Draw();
 }
 
 // 全ての当たり判定を行う
@@ -284,6 +291,9 @@ void GameScene::UpdateMain() {
 		CheckAllCollisions();
 
 		if (player_) player_->Update();
+
+		hpGauge_->SetHP(enemy_->GetHP(), enemy_->GetHalfHP());
+		hpGauge_->Update();
 	}
 }
 

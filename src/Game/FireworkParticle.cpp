@@ -3,20 +3,37 @@
 #include <algorithm>
 #include <numbers> // pi_v
 
+#include "Model.h"
+
 using namespace MyMath;
 
 FireworkParticle::~FireworkParticle() {
 	for (auto p : particles_) delete p;
 }
 
-void FireworkParticle::Initialize(const Vector3& position) {
-	for (int i = 0; i < kNumParticles; ++i) {
-		Object3d* obj = Object3d::Create();
-		obj->SetModel("firework.obj");
-		obj->SetTranslate(position);
-		particles_.push_back(obj);
-	}
-	color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
+void FireworkParticle::Initialize(const Vector3 &position) {
+  // ★ 実際のファイルパスに合わせて直してね
+  // 例: ./Resources/firework/firework.obj とか
+  std::string path = "./Resources/firework/firework.obj";
+
+  // モデル読み込み
+  Model::LoadFromOBJ(path);
+
+  particles_.clear();
+  particles_.reserve(kNumParticles);
+
+  for (int i = 0; i < kNumParticles; ++i) {
+    Object3d *obj = Object3d::Create();
+    obj->SetModel(path); // ★ 同じパスを渡す
+    obj->SetTranslate(position);
+    obj->SetScale(Vector3{1.0f, 1.0f, 1.0f});
+    obj->Update();
+    particles_.push_back(obj);
+  }
+
+  color_ = {1.0f, 1.0f, 1.0f, 1.0f};
+  counter_ = 0.0f;
+  isFinished_ = false;
 }
 
 void FireworkParticle::Update() {

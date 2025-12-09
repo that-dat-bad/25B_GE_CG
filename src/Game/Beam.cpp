@@ -14,6 +14,7 @@ void Beam::Initialize(const Vector3& position) {
 	object3d_->SetModel(path);
 	object3d_->SetTranslate(position);
 	object3d_->SetScale({ 1.0f, 1.0f, 1.0f });
+        object3d_->Update();
 }
 
 void Beam::Update() {
