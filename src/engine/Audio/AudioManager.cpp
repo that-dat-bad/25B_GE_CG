@@ -22,37 +22,33 @@ SoundData AudioManager::SoundLoadWave(const char* filename) {
 
 	FormatChunk format = {};
 
-	// チャンクヘッダを読み込む
-	file.read((char*)&format.chunk, sizeof(ChunkHeader));
-
-	if (strncmp(format.chunk.id, "JUNK", 4) == 0) {
-		file.seekg(format.chunk.size, std::ios_base::cur); // JUNKデータ本体をスキップ
-		// 次のチャンクのヘッダを読む
-		file.read((char*)&format.chunk, sizeof(ChunkHeader));
+	// --- fmtを探す ---
+	while (file.read((char*)&format.chunk, sizeof(ChunkHeader))) {
+		// "fmt " チャンクが見つかったら読み込んでループを抜ける
+		if (strncmp(format.chunk.id, "fmt ", 4) == 0) {
+			assert(format.chunk.size <= sizeof(format.fmt)); // サイズチェック
+			file.read((char*)&format.fmt, format.chunk.size);
+			break;
+		} else {
+			// fmt 以外は読み飛ばす
+			file.seekg(format.chunk.size, std::ios_base::cur);
+		}
 	}
 
-	if (strncmp(format.chunk.id, "fmt ", 4) != 0) assert(0);
-
-	// フォーマットデータを読み込む
-	file.read((char*)&format.fmt, format.chunk.size);
-
+	// --- dataを探す ---
 	ChunkHeader data;
-	file.read((char*)&data, sizeof(data));
-
-	// もし "JUNK" がまた来たら読み飛ばす（既存のコード）
-	if (strncmp(data.id, "JUNK", 4) == 0) {
-		file.seekg(data.size, std::ios_base::cur);
-		file.read((char*)&data, sizeof(data));
+	while (file.read((char*)&data, sizeof(ChunkHeader))) {
+		// "data" チャンクが見つかったらループを抜ける
+		if (strncmp(data.id, "data", 4) == 0) {
+			break;
+		} else {
+			// data 以外は全部読み飛ばす
+			file.seekg(data.size, std::ios_base::cur);
+		}
 	}
 
-	// LISTチャンク
-	if (strncmp(data.id, "LIST", 4) == 0) {
-		file.seekg(data.size, std::ios_base::cur);
-		file.read((char*)&data, sizeof(data));
-	}
-
+	// dataチャンクが見つからずにファイルが終わったらエラー
 	if (strncmp(data.id, "data", 4) != 0) assert(0);
-
 	char* pBuffer = new char[data.size];
 	file.read(pBuffer, data.size);
 	file.close();
