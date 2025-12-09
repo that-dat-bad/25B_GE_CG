@@ -3,11 +3,30 @@
 #include <cassert>
 
 void AudioManager::Initialize() {
-	// XAudio2の初期化
 	HRESULT hr = XAudio2Create(&xAudio2_, 0, XAUDIO2_DEFAULT_PROCESSOR);
 	assert(SUCCEEDED(hr));
 	hr = xAudio2_->CreateMasteringVoice(&masteringVoice_);
 	assert(SUCCEEDED(hr));
+}
+
+void AudioManager::Finalize() {
+	// 再生中のボイスをすべて停止・破壊
+	for (IXAudio2SourceVoice* voice : voices_) {
+		if (voice) {
+			voice->DestroyVoice();
+		}
+	}
+	voices_.clear();
+
+	// XAudio2本体の解放
+	if (masteringVoice_) {
+		masteringVoice_->DestroyVoice();
+		masteringVoice_ = nullptr;
+	}
+	if (xAudio2_) {
+		xAudio2_->Release();
+		xAudio2_ = nullptr;
+	}
 }
 
 SoundData AudioManager::SoundLoadWave(const char* filename) {
@@ -22,33 +41,29 @@ SoundData AudioManager::SoundLoadWave(const char* filename) {
 
 	FormatChunk format = {};
 
-	// --- fmtを探す ---
+	// fmtチャンクを探すループ
 	while (file.read((char*)&format.chunk, sizeof(ChunkHeader))) {
-		// "fmt " チャンクが見つかったら読み込んでループを抜ける
 		if (strncmp(format.chunk.id, "fmt ", 4) == 0) {
-			assert(format.chunk.size <= sizeof(format.fmt)); // サイズチェック
+			assert(format.chunk.size <= sizeof(format.fmt));
 			file.read((char*)&format.fmt, format.chunk.size);
 			break;
 		} else {
-			// fmt 以外は読み飛ばす
 			file.seekg(format.chunk.size, std::ios_base::cur);
 		}
 	}
 
-	// --- dataを探す ---
+	// dataチャンクを探すループ
 	ChunkHeader data;
 	while (file.read((char*)&data, sizeof(ChunkHeader))) {
-		// "data" チャンクが見つかったらループを抜ける
 		if (strncmp(data.id, "data", 4) == 0) {
 			break;
 		} else {
-			// data 以外は全部読み飛ばす
 			file.seekg(data.size, std::ios_base::cur);
 		}
 	}
 
-	// dataチャンクが見つからずにファイルが終わったらエラー
 	if (strncmp(data.id, "data", 4) != 0) assert(0);
+
 	char* pBuffer = new char[data.size];
 	file.read(pBuffer, data.size);
 	file.close();
@@ -71,34 +86,25 @@ void AudioManager::SoundUnload(SoundData* soundData) {
 IXAudio2SourceVoice* AudioManager::SoundPlayWave(const SoundData& soundData, bool loop, float volume) {
 	HRESULT result;
 
-	// ソースボイスの作成
 	IXAudio2SourceVoice* pSourceVoice = nullptr;
 	result = xAudio2_->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
 	assert(SUCCEEDED(result));
 
-	// バッファの設定
 	XAUDIO2_BUFFER buf = {};
 	buf.pAudioData = soundData.pBuffer;
 	buf.AudioBytes = soundData.buffersize;
 	buf.Flags = XAUDIO2_END_OF_STREAM;
 
-	// ループ設定
 	if (loop) {
-		buf.LoopCount = XAUDIO2_LOOP_INFINITE; // 無限ループ
+		buf.LoopCount = XAUDIO2_LOOP_INFINITE;
 	}
 
-	// データの送信
 	result = pSourceVoice->SubmitSourceBuffer(&buf);
-	assert(SUCCEEDED(result));
-
-	// 音量の設定
 	result = pSourceVoice->SetVolume(volume);
-	assert(SUCCEEDED(result));
-
-	// 再生開始
 	result = pSourceVoice->Start(0);
-	assert(SUCCEEDED(result));
 
-	// ボイスハンドルを返す（後で停止させるために必要）
+	// ★追加：作ったボイスをリストに登録しておく
+	voices_.insert(pSourceVoice);
+
 	return pSourceVoice;
 }

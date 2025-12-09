@@ -116,6 +116,7 @@ void TDEngine::Finalize() {
 	}
 
 	if (sAudioManager) {
+		sAudioManager->Finalize();
 		delete sAudioManager;
 	}
 
