@@ -7,16 +7,13 @@ TitleScene::~TitleScene() {
 	delete fade_;
 	delete backGround_;
 	delete logo_;
+
 	AudioManager* audio = TDEngine::GetAudioManager();
-	if (pBgmVoice_ != nullptr)
-	{
-		pBgmVoice_->Stop();
-		pBgmVoice_->DestroyVoice();
-		pBgmVoice_ = nullptr;
-	}
+	audio->StopAllVoices();
+	pBgmVoice_ = nullptr;
 	audio->SoundUnload(&soundBgm_);
-	audio->SoundUnload(&soundSelect_);
 	audio->SoundUnload(&soundSe_);
+	audio->SoundUnload(&soundSelect_);
 }
 
 void TitleScene::Initialize() {
@@ -45,7 +42,7 @@ void TitleScene::Initialize() {
 	soundSe_ = audio->SoundLoadWave("Resources/Sound/enter.wav");
 	soundSelect_ = audio->SoundLoadWave("Resources/Sound/select.wav");
 	pBgmVoice_ = audio->SoundPlayWave(soundBgm_, true, 1.0f);
-
+	
 	// シーン遷移
 	select_ = Select::kTutorial;
 
@@ -84,7 +81,7 @@ void TitleScene::UpdateMain() {
 			phase_ = Phase::kFadeOut;
 			fade_->Start(Fade::Status::kFadeOut, duration_);
 			AudioManager* audio = TDEngine::GetAudioManager();
-			pBgmVoice_ = audio->SoundPlayWave(soundSe_, true, 1.0f);
+			audio->StopVoice(pBgmVoice_);
 		}
 	}
 	if (backGround_) backGround_->Update();
@@ -104,14 +101,13 @@ void TitleScene::UpdateFadeOut() {
 }
 
 void TitleScene::UpdateSelect() {
-	AudioManager* audio = TDEngine::GetAudioManager();
 	
 	// キー入力で遷移先を選択
 	if (TDEngine::GetInput()->triggerKey(DIK_W)) {
 		select_ = Select::kTutorial;
-		pBgmVoice_ = audio->SoundPlayWave(soundSelect_, false, 1.0f);
+		TDEngine::GetAudioManager()->SoundPlayWave(soundSelect_, false, 1.0f);
 	} else if (TDEngine::GetInput()->triggerKey(DIK_S)) {
 		select_ = Select::kGame;
-		pBgmVoice_ = audio->SoundPlayWave(soundSelect_, false, 1.0f);
+		TDEngine::GetAudioManager()->SoundPlayWave(soundSelect_, false, 1.0f);
 	}
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "Fade.h"
 #include "BackGround.h"
+#include "AudioManager.h"
 
 class ClearScene {
 public:
@@ -22,4 +23,9 @@ private:
 	BackGround* backGround_ = nullptr;
 	bool isFinished_ = false;
 	float duration_ = 0.5f;
+
+	// BGM
+	SoundData soundBgm_;
+	SoundData soundSe_;
+	IXAudio2SourceVoice* pBgmVoice_ = nullptr;
 };

@@ -32,6 +32,10 @@ GameScene::~GameScene() {
 	delete skydome_;
 	delete timeLimit_;
 	delete fade_;
+	AudioManager* audio = TDEngine::GetAudioManager();
+	audio->StopAllVoices();
+	pBgmVoice_ = nullptr;
+	audio->SoundUnload(&soundBgm_);
 }
 
 // 初期化処理
@@ -81,6 +85,11 @@ void GameScene::Initialize() {
 	fade_->Start(Fade::Status::kFadeIn, duration_);
 
 	phase_ = Phase::kFadeIn;
+
+	// BGM
+	AudioManager* audio = TDEngine::GetAudioManager();
+	soundBgm_ = audio->SoundLoadWave("Resources/Sound/game.wav");
+	pBgmVoice_ = audio->SoundPlayWave(soundBgm_, true, 1.0f);
 }
 
 // 更新処理
@@ -294,5 +303,7 @@ void GameScene::UpdateFadeOut() {
 
 	if (fade_ && fade_->IsFinished()) {
 		isFinished_ = true;
+		AudioManager* audio = TDEngine::GetAudioManager();
+		audio->StopVoice(pBgmVoice_);
 	}
 }
