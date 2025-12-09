@@ -3,6 +3,7 @@
 #include "Collision.h"
 #include "EnemyDeathParticle.h"
 #include <vector>
+#include "AudioManager.h"
 
 class Player;
 class Enemy;
@@ -41,4 +42,8 @@ private:
 	int explodeTimer_ = kExplodeFrame;
 
 	EnemyDeathParticle* deathParticle_ = nullptr;
+
+	// SE
+	SoundData bombSe_;
+	IXAudio2SourceVoice* pBgmVoice_ = nullptr;
 };

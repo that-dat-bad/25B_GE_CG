@@ -39,6 +39,7 @@ void Player::Initialize(const Vector3& position) {
 	upSe_ = audio->SoundLoadWave("Resources/Sound/up.wav");
 	downSe_ = audio->SoundLoadWave("Resources/Sound/down.wav");
 	clashSe_ = audio->SoundLoadWave("Resources/Sound/clash.wav");
+	windSe_ = audio->SoundLoadWave("Resources/Sound/wind.wav");
 }
 
 void Player::Update() {
@@ -87,11 +88,12 @@ void Player::Draw() {
 Player::~Player()
 {
 	AudioManager* audio = TDEngine::GetAudioManager();
-	//audio->StopAllVoices();
+	audio->StopAllVoices();
 	pBgmVoice_ = nullptr;
 	audio->SoundUnload(&clashSe_);
 	audio->SoundUnload(&upSe_);
 	audio->SoundUnload(&downSe_);
+	audio->SoundUnload(&windSe_);
 }
 
 void Player::UpdateMove() {
@@ -359,4 +361,12 @@ void Player::OnCollision(const Wind* wind) {
 	float factor = (powf(size_, 3.0f) / 3.0f);
 	Vector3 addVel = { windVel.x / factor, windVel.y / factor, windVel.z / factor };
 	velocity_ = Add(velocity_, addVel);
+
+	if (isWindSe_)
+	{
+		return;
+	}
+
+	TDEngine::GetAudioManager()->SoundPlayWave(windSe_, false, 1.0f);
+	isWindSe_ = true;
 }

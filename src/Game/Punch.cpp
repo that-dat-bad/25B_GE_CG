@@ -7,7 +7,7 @@ using namespace MyMath;
 Punch::~Punch() {
 	if (object3d_) delete object3d_;
 	AudioManager* audio = TDEngine::GetAudioManager();
-	//audio->StopAllVoices();
+	audio->StopAllVoices();
 	audio->SoundUnload(&punchSe_);
 }
 

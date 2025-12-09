@@ -172,6 +172,10 @@ void GameScene::CheckAllCollisions() {
 	if (Collision::IsCollision(aabbPlayer, aabbWind)) {
 		player_->OnCollision(wind_);
 	}
+	else
+	{
+		player_->SetWindSe(false);
+	}
 
 	// 2. プレイヤーと敵
 	if (Collision::IsCollision(aabbPlayer, aabbEnemy)) {
