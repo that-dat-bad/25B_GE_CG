@@ -9,10 +9,13 @@ void EnemyDeathParticle::Initialize(const Vector3& position) {
 	Model::LoadFromOBJ(path);
 	object3d_ = Object3d::Create();
 	object3d_->SetModel(path);
-	object3d_->SetTranslate(position);
+    object3d_->SetTranslate(position);
+    object3d_->SetScale(Vector3{8.0f, 8.0f, 8.0f});
 
 	color_ = { 1.0f, 1.0f, 1.0f, 1.0f };
 	object3d_->SetColor(color_);
+
+	object3d_->Update();
 }
 
 void EnemyDeathParticle::Update() {

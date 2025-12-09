@@ -31,6 +31,8 @@ public:
 	bool IsExplode() const { return isExplode_; }
 	bool IsDestroy() const { return isDestroy_; }
 
+	void Restore();
+
 private:
 	Object3d* object3d_ = nullptr;
 	MyMath::Vector3 size_ = { 2.0f, 2.0f, 2.0f };
@@ -40,6 +42,15 @@ private:
 
 	static const int kExplodeFrame = 30;
 	int explodeTimer_ = kExplodeFrame;
+
+        // 復活用カウント（フレーム数）
+        int reviveTimer_ = 0;
+        const int kReviveFrame = 20 * 60; // 20秒
+
+		// リスポーン演出用
+        bool isRespawning_ = false;
+        int respawnTimer_ = 0;
+        static const int kRespawnEffectFrame = 60; // 1秒分くらいチカチカ
 
 	EnemyDeathParticle* deathParticle_ = nullptr;
 

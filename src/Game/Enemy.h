@@ -20,6 +20,7 @@
 
 class Player;
 class ChainBomb;
+class EnemyHPGauge;
 
 // 敵の向き
 enum class Direction {
@@ -82,6 +83,9 @@ public:
 	// 振る舞いリクエストを決定
 	void SetRequest(bool isUnknown) { isUnknown_ = isUnknown; }
 
+	float GetHP() const { return hp_; }
+    float GetHalfHP() const { return halfHp_; }
+
 private:
 	// --- 行動制御メソッド ---
 	void BehaviorRootUpdate();
@@ -136,8 +140,10 @@ private:
 	static inline const float kHeight = 3.2f;
 
 	// HP
-	float hp_ = 0;
-	float halfHp_ = 50;
+	float hp_ = 100;
+	float halfHp_ = 60;
+
+	EnemyHPGauge *hpGauge_ = nullptr;
 
 	// ヒットタイマー
 	int hitTimer_ = 100;
@@ -146,7 +152,7 @@ private:
 
 	// 状態フラグ
 	bool isChangeStart_ = false;
-	bool isChanged_ = true;
+	bool isChanged_ = false;
 	bool isDead_ = false;
 	bool isCollisionDisabled_ = false;
 

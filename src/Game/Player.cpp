@@ -26,7 +26,9 @@ void Player::Initialize(const Vector3& position) {
 	object3d_->SetTranslate(position);
 	object3d_->SetScale({ 1.0f, 1.0f, 1.0f });
 
+
 	ApplyScaleFromHeight();
+	object3d_->Update();
 
 	state_ = State::kAlive;
 
@@ -241,6 +243,12 @@ void Player::UpdateDead() {
 }
 
 void Player::UpdateRespawn() {
+
+	if (deathParticle_)
+    deathParticle_->Update();
+  for (auto &p : fireworkParticles_)
+    p->Update();
+
 	respawnTimer_ -= kDeltaTime;
 	const float easeDuration = 1.0f;
 	float t = 1.0f - (respawnTimer_ / easeDuration);
