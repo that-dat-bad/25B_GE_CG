@@ -1,7 +1,7 @@
 #pragma once
 #include <xaudio2.h>
 #include <cstdint>
-#include <set> // ★追加：再生中のボイスを管理するため
+#include <set>
 
 #pragma comment(lib, "xaudio2.lib")
 
@@ -42,6 +42,15 @@ public:
 
 	// 再生（戻り値は受け取らなくても勝手に管理します）
 	IXAudio2SourceVoice* SoundPlayWave(const SoundData& soundData, bool loop = false, float volume = 1.0f);
+
+	//停止(再生終了)
+	void StopVoice(IXAudio2SourceVoice* voice);
+
+	//一時停止
+	void PauseVoice(IXAudio2SourceVoice* voice);
+
+	//再開
+	void ResumeVoice(IXAudio2SourceVoice* voice);
 
 private:
 	IXAudio2* xAudio2_ = nullptr;

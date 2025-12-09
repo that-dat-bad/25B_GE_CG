@@ -103,8 +103,33 @@ IXAudio2SourceVoice* AudioManager::SoundPlayWave(const SoundData& soundData, boo
 	result = pSourceVoice->SetVolume(volume);
 	result = pSourceVoice->Start(0);
 
-	// ★追加：作ったボイスをリストに登録しておく
 	voices_.insert(pSourceVoice);
 
 	return pSourceVoice;
+}
+
+void AudioManager::StopVoice(IXAudio2SourceVoice* voice) {
+	// 管理リストに登録されているか確認
+	if (voices_.count(voice) > 0) {
+		//  停止
+		voice->Stop();
+		//  破棄
+		voice->DestroyVoice();
+		//  リストから抹消
+		voices_.erase(voice);
+	}
+}
+
+// 一時停止
+void AudioManager::PauseVoice(IXAudio2SourceVoice* voice) {
+	if (voices_.count(voice) > 0) {
+		voice->Stop();
+	}
+}
+
+// 再開
+void AudioManager::ResumeVoice(IXAudio2SourceVoice* voice) {
+	if (voices_.count(voice) > 0) {
+		voice->Start(0);
+	}
 }
