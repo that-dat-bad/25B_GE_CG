@@ -93,12 +93,14 @@ void ChainBomb::Draw() {
     return;
   }
 
-  if (isExplode_) {
-    if (deathParticle_)
-      deathParticle_->Draw();
-  } else {
-    if (object3d_)
-      object3d_->Draw();
+  if (!isDestroy_) {
+    if (isExplode_) {
+      if (deathParticle_)
+        deathParticle_->Draw();
+    } else {
+      if (object3d_)
+        object3d_->Draw();
+    }
   }
 }
 
@@ -149,6 +151,9 @@ void ChainBomb::Explode() {
 }
 
 void ChainBomb::OnCollision(const Player* player) {
+  if (isExplode_ || isDestroy_)
+    return;
+
 	if (player->IsExplode()) {
 		Explode();
 		TDEngine::GetAudioManager()->SoundPlayWave(bombSe_, false, 1.0f);

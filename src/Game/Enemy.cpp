@@ -79,6 +79,7 @@ void Enemy::Initialize(const Vector3& position) {
 	needleSe_ = audio->SoundLoadWave("Resources/Sound/needle.wav");
 	thunderSe_ = audio->SoundLoadWave("Resources/Sound/thunder.wav");
 	deathSe_ = audio->SoundLoadWave("Resources/Sound/enemyDeath.wav");
+    changeSe_ = audio->SoundLoadWave("Resources/Sound/change.wav");
 }
 
 // ---------------------------------------------------------
