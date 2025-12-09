@@ -5,6 +5,10 @@
 GameOverScene::~GameOverScene() {
 	delete fade_;
 	delete backGround_;
+	AudioManager* audio = TDEngine::GetAudioManager();
+	audio->StopAllVoices();
+	pBgmVoice_ = nullptr;
+	audio->SoundUnload(&soundBgm_);
 }
 
 void GameOverScene::Initialize() {
@@ -19,6 +23,11 @@ void GameOverScene::Initialize() {
 	fade_->Initialize();
 	fade_->Start(Fade::Status::kFadeIn, duration_);
 	phase_ = Phase::kFadeIn;
+
+	// BGM
+	AudioManager* audio = TDEngine::GetAudioManager();
+	soundBgm_ = audio->SoundLoadWave("Resources/Sound/gameover.wav");
+	pBgmVoice_ = audio->SoundPlayWave(soundBgm_, true, 1.0f);
 }
 
 void GameOverScene::Update() {
@@ -59,5 +68,7 @@ void GameOverScene::UpdateFadeOut() {
 	backGround_->Update();
 	if (fade_->IsFinished()) {
 		isFinished_ = true;
+		AudioManager* audio = TDEngine::GetAudioManager();
+		audio->StopVoice(pBgmVoice_);
 	}
 }

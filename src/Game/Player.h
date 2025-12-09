@@ -4,6 +4,7 @@
 #include "Collision.h"
 #include <list>
 #include <memory>
+#include "AudioManager.h"
 
 // 前方宣言
 class Enemy;
@@ -26,6 +27,9 @@ public:
 
 	// 描画
 	void Draw();
+
+	// デストラクタ
+	~Player();
 
 	// 衝突応答
 	void OnCollision(const Enemy* enemy);
@@ -127,6 +131,12 @@ private:
 	std::list<FireworkParticle*> fireworkParticles_;
 	static const int kFireParticleCount = 3;
 	Rand* rand_ = nullptr;
+
+	// SE
+	SoundData upSe_;
+	SoundData downSe_;
+	SoundData clashSe_;
+	IXAudio2SourceVoice* pBgmVoice_ = nullptr;
 
 private:
 	void UpdateMove();

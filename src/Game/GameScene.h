@@ -2,6 +2,7 @@
 #include "Math/MyMath.h"
 #include <vector>
 #include <list>
+#include "AudioManager.h"
 
 // 前方宣言
 class Player;
@@ -71,6 +72,10 @@ private:
 	bool isFinished_ = false;
 	bool isClear_ = false;
 	bool isGameover_ = false;
+
+	// SE
+	SoundData soundBgm_;
+	IXAudio2SourceVoice* pBgmVoice_ = nullptr;
 
 private:
 	// フェードインの更新

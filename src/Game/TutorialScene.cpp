@@ -8,14 +8,9 @@ TutorialScene::~TutorialScene() {
   delete enemy_;
   delete skydome_;
   AudioManager* audio = TDEngine::GetAudioManager();
-  if (pBgmVoice_ != nullptr)
-  {
-      pBgmVoice_->Stop();
-      pBgmVoice_->DestroyVoice();
-      pBgmVoice_ = nullptr;
-  }
+  audio->StopAllVoices();
+  pBgmVoice_ = nullptr;
   audio->SoundUnload(&soundBgm_);
-  
 }
 
 void TutorialScene::Initialize() {
@@ -122,6 +117,8 @@ void TutorialScene::CheckAllCollisions() {
 
     if (player_->IsDead() && enemy_->IsCollisionDisabled()) {
       isCleared_ = true;
+      AudioManager* audio = TDEngine::GetAudioManager();
+      audio->StopVoice(pBgmVoice_);
     }
   }
 }

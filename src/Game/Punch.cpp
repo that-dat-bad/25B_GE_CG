@@ -1,10 +1,14 @@
 #include "Punch.h"
 #include <algorithm>
 #include "Model.h"
+#include "TDEngine.h"
 using namespace MyMath;
 
 Punch::~Punch() {
 	if (object3d_) delete object3d_;
+	AudioManager* audio = TDEngine::GetAudioManager();
+	audio->StopAllVoices();
+	audio->SoundUnload(&punchSe_);
 }
 
 void Punch::Initialize(const Vector3& position, int punched) {
@@ -23,6 +27,9 @@ void Punch::Initialize(const Vector3& position, int punched) {
 	// パンチした後の位置を設定 (元コードのロジックを踏襲)
 	// 元: punchedPosition = {position.x - 8.0f, position.y, position.z};
 	punchedPosition_ = { position.x - 8.0f, position.y, position.z };
+
+	AudioManager* audio = TDEngine::GetAudioManager();
+	punchSe_ = audio->SoundLoadWave("Resources/Sound/punch.wav");
 }
 
 void Punch::Update() {
@@ -37,11 +44,13 @@ void Punch::Update() {
 			// パンチが完了したらフラグを戻す (戻る動作へ)
 			isPunched_ = false;
 			punchedPosition_.x += 6.0f;
+			TDEngine::GetAudioManager()->SoundPlayWave(punchSe_, false, 1.0f);
 		}
 		else {
 			// パンチが完了したらフラグを立てる (突き出す動作へ)
 			isPunched_ = true;
 			punchedPosition_.x -= 8.0f;
+			TDEngine::GetAudioManager()->SoundPlayWave(punchSe_, false, 1.0f);
 		}
 	}
 	else {
