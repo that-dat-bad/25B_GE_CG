@@ -6,7 +6,7 @@ ClearScene::~ClearScene() {
 	delete fade_;
 	delete backGround_;
 	AudioManager* audio = TDEngine::GetAudioManager();
-	//audio->StopAllVoices();
+	audio->StopAllVoices();
 	pBgmVoice_ = nullptr;
 	audio->SoundUnload(&soundBgm_);
 	audio->SoundUnload(&soundSe_);
@@ -29,7 +29,7 @@ void ClearScene::Initialize() {
 	AudioManager* audio = TDEngine::GetAudioManager();
 	soundBgm_ = audio->SoundLoadWave("Resources/Sound/clear.wav");
 	soundSe_ = audio->SoundLoadWave("Resources/Sound/enter.wav");
-	pBgmVoice_ = audio->SoundPlayWave(soundBgm_, true, 1.0f);
+	pBgmVoice_ = audio->SoundPlayWave(soundBgm_, false, 1.0f);
 }
 
 void ClearScene::Update() {
