@@ -81,6 +81,9 @@ public:
 	// 振る舞いリクエストを決定
 	void SetRequest(bool isUnknown) { isUnknown_ = isUnknown; }
 
+	bool IsDeath() const { return behavior_ == Behavior::kDeath; }
+	bool IsCollisionDisabled() const { return isCollisionDisabled_; }
+
 private:
 	// --- 行動制御メソッド ---
 	void BehaviorRootUpdate();
