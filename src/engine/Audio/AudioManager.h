@@ -52,6 +52,8 @@ public:
 	//再開
 	void ResumeVoice(IXAudio2SourceVoice* voice);
 
+	void StopAllVoices();
+
 private:
 	IXAudio2* xAudio2_ = nullptr;
 	IXAudio2MasteringVoice* masteringVoice_ = nullptr;

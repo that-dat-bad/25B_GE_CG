@@ -44,14 +44,26 @@ SoundData AudioManager::SoundLoadWave(const char* filename) {
 	// fmtチャンクを探すループ
 	while (file.read((char*)&format.chunk, sizeof(ChunkHeader))) {
 		if (strncmp(format.chunk.id, "fmt ", 4) == 0) {
-			assert(format.chunk.size <= sizeof(format.fmt));
-			file.read((char*)&format.fmt, format.chunk.size);
+
+			// 1. 読み込むバイト数を計算（構造体のサイズを超えないように制限）
+			int32_t sizeToRead = format.chunk.size;
+			if (sizeToRead > sizeof(format.fmt)) {
+				sizeToRead = sizeof(format.fmt);
+			}
+
+			// 2. フォーマットデータを読み込む
+			file.read((char*)&format.fmt, sizeToRead);
+
+			// 3. もしファイル側のデータの方が大きかったら、残りは読み飛ばす（シークする）
+			if (format.chunk.size > sizeToRead) {
+				file.seekg(format.chunk.size - sizeToRead, std::ios_base::cur);
+			}
+
 			break;
 		} else {
 			file.seekg(format.chunk.size, std::ios_base::cur);
 		}
 	}
-
 	// dataチャンクを探すループ
 	ChunkHeader data;
 	while (file.read((char*)&data, sizeof(ChunkHeader))) {
@@ -132,4 +144,14 @@ void AudioManager::ResumeVoice(IXAudio2SourceVoice* voice) {
 	if (voices_.count(voice) > 0) {
 		voice->Start(0);
 	}
+}
+
+void AudioManager::StopAllVoices() {
+	for (IXAudio2SourceVoice* voice : voices_) {
+		if (voice) {
+			voice->Stop();
+			voice->DestroyVoice();
+		}
+	}
+	voices_.clear();
 }
