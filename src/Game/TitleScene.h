@@ -2,6 +2,7 @@
 #include "BackGround.h"
 #include "TitleLogo.h"
 #include "Fade.h"
+#include "Skydome.h"
 
 class TitleScene {
 public:
@@ -31,4 +32,5 @@ private:
 
 	BackGround* backGround_ = nullptr;
 	TitleLogo* logo_ = nullptr;
+        Skydome *skydome_ = nullptr;
 };
