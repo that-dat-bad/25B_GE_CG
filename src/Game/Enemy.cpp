@@ -4,6 +4,7 @@
 #include "ModelManager.h"
 #include "CameraManager.h"
 #include "TextureManager.h"
+#include "TDEngine.h"
 
 // 攻撃クラスのヘッダー
 #include "Beam.h"
@@ -28,6 +29,17 @@ Enemy::~Enemy() {
 	for (auto p : punches_) delete p;
 	for (auto p : deathExs_) delete p;
 	for (auto p : deathParticles_) delete p;
+
+	AudioManager* audio = TDEngine::GetAudioManager();
+	//audio->StopAllVoices();
+	pBgmVoice_ = nullptr;
+	audio->SoundUnload(&boundSe_);
+	audio->SoundUnload(&approachSe_);
+	audio->SoundUnload(&beamSe_);
+	audio->SoundUnload(&needleSe_);
+	audio->SoundUnload(&thunderSe_);
+	audio->SoundUnload(&deathSe_);
+	audio->SoundUnload(&changeSe_);
 }
 
 // ---------------------------------------------------------
@@ -58,6 +70,15 @@ void Enemy::Initialize(const Vector3& position) {
 
 	// 初期行動
 	behaviorRequest_ = Behavior::kStart;
+
+	// SE
+	AudioManager* audio = TDEngine::GetAudioManager();
+	boundSe_ = audio->SoundLoadWave("Resources/Sound/bound.wav");
+	approachSe_ = audio->SoundLoadWave("Resources/Sound/approach.wav");
+	beamSe_ = audio->SoundLoadWave("Resources/Sound/beam.wav");
+	needleSe_ = audio->SoundLoadWave("Resources/Sound/needle.wav");
+	thunderSe_ = audio->SoundLoadWave("Resources/Sound/thunder.wav");
+	deathSe_ = audio->SoundLoadWave("Resources/Sound/enemyDeath.wav");
 }
 
 // ---------------------------------------------------------
@@ -225,6 +246,7 @@ void Enemy::BehaviorBoundUpdate() {
 					enemySpeed_.y = 2.0f;
 					attackCount_++;
 					attackAfterTimer_ = 10.0f;
+					TDEngine::GetAudioManager()->SoundPlayWave(boundSe_, false, 1.0f);
 				}
 			} else {
 				enemySpeed_.y -= enemySpeedDecay_.y;
@@ -365,6 +387,7 @@ void Enemy::BehaviorBeamUpdate() {
 			// Beam生成
 			beam_ = new Beam();
 			beam_->Initialize(pos);
+			TDEngine::GetAudioManager()->SoundPlayWave(beamSe_, false, 1.0f);
 		}
 		break;
 
@@ -431,6 +454,7 @@ void Enemy::BehaviorApproachUpdate() {
 			Vector3 rot = object3d_->GetRotate();
 			turnFirstRotationY = rot.y;
 			turnTimer_ = kTimeTurn;
+			TDEngine::GetAudioManager()->SoundPlayWave(approachSe_, false, 1.0f);
 		}
 		break;
 
@@ -499,6 +523,7 @@ void Enemy::BehaviorNeedleUpdate() {
 		if (attackParameter_ >= attackReservoirTimer_) {
 			attackPhase_ = AttackPhase::kAttack;
 			attackParameter_ = 0;
+			TDEngine::GetAudioManager()->SoundPlayWave(needleSe_, false, 1.0f);
 			for (int32_t i = 0; i < kNeedleCount; ++i) {
 				Needle* needle = new Needle();
 				needle->Initialize(pos, needleRotates_[i]);
@@ -585,6 +610,7 @@ void Enemy::BehaviorThunderUpdate() {
 				Thunder* thunder = new Thunder();
 				thunder->Initialize(thunderPositions_[idx]);
 				thunders_.push_back(thunder);
+				TDEngine::GetAudioManager()->SoundPlayWave(thunderSe_, false, 1.0f);
 			}
 		}
 
@@ -764,6 +790,7 @@ void Enemy::BehaviorDeathUpdate() {
 		if (attackParameter_ >= attackReservoirTimer_) {
 			attackPhase_ = AttackPhase::kAttack;
 			attackParameter_ = 0;
+			TDEngine::GetAudioManager()->SoundPlayWave(deathSe_, false, 1.0f);
 		}
 		break;
 
@@ -828,6 +855,7 @@ void Enemy::BehaviorChangeInitialize() {
 	initPos_ = { 20.0f, 0.0f, 0.0f };
 	enemyRotate_ = { 1.0f, 1.0f, 1.0f };
 	t = 0.0f;
+	TDEngine::GetAudioManager()->SoundPlayWave(changeSe_, false, 1.0f);
 }
 
 void Enemy::BehaviorChangeUpdate() {

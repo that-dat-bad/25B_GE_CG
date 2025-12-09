@@ -18,4 +18,5 @@ private:
 	MyMath::Vector3 direction_ = { -1.0f, 0.0f, 0.0f };
 	float strength_ = 1.0f;
 	MyMath::Vector3 range_ = { 48.0f, 6.0f, 2.0f };
+
 };

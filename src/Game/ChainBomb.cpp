@@ -6,10 +6,12 @@
 using namespace MyMath;
 
 ChainBomb::~ChainBomb() {
-  if (object3d_)
-    delete object3d_;
-  if (deathParticle_)
-    delete deathParticle_;
+	if (object3d_) delete object3d_;
+	if (deathParticle_) delete deathParticle_;
+	AudioManager* audio = TDEngine::GetAudioManager();
+	audio->StopAllVoices();
+	audio->SoundUnload(&bombSe_);
+
 }
 
 void ChainBomb::Initialize(const Vector3 &position) {
@@ -22,7 +24,10 @@ void ChainBomb::Initialize(const Vector3 &position) {
 
   object3d_->Update();
 
-  explodeTimer_ = kExplodeFrame;
+	explodeTimer_ = kExplodeFrame;
+
+	AudioManager* audio = TDEngine::GetAudioManager();
+	bombSe_ = audio->SoundLoadWave("Resources/Sound/bomb.wav");
 }
 
 void ChainBomb::Update() {
@@ -143,10 +148,11 @@ void ChainBomb::Explode() {
   deathParticle_->Initialize(GetWorldPosition());
 }
 
-void ChainBomb::OnCollision(const Player *player) {
-  if (player->IsExplode()) {
-    Explode();
-  }
+void ChainBomb::OnCollision(const Player* player) {
+	if (player->IsExplode()) {
+		Explode();
+		TDEngine::GetAudioManager()->SoundPlayWave(bombSe_, false, 1.0f);
+	}
 }
 
 void ChainBomb::OnCollision(const Enemy *enemy) {

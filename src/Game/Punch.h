@@ -2,6 +2,7 @@
 #include "Object3d.h"
 #include "Collision.h"
 #include "Math/MyMath.h"
+#include "AudioManager.h"
 
 class Punch {
 public:
@@ -39,4 +40,7 @@ private:
 	bool isPunched_ = false;
 	// パンチした後の拳の位置（目標地点）
 	MyMath::Vector3 punchedPosition_ = {};
+
+	// SE
+	SoundData punchSe_;
 };

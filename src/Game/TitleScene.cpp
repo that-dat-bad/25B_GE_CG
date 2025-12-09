@@ -4,10 +4,19 @@
 #include "TDEngine.h"
 
 TitleScene::~TitleScene() {
+
   delete fade_;
   delete backGround_;
   delete logo_;
   delete skydome_;
+
+	AudioManager* audio = TDEngine::GetAudioManager();
+	audio->StopAllVoices();
+	pBgmVoice_ = nullptr;
+	audio->SoundUnload(&soundBgm_);
+	audio->SoundUnload(&soundSe_);
+	audio->SoundUnload(&soundSelect_);
+
 }
 
 void TitleScene::Initialize() {
@@ -27,11 +36,21 @@ void TitleScene::Initialize() {
   logo_ = new TitleLogo();
   logo_->Initialize({0.0f, 0.0f, 0.0f});
 
-  // フェード
-  fade_ = new Fade();
-  fade_->Initialize();
-  fade_->Start(Fade::Status::kFadeIn, duration_);
-  phase_ = Phase::kFadeIn;
+	// フェード
+	fade_ = new Fade();
+	fade_->Initialize();
+	fade_->Start(Fade::Status::kFadeIn, duration_);
+	phase_ = Phase::kFadeIn;
+
+	// BGM
+	AudioManager* audio = TDEngine::GetAudioManager();
+	soundBgm_ = audio->SoundLoadWave("Resources/Sound/title.wav");
+	soundSe_ = audio->SoundLoadWave("Resources/Sound/enter.wav");
+	soundSelect_ = audio->SoundLoadWave("Resources/Sound/select.wav");
+	pBgmVoice_ = audio->SoundPlayWave(soundBgm_, true, 1.0f);
+	
+	// シーン遷移
+	select_ = Select::kTutorial;
 }
 
 void TitleScene::Update() {
@@ -82,28 +101,39 @@ void TitleScene::UpdateFadeIn() {
 }
 
 void TitleScene::UpdateMain() {
-  if (TDEngine::GetInput()->triggerKey(DIK_SPACE)) {
-    if (select_ != Select::kNone) {
-      phase_ = Phase::kFadeOut;
-      fade_->Start(Fade::Status::kFadeOut, duration_);
-    }
-  }
-
-  UpdateSelect();
+	if (TDEngine::GetInput()->triggerKey(DIK_SPACE)) {
+		if (select_ != Select::kNone) {
+			phase_ = Phase::kFadeOut;
+			fade_->Start(Fade::Status::kFadeOut, duration_);
+			AudioManager* audio = TDEngine::GetAudioManager();
+		}
+	}
+	if (backGround_) backGround_->Update();
+	if (logo_) logo_->Update();
+	UpdateSelect();
 }
 
 void TitleScene::UpdateFadeOut() {
-  fade_->Update();
-  if (fade_->IsFinished()) {
-    isFinished_ = true;
-  }
+	fade_->Update();
+	if (fade_->IsFinished()) {
+		isFinished_ = true;
+		
+	}
+	if (backGround_) { backGround_->Update(); }
+	if (logo_) {
+		logo_->Update();
+	}
 }
 
 void TitleScene::UpdateSelect() {
-  // キー入力で遷移先を選択
-  if (TDEngine::GetInput()->pushKey(DIK_A)) {
-    select_ = Select::kTutorial;
-  } else if (TDEngine::GetInput()->pushKey(DIK_D)) {
-    select_ = Select::kGame;
-  }
+	
+	// キー入力で遷移先を選択
+	if (TDEngine::GetInput()->triggerKey(DIK_W)) {
+		select_ = Select::kTutorial;
+		TDEngine::GetAudioManager()->SoundPlayWave(soundSelect_, false, 1.0f);
+	} else if (TDEngine::GetInput()->triggerKey(DIK_S)) {
+		select_ = Select::kGame;
+		TDEngine::GetAudioManager()->SoundPlayWave(soundSelect_, false, 1.0f);
+	}
+
 }

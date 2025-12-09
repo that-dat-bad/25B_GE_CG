@@ -16,6 +16,7 @@
 #include <list>
 #include <vector>
 #include <numbers>
+#include "AudioManager.h"
 
 class Player;
 class ChainBomb;
@@ -242,4 +243,14 @@ private:
 	float blinkSpeed_ = 0.2f;
 	MyMath::Vector3 originalScale_ = { 2.0f, 2.0f, 2.0f };
 	MyMath::Vector3 changeScale_ = { 3.0f, 3.0f, 3.0f };
+
+	// SE
+	SoundData boundSe_;
+	SoundData approachSe_;
+	SoundData beamSe_;
+	SoundData needleSe_;
+	SoundData thunderSe_;
+	SoundData deathSe_;
+	SoundData changeSe_;
+	IXAudio2SourceVoice* pBgmVoice_ = nullptr;
 };

@@ -3,6 +3,7 @@
 #include "Collision.h"
 #include "EnemyDeathParticle.h"
 #include <vector>
+#include "AudioManager.h"
 
 class Player;
 class Enemy;
@@ -52,4 +53,8 @@ private:
         static const int kRespawnEffectFrame = 60; // 1秒分くらいチカチカ
 
 	EnemyDeathParticle* deathParticle_ = nullptr;
+
+	// SE
+	SoundData bombSe_;
+	IXAudio2SourceVoice* pBgmVoice_ = nullptr;
 };

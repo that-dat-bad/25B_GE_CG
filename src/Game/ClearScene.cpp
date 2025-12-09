@@ -5,6 +5,11 @@
 ClearScene::~ClearScene() {
 	delete fade_;
 	delete backGround_;
+	AudioManager* audio = TDEngine::GetAudioManager();
+	audio->StopAllVoices();
+	pBgmVoice_ = nullptr;
+	audio->SoundUnload(&soundBgm_);
+	audio->SoundUnload(&soundSe_);
 }
 
 void ClearScene::Initialize() {
@@ -19,6 +24,12 @@ void ClearScene::Initialize() {
 	fade_->Initialize();
 	fade_->Start(Fade::Status::kFadeIn, duration_);
 	phase_ = Phase::kFadeIn;
+
+	// BGM
+	AudioManager* audio = TDEngine::GetAudioManager();
+	soundBgm_ = audio->SoundLoadWave("Resources/Sound/clear.wav");
+	soundSe_ = audio->SoundLoadWave("Resources/Sound/enter.wav");
+	pBgmVoice_ = audio->SoundPlayWave(soundBgm_, false, 1.0f);
 }
 
 void ClearScene::Update() {
@@ -59,5 +70,7 @@ void ClearScene::UpdateFadeOut() {
 	backGround_->Update();
 	if (fade_->IsFinished()) {
 		isFinished_ = true;
+		AudioManager* audio = TDEngine::GetAudioManager();
+		audio->StopVoice(pBgmVoice_);
 	}
 }

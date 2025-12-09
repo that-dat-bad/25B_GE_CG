@@ -3,6 +3,7 @@
 #include "TitleLogo.h"
 #include "Fade.h"
 #include "Skydome.h"
+#include "AudioManager.h"
 
 class TitleScene {
 public:
@@ -32,5 +33,14 @@ private:
 
 	BackGround* backGround_ = nullptr;
 	TitleLogo* logo_ = nullptr;
-        Skydome *skydome_ = nullptr;
+
+  Skydome *skydome_ = nullptr;
+
+
+	// BGM
+	SoundData soundBgm_;
+	SoundData soundSe_;
+	SoundData soundSelect_;
+	IXAudio2SourceVoice* pBgmVoice_ = nullptr;
+
 };

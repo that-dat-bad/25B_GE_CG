@@ -36,6 +36,12 @@ void Player::Initialize(const Vector3& position) {
 	rand_ = new Rand();
 	rand_->Initialize();
 	rand_->RandomInitialize();
+
+	AudioManager* audio = TDEngine::GetAudioManager();
+	upSe_ = audio->SoundLoadWave("Resources/Sound/up.wav");
+	downSe_ = audio->SoundLoadWave("Resources/Sound/down.wav");
+	clashSe_ = audio->SoundLoadWave("Resources/Sound/clash.wav");
+	windSe_ = audio->SoundLoadWave("Resources/Sound/wind.wav");
 }
 
 void Player::Update() {
@@ -79,6 +85,17 @@ void Player::Draw() {
 			object3d_->Draw();
 		}
 	}
+}
+
+Player::~Player()
+{
+	AudioManager* audio = TDEngine::GetAudioManager();
+	audio->StopAllVoices();
+	pBgmVoice_ = nullptr;
+	audio->SoundUnload(&clashSe_);
+	audio->SoundUnload(&upSe_);
+	audio->SoundUnload(&downSe_);
+	audio->SoundUnload(&windSe_);
 }
 
 void Player::UpdateMove() {
@@ -132,6 +149,16 @@ void Player::UpdateMove() {
 	}
 
 	// 上下移動
+
+	if (input->triggerKey(DIK_W)) {
+		TDEngine::GetAudioManager()->SoundPlayWave(upSe_, false, 1.0f);
+	}
+	else if (input->triggerKey(DIK_S)) {
+		TDEngine::GetAudioManager()->SoundPlayWave(downSe_, false, 1.0f);
+	}
+
+
+	// 上下移動
 	if (input->pushKey(DIK_W) || input->pushKey(DIK_S)) {
 		if (input->pushKey(DIK_W)) {
 			if (velocity_.y < 0.0f) velocity_.y *= (1.0f - kAttenuation);
@@ -174,6 +201,7 @@ void Player::UpdateAlive() {
 			isExplode_ = true;
 			state_ = State::kDead;
 			respawnTimer_ = kRespawnTimeSelf;
+			TDEngine::GetAudioManager()->SoundPlayWave(clashSe_, false, 1.0f);
 
 			// パーティクル生成 (TDEngine対応版のコンストラクタを使う想定)
 			deathParticle_ = new EnemyDeathParticle();
@@ -288,25 +316,25 @@ Vector3 Player::GetWorldPosition() const {
 }
 
 AABB Player::GetAABB() {
-  Vector3 worldPos = GetWorldPosition();
-  AABB aabb;
+	Vector3 worldPos = GetWorldPosition();
+	AABB aabb;
 
-  constexpr float kHitScale = 2.0f; // 好きな倍率
+	constexpr float kHitScale = 2.0f; // 好きな倍率
 
-  float half = (size_ * kHitScale) / 2.0f;
+	float half = (size_ * kHitScale) / 2.0f;
 
-  if (isExplode_) {
-    half = (size_ * kHitScale + 30.0f) / 2.0f; // 爆発時さらに広げたいなら
-  }
+	if (isExplode_) {
+		half = (size_ * kHitScale + 30.0f) / 2.0f; // 爆発時さらに広げたいなら
+	}
 
-  aabb.min = {worldPos.x - half, worldPos.y - half, worldPos.z - half};
-  aabb.max = {worldPos.x + half, worldPos.y + half, worldPos.z + half};
-  return aabb;
+	aabb.min = { worldPos.x - half, worldPos.y - half, worldPos.z - half };
+	aabb.max = { worldPos.x + half, worldPos.y + half, worldPos.z + half };
+	return aabb;
 }
 
 
 Vector3 Player::GetScale() const {
-  return Vector3{explosivePower_, explosivePower_, explosivePower_};
+	return Vector3{ explosivePower_, explosivePower_, explosivePower_ };
 }
 
 void Player::SetPosition(const Vector3& position) {
@@ -320,6 +348,7 @@ void Player::OnCollision(const Enemy* enemy) {
 	isAlive_ = false;
 	respawnTimer_ = kRespawnTimeKilled;
 	state_ = State::kDead;
+	TDEngine::GetAudioManager()->SoundPlayWave(clashSe_, false, 1.0f);
 
 	// パーティクル生成 (簡易化)
 	if (deathParticle_) delete deathParticle_;
@@ -340,4 +369,12 @@ void Player::OnCollision(const Wind* wind) {
 	float factor = (powf(size_, 3.0f) / 3.0f);
 	Vector3 addVel = { windVel.x / factor, windVel.y / factor, windVel.z / factor };
 	velocity_ = Add(velocity_, addVel);
+
+	if (isWindSe_)
+	{
+		return;
+	}
+
+	TDEngine::GetAudioManager()->SoundPlayWave(windSe_, false, 1.0f);
+	isWindSe_ = true;
 }

@@ -1,42 +1,90 @@
 #include "AudioManager.h"
-#include<fstream>
-#include<cassert>
-
+#include <fstream>
+#include <cassert>
 
 void AudioManager::Initialize() {
-	// XAudio2の初期化
 	HRESULT hr = XAudio2Create(&xAudio2_, 0, XAUDIO2_DEFAULT_PROCESSOR);
 	assert(SUCCEEDED(hr));
 	hr = xAudio2_->CreateMasteringVoice(&masteringVoice_);
 	assert(SUCCEEDED(hr));
 }
 
+void AudioManager::Finalize() {
+	// 再生中のボイスをすべて停止・破壊
+	for (IXAudio2SourceVoice* voice : voices_) {
+		if (voice) {
+			voice->DestroyVoice();
+		}
+	}
+	voices_.clear();
+
+	// XAudio2本体の解放
+	if (masteringVoice_) {
+		masteringVoice_->DestroyVoice();
+		masteringVoice_ = nullptr;
+	}
+	if (xAudio2_) {
+		xAudio2_->Release();
+		xAudio2_ = nullptr;
+	}
+}
+
 SoundData AudioManager::SoundLoadWave(const char* filename) {
 	std::ifstream file;
 	file.open(filename, std::ios_base::binary);
 	assert(file.is_open());
+
 	RiffHeader riff;
 	file.read((char*)&riff, sizeof(riff));
 	if (strncmp(riff.chunk.id, "RIFF", 4) != 0) assert(0);
 	if (strncmp(riff.type, "WAVE", 4) != 0) assert(0);
+
 	FormatChunk format = {};
-	file.read((char*)&format, sizeof(ChunkHeader));
-	if (strncmp(format.chunk.id, "fmt ", 4) != 0) assert(0);
-	file.read((char*)&format.fmt, format.chunk.size);
-	ChunkHeader data;
-	file.read((char*)&data, sizeof(data));
-	if (strncmp(data.id, "JUNK", 4) == 0) {
-		file.seekg(data.size, std::ios_base::cur);
-		file.read((char*)&data, sizeof(data));
+
+	// fmtチャンクを探すループ
+	while (file.read((char*)&format.chunk, sizeof(ChunkHeader))) {
+		if (strncmp(format.chunk.id, "fmt ", 4) == 0) {
+
+			// 1. 読み込むバイト数を計算（構造体のサイズを超えないように制限）
+			int32_t sizeToRead = format.chunk.size;
+			if (sizeToRead > sizeof(format.fmt)) {
+				sizeToRead = sizeof(format.fmt);
+			}
+
+			// 2. フォーマットデータを読み込む
+			file.read((char*)&format.fmt, sizeToRead);
+
+			// 3. もしファイル側のデータの方が大きかったら、残りは読み飛ばす（シークする）
+			if (format.chunk.size > sizeToRead) {
+				file.seekg(format.chunk.size - sizeToRead, std::ios_base::cur);
+			}
+
+			break;
+		} else {
+			file.seekg(format.chunk.size, std::ios_base::cur);
+		}
 	}
+	// dataチャンクを探すループ
+	ChunkHeader data;
+	while (file.read((char*)&data, sizeof(ChunkHeader))) {
+		if (strncmp(data.id, "data", 4) == 0) {
+			break;
+		} else {
+			file.seekg(data.size, std::ios_base::cur);
+		}
+	}
+
 	if (strncmp(data.id, "data", 4) != 0) assert(0);
+
 	char* pBuffer = new char[data.size];
 	file.read(pBuffer, data.size);
 	file.close();
+
 	SoundData soundData = {};
 	soundData.wfex = format.fmt;
 	soundData.pBuffer = reinterpret_cast<BYTE*>(pBuffer);
 	soundData.buffersize = data.size;
+
 	return soundData;
 }
 
@@ -47,14 +95,63 @@ void AudioManager::SoundUnload(SoundData* soundData) {
 	soundData->wfex = {};
 }
 
-void AudioManager::SoundPlayWave(const SoundData& soundData) {
+IXAudio2SourceVoice* AudioManager::SoundPlayWave(const SoundData& soundData, bool loop, float volume) {
+	HRESULT result;
+
 	IXAudio2SourceVoice* pSourceVoice = nullptr;
-	HRESULT result = xAudio2_->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
+	result = xAudio2_->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
 	assert(SUCCEEDED(result));
+
 	XAUDIO2_BUFFER buf = {};
 	buf.pAudioData = soundData.pBuffer;
 	buf.AudioBytes = soundData.buffersize;
 	buf.Flags = XAUDIO2_END_OF_STREAM;
+
+	if (loop) {
+		buf.LoopCount = XAUDIO2_LOOP_INFINITE;
+	}
+
 	result = pSourceVoice->SubmitSourceBuffer(&buf);
+	result = pSourceVoice->SetVolume(volume);
 	result = pSourceVoice->Start(0);
+
+	voices_.insert(pSourceVoice);
+
+	return pSourceVoice;
+}
+
+void AudioManager::StopVoice(IXAudio2SourceVoice* voice) {
+	// 管理リストに登録されているか確認
+	if (voices_.count(voice) > 0) {
+		//  停止
+		voice->Stop();
+		//  破棄
+		voice->DestroyVoice();
+		//  リストから抹消
+		voices_.erase(voice);
+	}
+}
+
+// 一時停止
+void AudioManager::PauseVoice(IXAudio2SourceVoice* voice) {
+	if (voices_.count(voice) > 0) {
+		voice->Stop();
+	}
+}
+
+// 再開
+void AudioManager::ResumeVoice(IXAudio2SourceVoice* voice) {
+	if (voices_.count(voice) > 0) {
+		voice->Start(0);
+	}
+}
+
+void AudioManager::StopAllVoices() {
+	for (IXAudio2SourceVoice* voice : voices_) {
+		if (voice) {
+			voice->Stop();
+			voice->DestroyVoice();
+		}
+	}
+	voices_.clear();
 }

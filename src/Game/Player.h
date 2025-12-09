@@ -4,6 +4,7 @@
 #include "Collision.h"
 #include <list>
 #include <memory>
+#include "AudioManager.h"
 
 // 前方宣言
 class Enemy;
@@ -26,6 +27,9 @@ public:
 
 	// 描画
 	void Draw();
+
+	// デストラクタ
+	~Player();
 
 	// 衝突応答
 	void OnCollision(const Enemy* enemy);
@@ -50,6 +54,9 @@ public:
 	bool IsRespawning() const { return state_ == State::kRespawn; }
 	bool IsInvincible() const { return state_ == State::kInvincible; }
 	bool IsDead() const { return state_ == State::kDead; }
+
+	// セッター
+	void SetWindSe(bool wind) { isWindSe_ = wind; }
 
 private:
 	enum class State {
@@ -127,6 +134,14 @@ private:
 	std::list<FireworkParticle*> fireworkParticles_;
 	static const int kFireParticleCount = 3;
 	Rand* rand_ = nullptr;
+
+	// SE
+	SoundData upSe_;
+	SoundData downSe_;
+	SoundData clashSe_;
+	SoundData windSe_;
+	IXAudio2SourceVoice* pBgmVoice_ = nullptr;
+	bool isWindSe_ = false;
 
 private:
 	void UpdateMove();
