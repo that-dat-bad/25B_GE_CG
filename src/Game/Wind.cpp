@@ -16,6 +16,7 @@ void Wind::Initialize(const Vector3& position) {
 
 	// 半透明設定 (Object3d拡張前提)
 	object3d_->SetColor({ 1.0f, 1.0f, 1.0f, 0.5f });
+
 }
 
 void Wind::Update() {

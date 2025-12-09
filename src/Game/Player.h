@@ -55,6 +55,9 @@ public:
 	bool IsInvincible() const { return state_ == State::kInvincible; }
 	bool IsDead() const { return state_ == State::kDead; }
 
+	// セッター
+	void SetWindSe(bool wind) { isWindSe_ = wind; }
+
 private:
 	enum class State {
 		kAlive,   // 生存中
@@ -136,7 +139,9 @@ private:
 	SoundData upSe_;
 	SoundData downSe_;
 	SoundData clashSe_;
+	SoundData windSe_;
 	IXAudio2SourceVoice* pBgmVoice_ = nullptr;
+	bool isWindSe_ = false;
 
 private:
 	void UpdateMove();
