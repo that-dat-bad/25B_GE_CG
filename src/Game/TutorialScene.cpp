@@ -8,7 +8,7 @@ TutorialScene::~TutorialScene() {
   delete enemy_;
   delete skydome_;
   AudioManager* audio = TDEngine::GetAudioManager();
-  //audio->StopAllVoices();
+  audio->StopAllVoices();
   pBgmVoice_ = nullptr;
   audio->SoundUnload(&soundBgm_);
 }

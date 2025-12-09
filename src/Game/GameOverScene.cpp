@@ -27,7 +27,7 @@ void GameOverScene::Initialize() {
 	// BGM
 	AudioManager* audio = TDEngine::GetAudioManager();
 	soundBgm_ = audio->SoundLoadWave("Resources/Sound/gameover.wav");
-	pBgmVoice_ = audio->SoundPlayWave(soundBgm_, true, 1.0f);
+	pBgmVoice_ = audio->SoundPlayWave(soundBgm_, false, 1.0f);
 }
 
 void GameOverScene::Update() {

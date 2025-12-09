@@ -505,7 +505,6 @@ void Enemy::BehaviorNeedleInitialize() {
 	Vector3 rot = object3d_->GetRotate();
 	turnFirstRotationY = rot.y;
 	turnTimer_ = kTimeTurn;
-	TDEngine::GetAudioManager()->SoundPlayWave(needleSe_, false, 1.0f);
 }
 
 void Enemy::BehaviorNeedleUpdate() {
@@ -769,7 +768,6 @@ void Enemy::BehaviorDeathInitialize() {
 	initPos_ = { 20.0f, 0.0f, 0.0f };
 	enemyRotate_ = { 1.0f, 1.0f, 1.0f };
 	t = 0.0f;
-	TDEngine::GetAudioManager()->SoundPlayWave(deathSe_, false, 1.0f);
 }
 
 void Enemy::BehaviorDeathUpdate() {
@@ -790,6 +788,7 @@ void Enemy::BehaviorDeathUpdate() {
 		if (attackParameter_ >= attackReservoirTimer_) {
 			attackPhase_ = AttackPhase::kAttack;
 			attackParameter_ = 0;
+			TDEngine::GetAudioManager()->SoundPlayWave(deathSe_, false, 1.0f);
 		}
 		break;
 

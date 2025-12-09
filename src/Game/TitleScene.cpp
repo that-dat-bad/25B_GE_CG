@@ -9,7 +9,7 @@ TitleScene::~TitleScene() {
 	delete logo_;
 
 	AudioManager* audio = TDEngine::GetAudioManager();
-	audio->StopVoice(pBgmVoice_);
+	audio->StopAllVoices();
 	pBgmVoice_ = nullptr;
 	audio->SoundUnload(&soundBgm_);
 	audio->SoundUnload(&soundSe_);
