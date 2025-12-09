@@ -20,14 +20,35 @@ SoundData AudioManager::SoundLoadWave(const char* filename) {
 	if (strncmp(riff.chunk.id, "RIFF", 4) != 0) assert(0);
 	if (strncmp(riff.type, "WAVE", 4) != 0) assert(0);
 
+	// --- 修正ここから ---
 	FormatChunk format = {};
-	file.read((char*)&format, sizeof(ChunkHeader));
+
+	// チャンクヘッダを読み込む
+	file.read((char*)&format.chunk, sizeof(ChunkHeader));
+
+	if (strncmp(format.chunk.id, "JUNK", 4) == 0) {
+		file.seekg(format.chunk.size, std::ios_base::cur); // JUNKデータ本体をスキップ
+		// 改めて次のチャンク（多分fmt）のヘッダを読む
+		file.read((char*)&format.chunk, sizeof(ChunkHeader));
+	}
+
+	// ここで "fmt " であることを確認
 	if (strncmp(format.chunk.id, "fmt ", 4) != 0) assert(0);
+
+	// フォーマットデータを読み込む
 	file.read((char*)&format.fmt, format.chunk.size);
 
 	ChunkHeader data;
 	file.read((char*)&data, sizeof(data));
+
+	// もし "JUNK" がまた来たら読み飛ばす（既存のコード）
 	if (strncmp(data.id, "JUNK", 4) == 0) {
+		file.seekg(data.size, std::ios_base::cur);
+		file.read((char*)&data, sizeof(data));
+	}
+
+	// LISTチャンク
+	if (strncmp(data.id, "LIST", 4) == 0) {
 		file.seekg(data.size, std::ios_base::cur);
 		file.read((char*)&data, sizeof(data));
 	}
