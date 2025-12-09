@@ -10,7 +10,7 @@ void Skydome::Initialize() {
 	Model::LoadFromOBJ(path);
 	object3d_ = Object3d::Create();
 	object3d_->SetModel(path);
-	object3d_->SetScale({ 10.0f, 10.0f, 10.0f });
+	object3d_->SetScale({ 0.085f, 0.085f, 0.085f });
 }
 
 void Skydome::Update() {

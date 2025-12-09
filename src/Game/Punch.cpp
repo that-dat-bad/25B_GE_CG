@@ -15,6 +15,8 @@ void Punch::Initialize(const Vector3& position, int punched) {
 	object3d_->SetTranslate(position);
 	object3d_->SetScale({ 1.0f, 1.0f, 1.0f });
 
+	object3d_->Update();
+
 	// フラグを設定 (int -> bool)
 	isPunched_ = (punched != 0);
 

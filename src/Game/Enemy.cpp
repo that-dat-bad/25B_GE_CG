@@ -35,7 +35,7 @@ Enemy::~Enemy() {
 // ---------------------------------------------------------
 void Enemy::Initialize(const Vector3& position) {
 	// モデル読み込み (Resources/enemy.obj 前提)
-	std::string modelPath = "Resources/enemy.obj";
+	std::string modelPath = "Resources/enemy/enemy.obj";
 	ModelManager::GetInstance()->LoadModel(modelPath);
 
 	// Object3d生成
@@ -924,8 +924,15 @@ void Enemy::BehaviorStartUpdate() {
 // その他ユーティリティ
 // ---------------------------------------------------------
 Vector3 Enemy::GetWorldPosition() {
-	if (object3d_) return object3d_->GetTranslate();
-	return { 0,0,0 };
+	/*if (object3d_) return object3d_->GetTranslate();
+	return { 0,0,0 };*/
+
+	Matrix4x4 world = MyMath::MakeAffineMatrix(object3d_->GetScale(),
+                                               object3d_->GetRotate(),
+                                               object3d_->GetTranslate());
+
+    // ワールド行列の平行移動成分が「世界座標」
+    return Vector3{world.m[3][0], world.m[3][1], world.m[3][2]};
 }
 
 AABB Enemy::GetAABB() {
@@ -957,7 +964,7 @@ void Enemy::PlayerHitDamage(const Player& player) {
 		return;
 	}
 
-	hp_ -= 20.0f; // プレイヤーの攻撃力(仮)
+	hp_ -= player.GetScale().x * 10.0f; // プレイヤーの攻撃力(仮)
 	isHit_ = true;
 }
 

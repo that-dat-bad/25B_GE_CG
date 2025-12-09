@@ -11,6 +11,7 @@ void Needle::Initialize(const Vector3& position, const Vector3& rotate) {
 	object3d_->SetModel(path);
 	object3d_->SetTranslate(position);
 	object3d_->SetRotate(rotate);
+    object3d_->SetScale(Vector3{1.0f, 1.0f, 1.0f});
 }
 
 void Needle::Update() {

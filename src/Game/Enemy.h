@@ -61,6 +61,9 @@ public:
 	// デスフラグの取得
 	bool IsDead() const { return isDead_; }
 
+	// コリジョン無効フラグの取得
+    bool IsCollisionDisabled() const { return isCollisionDisabled_; }
+
 	// プレイヤーのポインタのセッター
 	void SetPlayer(Player* player) { player_ = player; }
 
@@ -71,6 +74,9 @@ public:
 	std::list<Thunder*> GetThunders() { return thunders_; }
 
 	void SetThunderEnabled(bool enabled) { canUseThunder_ = enabled; }
+
+	// 敵の死亡フラグ
+	bool IsDeath() const { return behavior_ == Behavior::kDeath; }
 
 	// 振る舞いリクエストを決定
 	void SetRequest(bool isUnknown) { isUnknown_ = isUnknown; }

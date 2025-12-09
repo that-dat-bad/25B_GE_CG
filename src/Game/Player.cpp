@@ -280,15 +280,25 @@ Vector3 Player::GetWorldPosition() const {
 }
 
 AABB Player::GetAABB() {
-	Vector3 worldPos = GetWorldPosition();
-	AABB aabb;
-	aabb.min = { worldPos.x - size_ / 2.0f, worldPos.y - size_ / 2.0f, worldPos.z - size_ / 2.0f };
-	aabb.max = { worldPos.x + size_ / 2.0f, worldPos.y + size_ / 2.0f, worldPos.z + size_ / 2.0f };
-	return aabb;
+  Vector3 worldPos = GetWorldPosition();
+  AABB aabb;
+
+  constexpr float kHitScale = 2.0f; // 好きな倍率
+
+  float half = (size_ * kHitScale) / 2.0f;
+
+  if (isExplode_) {
+    half = (size_ * kHitScale + 30.0f) / 2.0f; // 爆発時さらに広げたいなら
+  }
+
+  aabb.min = {worldPos.x - half, worldPos.y - half, worldPos.z - half};
+  aabb.max = {worldPos.x + half, worldPos.y + half, worldPos.z + half};
+  return aabb;
 }
 
+
 Vector3 Player::GetScale() const {
-	return object3d_->GetScale();
+  return Vector3{explosivePower_, explosivePower_, explosivePower_};
 }
 
 void Player::SetPosition(const Vector3& position) {
