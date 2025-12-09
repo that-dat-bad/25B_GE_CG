@@ -7,6 +7,15 @@ TutorialScene::~TutorialScene() {
   delete player_;
   delete enemy_;
   delete skydome_;
+  AudioManager* audio = TDEngine::GetAudioManager();
+  if (pBgmVoice_ != nullptr)
+  {
+      pBgmVoice_->Stop();
+      pBgmVoice_->DestroyVoice();
+      pBgmVoice_ = nullptr;
+  }
+  audio->SoundUnload(&soundBgm_);
+  
 }
 
 void TutorialScene::Initialize() {
@@ -28,6 +37,11 @@ void TutorialScene::Initialize() {
   fade_->Initialize();
   fade_->Start(Fade::Status::kFadeIn, duration_);
   phase_ = Phase::kFadeIn;
+
+  // BGM
+  AudioManager* audio = TDEngine::GetAudioManager();
+  soundBgm_ = audio->SoundLoadWave("Resources/Sound/tutorial.wav");
+  pBgmVoice_ = audio->SoundPlayWave(soundBgm_, true, 1.0f);
 }
 
 void TutorialScene::Update() {
