@@ -9,7 +9,7 @@ TitleScene::~TitleScene() {
 	delete logo_;
 
 	AudioManager* audio = TDEngine::GetAudioManager();
-	audio->StopAllVoices();
+	audio->StopVoice(pBgmVoice_);
 	pBgmVoice_ = nullptr;
 	audio->SoundUnload(&soundBgm_);
 	audio->SoundUnload(&soundSe_);
@@ -81,7 +81,6 @@ void TitleScene::UpdateMain() {
 			phase_ = Phase::kFadeOut;
 			fade_->Start(Fade::Status::kFadeOut, duration_);
 			AudioManager* audio = TDEngine::GetAudioManager();
-			audio->StopVoice(pBgmVoice_);
 		}
 	}
 	if (backGround_) backGround_->Update();
@@ -93,6 +92,7 @@ void TitleScene::UpdateFadeOut() {
 	fade_->Update();
 	if (fade_->IsFinished()) {
 		isFinished_ = true;
+		
 	}
 	if (backGround_) { backGround_->Update(); }
 	if (logo_) {

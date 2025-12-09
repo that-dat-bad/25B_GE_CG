@@ -87,7 +87,7 @@ void Player::Draw() {
 Player::~Player()
 {
 	AudioManager* audio = TDEngine::GetAudioManager();
-	audio->StopAllVoices();
+	//audio->StopAllVoices();
 	pBgmVoice_ = nullptr;
 	audio->SoundUnload(&clashSe_);
 	audio->SoundUnload(&upSe_);
