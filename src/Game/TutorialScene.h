@@ -4,6 +4,7 @@
 #include "Enemy.h"
 #include "Skydome.h"
 #include "Collision.h"
+#include "AudioManager.h"
 
 class TutorialScene {
 public:
@@ -32,4 +33,7 @@ private:
 	Player* player_ = nullptr;
 	Enemy* enemy_ = nullptr;
 	Skydome* skydome_ = nullptr;
+	// BGM
+	SoundData soundBgm_;
+	IXAudio2SourceVoice* pBgmVoice_ = nullptr;
 };

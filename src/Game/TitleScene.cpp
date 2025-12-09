@@ -7,6 +7,16 @@ TitleScene::~TitleScene() {
 	delete fade_;
 	delete backGround_;
 	delete logo_;
+	AudioManager* audio = TDEngine::GetAudioManager();
+	if (pBgmVoice_ != nullptr)
+	{
+		pBgmVoice_->Stop();
+		pBgmVoice_->DestroyVoice();
+		pBgmVoice_ = nullptr;
+	}
+	audio->SoundUnload(&soundBgm_);
+	audio->SoundUnload(&soundSelect_);
+	audio->SoundUnload(&soundSe_);
 }
 
 void TitleScene::Initialize() {
@@ -28,6 +38,17 @@ void TitleScene::Initialize() {
 	fade_->Initialize();
 	fade_->Start(Fade::Status::kFadeIn, duration_);
 	phase_ = Phase::kFadeIn;
+
+	// BGM
+	AudioManager* audio = TDEngine::GetAudioManager();
+	soundBgm_ = audio->SoundLoadWave("Resources/Sound/title.wav");
+	soundSe_ = audio->SoundLoadWave("Resources/Sound/enter.wav");
+	soundSelect_ = audio->SoundLoadWave("Resources/Sound/select.wav");
+	pBgmVoice_ = audio->SoundPlayWave(soundBgm_, true, 1.0f);
+
+	// シーン遷移
+	select_ = Select::kTutorial;
+
 }
 
 void TitleScene::Update() {
@@ -62,6 +83,8 @@ void TitleScene::UpdateMain() {
 		if (select_ != Select::kNone) {
 			phase_ = Phase::kFadeOut;
 			fade_->Start(Fade::Status::kFadeOut, duration_);
+			AudioManager* audio = TDEngine::GetAudioManager();
+			pBgmVoice_ = audio->SoundPlayWave(soundSe_, true, 1.0f);
 		}
 	}
 	if (backGround_) backGround_->Update();
@@ -81,10 +104,14 @@ void TitleScene::UpdateFadeOut() {
 }
 
 void TitleScene::UpdateSelect() {
+	AudioManager* audio = TDEngine::GetAudioManager();
+	
 	// キー入力で遷移先を選択
-	if (TDEngine::GetInput()->pushKey(DIK_A)) {
+	if (TDEngine::GetInput()->triggerKey(DIK_W)) {
 		select_ = Select::kTutorial;
-	} else if (TDEngine::GetInput()->pushKey(DIK_D)) {
+		pBgmVoice_ = audio->SoundPlayWave(soundSelect_, false, 1.0f);
+	} else if (TDEngine::GetInput()->triggerKey(DIK_S)) {
 		select_ = Select::kGame;
+		pBgmVoice_ = audio->SoundPlayWave(soundSelect_, false, 1.0f);
 	}
 }

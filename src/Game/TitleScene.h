@@ -2,6 +2,7 @@
 #include "BackGround.h"
 #include "TitleLogo.h"
 #include "Fade.h"
+#include "AudioManager.h"
 
 class TitleScene {
 public:
@@ -31,4 +32,11 @@ private:
 
 	BackGround* backGround_ = nullptr;
 	TitleLogo* logo_ = nullptr;
+
+	// BGM
+	SoundData soundBgm_;
+	SoundData soundSe_;
+	SoundData soundSelect_;
+	IXAudio2SourceVoice* pBgmVoice_ = nullptr;
+
 };
