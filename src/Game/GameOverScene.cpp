@@ -6,7 +6,7 @@ GameOverScene::~GameOverScene() {
 	delete fade_;
 	delete backGround_;
 	AudioManager* audio = TDEngine::GetAudioManager();
-	audio->StopAllVoices();
+	//audio->StopAllVoices();
 	pBgmVoice_ = nullptr;
 	audio->SoundUnload(&soundBgm_);
 }

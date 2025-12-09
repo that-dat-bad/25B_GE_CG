@@ -33,7 +33,7 @@ GameScene::~GameScene() {
 	delete timeLimit_;
 	delete fade_;
 	AudioManager* audio = TDEngine::GetAudioManager();
-	audio->StopAllVoices();
+	//audio->StopAllVoices();
 	pBgmVoice_ = nullptr;
 	audio->SoundUnload(&soundBgm_);
 }

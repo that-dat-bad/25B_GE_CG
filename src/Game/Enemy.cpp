@@ -31,7 +31,7 @@ Enemy::~Enemy() {
 	for (auto p : deathParticles_) delete p;
 
 	AudioManager* audio = TDEngine::GetAudioManager();
-	audio->StopAllVoices();
+	//audio->StopAllVoices();
 	pBgmVoice_ = nullptr;
 	audio->SoundUnload(&boundSe_);
 	audio->SoundUnload(&approachSe_);
