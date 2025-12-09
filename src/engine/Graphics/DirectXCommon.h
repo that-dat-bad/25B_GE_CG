@@ -2,7 +2,7 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
-#include"WinApp.h"
+#include"../../engine/base/WinApp.h"
 #include <array>
 #include <dxcapi.h>
 #pragma comment(lib, "dxcompiler.lib")
@@ -14,8 +14,7 @@
 class DirectXCommon
 {
 public:
-	static DirectXCommon* GetInstance();
-	~DirectXCommon() = default;
+
 	static const uint32_t kRtvHeapDescriptorNum_ = 2; // ダブルバッファ用
 	static const uint32_t kDsvHeapDescriptorNum_ = 1; // 深度バッファ用
 	static const uint32_t kSwapChainBufferCount_ = 2;
@@ -77,10 +76,7 @@ public:
 
 private:
 
-	DirectXCommon() = default;
 
-	DirectXCommon(const DirectXCommon&) = delete;
-	const DirectXCommon& operator=(const DirectXCommon&) = delete;
 
 
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_ = nullptr;

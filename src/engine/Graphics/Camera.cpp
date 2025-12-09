@@ -1,5 +1,5 @@
 #include "Camera.h"
-#include"WinApp.h"
+#include"../base/WinApp.h"
 Camera::Camera()
 
 	: transform_({ 1.0f,1.0f,1.0f }, { 0.0f,0.0f,0.0f }, { 0.0f,0.0f,0.0f })

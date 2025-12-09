@@ -1,7 +1,6 @@
 #pragma once
 #include <Windows.h>
 #include <cstdint>
-#include<string>
 
 class WinApp {
 public:
@@ -11,7 +10,7 @@ public:
 
 public:
 	// 初期化
-	void Initialize(const std::wstring& title = L"TDengine");
+	void Initialize();
 
 	bool ProcessMessage();
 
@@ -20,8 +19,6 @@ public:
 
 	// ウィンドウハンドルの取得
 	HWND GetHwnd() const { return hwnd_; }
-
-	HINSTANCE GetInstance() const;
 
 private:
 	// ウィンドウプロシージャ

@@ -6,7 +6,6 @@ class DirectXCommon;
 
 class SrvManager {
 public:
-	static SrvManager* GetInstance();
 	void Initialize(DirectXCommon* dxCommon);
 
 	void PreDraw();
@@ -32,12 +31,6 @@ public:
 	void CreateSRVforTexture2D(uint32_t srvIndex, ID3D12Resource* pResource, DXGI_FORMAT Format, UINT MipLevels);
 	void CreateSRVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource* pResource, UINT numElements, UINT structureByteStride);
 private:
-
-	SrvManager() = default;
-	~SrvManager() = default;
-	SrvManager(const SrvManager&) = delete;
-	SrvManager& operator=(const SrvManager&) = delete;
-
 	DirectXCommon* dxCommon_ = nullptr;
 	//次に使用するSRVインデックス
 	uint32_t useIndex_ = 0;

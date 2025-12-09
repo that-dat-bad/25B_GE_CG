@@ -3,14 +3,6 @@
 #include"DirectXCommon.h"
 const uint32_t SrvManager::kMaxSRVCount_ = 512;
 
-SrvManager* SrvManager::GetInstance() {
-	static SrvManager* instance = nullptr;
-	if (instance == nullptr) {
-		instance = new SrvManager();
-	}
-	return instance;
-}
-
 void SrvManager::Initialize(DirectXCommon* dxCommon) {
 	dxCommon_ = dxCommon;
 

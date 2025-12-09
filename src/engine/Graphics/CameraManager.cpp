@@ -42,16 +42,6 @@ void CameraManager::SetActiveCamera(const std::string& name) {
 	}
 }
 
-Camera* CameraManager::GetCamera(const std::string& name) {
-	// 指定した名前のカメラがあるか検索
-	if (cameras_.contains(name)) {
-		// unique_ptr から生ポインタを取り出して返す
-		return cameras_[name].get();
-	}
-	// 見つからなければ nullptr
-	return nullptr;
-}
-
 void CameraManager::Update() {
 	if (activeCamera_) {
 		activeCamera_->Update();

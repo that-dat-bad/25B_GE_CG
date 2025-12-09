@@ -1,8 +1,7 @@
 #include "SpriteCommon.h"
 #include "DirectXCommon.h"
-#include"logger.h"
+#include"../base/logger.h"
 #include <cassert>
-#include "SrvManager.h"
 using namespace logger;
 
 void SpriteCommon::Initialize(DirectXCommon* dxCommon)
@@ -16,7 +15,7 @@ void SpriteCommon::SetupCommonState()
 #ifdef _DEBUG
 	assert(dxCommon_ != nullptr);
 #endif // _DEBUG
-	SrvManager::GetInstance()->PreDraw();
+
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 	commandList->SetPipelineState(graphicsPipelineState_.Get());
 	commandList->SetGraphicsRootSignature(rootSignature_.Get());

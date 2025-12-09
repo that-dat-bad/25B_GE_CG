@@ -11,9 +11,6 @@ class SrvManager;
 
 class ImGuiManager {
 public:
-
-	static ImGuiManager* GetInstance();
-	~ImGuiManager() = default;
 	// 初期化
 	void Initialize(WinApp* winApp, DirectXCommon* dxCommon, SrvManager* srvManager);
 
@@ -23,17 +20,10 @@ public:
 	// 描画処理
 	void End();
 
-	void Draw();
-
 	// 終了処理
 	void Finalize();
 
 private:
-
-	ImGuiManager() = default;
-	ImGuiManager(const ImGuiManager&) = delete;
-	const ImGuiManager& operator=(const ImGuiManager&) = delete;
-
 	DirectXCommon* dxCommon_ = nullptr;
 	SrvManager* srvManager_ = nullptr;
 };

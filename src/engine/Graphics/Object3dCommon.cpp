@@ -2,7 +2,7 @@
 #include "DirectXCommon.h"
 #include "../base/logger.h"
 using namespace logger;
-#include"SrvManager.h"
+
 
 void Object3dCommon::Initialize(DirectXCommon* dxCommon)
 {
@@ -15,8 +15,6 @@ void Object3dCommon::SetupCommonState()
 #ifdef _DEBUG
 	assert(dxCommon_ != nullptr);
 #endif // _DEBUG
-
-	SrvManager::GetInstance()->PreDraw();
 
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 	commandList->SetPipelineState(graphicsPipelineState_.Get());

@@ -41,19 +41,14 @@ void ImGuiManager::Begin() {
 #endif // USE_IMGUI
 }
 
-void ImGuiManager::Draw() {
-#ifdef USE_IMGUI
-	// 実際の描画コマンド発行
-	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-#endif
-}
-
 void ImGuiManager::End() {
 #ifdef USE_IMGUI
-	// 内部の処理を確定
 	ImGui::Render();
-#endif
+	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+
+	// 実際の描画コマンド発行
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+#endif // USE_IMGUI
 }
 
 void ImGuiManager::Finalize() {
@@ -62,12 +57,4 @@ void ImGuiManager::Finalize() {
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 #endif // USE_IMGUI
-}
-
-ImGuiManager* ImGuiManager::GetInstance() {
-	static ImGuiManager* instance = nullptr;
-	if (instance == nullptr) {
-		instance = new ImGuiManager();
-	}
-	return instance;
 }

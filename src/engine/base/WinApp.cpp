@@ -11,10 +11,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 
 
-HINSTANCE WinApp::GetInstance() const {
-	return wc_.hInstance;
-}
-
 // ウィンドウプロシージャ
 LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 #ifdef USE_IMGUI
@@ -36,7 +32,7 @@ LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
-void WinApp::Initialize(const std::wstring& title) {
+void WinApp::Initialize() {
 	//システムタイマーの分解能を上げる
 	timeBeginPeriod(1);
 
@@ -55,7 +51,7 @@ void WinApp::Initialize(const std::wstring& title) {
 
 	hwnd_ = CreateWindow(
 		wc_.lpszClassName,
-		title.c_str(),
+		L"GE3",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
@@ -72,15 +68,14 @@ void WinApp::Initialize(const std::wstring& title) {
 
 bool WinApp::ProcessMessage() {
 	MSG msg{};
-	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+	if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
-		if (msg.message == WM_QUIT) {
-			return true;
-		}
 	}
 
-
+	if (msg.message == WM_QUIT) {
+		return true;
+	}
 
 	return false;
 }
