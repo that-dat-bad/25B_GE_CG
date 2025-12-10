@@ -33,6 +33,7 @@ private:
 
   Sprite *rule_ = nullptr;
   Sprite *operation_ = nullptr;
+  Sprite *system_ = nullptr;
 
   Player *player_ = nullptr;
   Enemy *enemy_ = nullptr;
