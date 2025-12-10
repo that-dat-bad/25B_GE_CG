@@ -155,6 +155,7 @@ private:
 	bool isChanged_ = false;
 	bool isDead_ = false;
 	bool isCollisionDisabled_ = false;
+	bool isDeath_ = false;
 
 	// 振る舞い定義
 	enum class Behavior {

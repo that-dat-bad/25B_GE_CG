@@ -90,7 +90,7 @@ void Enemy::Update() {
 	// 旋回制御
 	if (turnTimer_ > 0.0f) {
 		if (turnTimer_ <= 1.0f) {
-			turnTimer_ += 0.01f;
+			turnTimer_ += 0.1f;
 		}
 
 		float destinationRotationYTable[] = {
@@ -366,7 +366,7 @@ void Enemy::BehaviorBeamInitialize() {
 	attackRushTimer_ = 50.0f;
 	attackLingeringTimer_ = 40.0f;
 	attackAfterTimer_ = 10.0f;
-	initPos_ = { 36.0f, -5.0f, 0.0f };
+	initPos_ = { 36.0f, -3.0f, 0.0f };
 	t = 0.0f;
 }
 
@@ -735,6 +735,18 @@ void Enemy::BehaviorRootUpdate() {
 			return;
 		}
 
+
+		if (hp_ <= 0) {
+			if (isDeath_ == false)
+			{
+				hp_ = 0;
+				behaviorRequest_ = Behavior::kDeath;
+				isCollisionDisabled_ = true;
+				isDeath_ = true;
+				return;
+			}
+		}
+
 		if (isChanged_) {
 			if (hp_ <= halfHp_) {
 				if (!canUseThunder_) {
@@ -771,6 +783,10 @@ void Enemy::BehaviorDeathInitialize() {
 	initPos_ = { 20.0f, 0.0f, 0.0f };
 	enemyRotate_ = { 1.0f, 1.0f, 1.0f };
 	t = 0.0f;
+	if (!isDeath_)
+	{
+		TDEngine::GetAudioManager()->SoundPlayWave(deathSe_, false, 1.0f);
+	}
 }
 
 void Enemy::BehaviorDeathUpdate() {
@@ -791,7 +807,6 @@ void Enemy::BehaviorDeathUpdate() {
 		if (attackParameter_ >= attackReservoirTimer_) {
 			attackPhase_ = AttackPhase::kAttack;
 			attackParameter_ = 0;
-			TDEngine::GetAudioManager()->SoundPlayWave(deathSe_, false, 1.0f);
 		}
 		break;
 
@@ -993,15 +1008,16 @@ void Enemy::PlayerHitDamage(const Player& player) {
         hp_ = 0;
 		behaviorRequest_ = Behavior::kDeath;
 		isCollisionDisabled_ = true;
+		isDeath_ = true;
 		return;
 	}
 
-	hp_ -= player.GetScale().x * 3.0f; // プレイヤーの攻撃力(仮)
+	hp_ -= player.GetScale().x * 1.8f; // プレイヤーの攻撃力(仮)
 	isHit_ = true;
 }
 
 void Enemy::BombHitDamage() {
-	hp_ -= 10;
+	hp_ -= 15;
 	isHit_ = true;
 
 	if (!isChangeStart_) {
@@ -1012,6 +1028,7 @@ void Enemy::BombHitDamage() {
 	}
 	if (hp_ <= 0) {
 		behaviorRequest_ = Behavior::kDeath;
+		isDeath_ = true;
 	}
 }
 

@@ -98,7 +98,7 @@ private:
 	bool isExplode_ = false;
 
 	static inline const float kDeltaTime = 1.0f / 60.0f;
-	static inline const float kRespawnTimeSelf = 1.5f;
+	static inline const float kRespawnTimeSelf = 1.0f;
 	static inline const float kRespawnTimeKilled = 2.5f;
 	float respawnTimer_ = 0.0f;
 
@@ -142,6 +142,7 @@ private:
 	SoundData windSe_;
 	IXAudio2SourceVoice* pBgmVoice_ = nullptr;
 	bool isWindSe_ = false;
+	bool isClashSe_ = false;
 
 private:
 	void UpdateMove();
