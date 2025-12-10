@@ -745,7 +745,7 @@ void Enemy::BehaviorRootUpdate() {
 
 
 		if (hp_ <= 0) {
-			if (isDeath_ == false)
+			if (!isDeath_)
 			{
 				hp_ = 0;
 				behaviorRequest_ = Behavior::kDeath;
@@ -1012,11 +1012,14 @@ void Enemy::PlayerHitDamage(const Player& player) {
 		}
 	}
 	if (hp_ <= 0) {
-		hp_ = 0;
-		behaviorRequest_ = Behavior::kDeath;
-		isCollisionDisabled_ = true;
-		isDeath_ = true;
-		return;
+		if (!isDeath_)
+		{
+			hp_ = 0;
+			behaviorRequest_ = Behavior::kDeath;
+			isCollisionDisabled_ = true;
+			isDeath_ = true;
+			return;
+		}
 	}
 
 	hp_ -= player.GetScale().x * 1.8f; // プレイヤーの攻撃力(仮)
@@ -1024,7 +1027,7 @@ void Enemy::PlayerHitDamage(const Player& player) {
 }
 
 void Enemy::BombHitDamage() {
-	hp_ -= 15;
+	hp_ -= 10;
 	isHit_ = true;
 
 	if (!isChangeStart_) {
@@ -1034,8 +1037,14 @@ void Enemy::BombHitDamage() {
 		}
 	}
 	if (hp_ <= 0) {
-		behaviorRequest_ = Behavior::kDeath;
-		isDeath_ = true;
+		if (!isDeath_)
+		{
+			hp_ = 0;
+			behaviorRequest_ = Behavior::kDeath;
+			isCollisionDisabled_ = true;
+			isDeath_ = true;
+			return;
+		}
 	}
 }
 
