@@ -79,7 +79,7 @@ void Enemy::Initialize(const Vector3& position) {
 	needleSe_ = audio->SoundLoadWave("Resources/Sound/needle.wav");
 	thunderSe_ = audio->SoundLoadWave("Resources/Sound/thunder.wav");
 	deathSe_ = audio->SoundLoadWave("Resources/Sound/enemyDeath.wav");
-    changeSe_ = audio->SoundLoadWave("Resources/Sound/change.wav");
+	changeSe_ = audio->SoundLoadWave("Resources/Sound/change.wav");
 }
 
 // ---------------------------------------------------------
@@ -164,7 +164,8 @@ void Enemy::Draw() {
 		if (hitTimer_ % 2 == 0) {
 			if (object3d_) object3d_->Draw();
 		}
-	} else {
+	}
+	else {
 		if (object3d_) object3d_->Draw();
 	}
 
@@ -219,7 +220,8 @@ void Enemy::BehaviorBoundUpdate() {
 				attackParameter_ = 0;
 				t = 0.0f;
 			}
-		} else {
+		}
+		else {
 			pos = Add(pos, enemySpeed_);
 			object3d_->SetTranslate(pos);
 
@@ -228,7 +230,8 @@ void Enemy::BehaviorBoundUpdate() {
 					attackAfterTimer_--;
 					pos.y = -20.0f;
 					object3d_->SetTranslate(pos);
-				} else {
+				}
+				else {
 					Vector3 playerPos = player_->GetWorldPosition();
 					Vector3 myPos = object3d_->GetTranslate();
 					Vector3 myRot = object3d_->GetRotate();
@@ -238,7 +241,8 @@ void Enemy::BehaviorBoundUpdate() {
 						direction_ = Direction::kRight;
 						turnFirstRotationY = myRot.y;
 						turnTimer_ = kTimeTurn;
-					} else {
+					}
+					else {
 						enemySpeed_.x = -0.5f;
 						direction_ = Direction::kLeft;
 						turnFirstRotationY = myRot.y;
@@ -249,7 +253,8 @@ void Enemy::BehaviorBoundUpdate() {
 					attackAfterTimer_ = 10.0f;
 					TDEngine::GetAudioManager()->SoundPlayWave(boundSe_, false, 1.0f);
 				}
-			} else {
+			}
+			else {
 				enemySpeed_.y -= enemySpeedDecay_.y;
 			}
 		}
@@ -315,7 +320,8 @@ void Enemy::BehaviorRoundUpdate() {
 				attackParameter_ = 0;
 				t = 0.0f;
 			}
-		} else {
+		}
+		else {
 			if (enemySpeed_.y >= 1.9f) {
 				if (attackAfterTimer_ >= 0.0f) {
 					attackAfterTimer_--;
@@ -330,7 +336,8 @@ void Enemy::BehaviorRoundUpdate() {
 				Vector3 rot = object3d_->GetRotate();
 				turnFirstRotationY = rot.y;
 				turnTimer_ = kTimeTurn;
-			} else {
+			}
+			else {
 				enemySpeed_.y += enemySpeedDecay_.y;
 			}
 			pos = Add(pos, enemySpeed_);
@@ -679,7 +686,8 @@ void Enemy::BehaviorPunchUpdate() {
 		if (t >= 1.0f) {
 			initPos_.x = pos.x - 2.0f;
 			t = 0.0f;
-		} else {
+		}
+		else {
 			pos = EaseIn(t, pos, initPos_);
 			object3d_->SetTranslate(pos);
 		}
@@ -760,7 +768,8 @@ void Enemy::BehaviorRootUpdate() {
 					return;
 				}
 			}
-		} else {
+		}
+		else {
 			if (randomValue == static_cast<int>(Behavior::kApproach) ||
 				randomValue == static_cast<int>(Behavior::kBound) ||
 				randomValue == static_cast<int>(Behavior::kRound)) {
@@ -783,10 +792,7 @@ void Enemy::BehaviorDeathInitialize() {
 	initPos_ = { 20.0f, 0.0f, 0.0f };
 	enemyRotate_ = { 1.0f, 1.0f, 1.0f };
 	t = 0.0f;
-	if (!isDeath_)
-	{
-		TDEngine::GetAudioManager()->SoundPlayWave(deathSe_, false, 1.0f);
-	}
+	TDEngine::GetAudioManager()->SoundPlayWave(deathSe_, false, 1.0f);
 }
 
 void Enemy::BehaviorDeathUpdate() {
@@ -960,7 +966,8 @@ void Enemy::BehaviorStartUpdate() {
 
 		if (isUnknown_) {
 			behaviorRequest_ = Behavior::kUnknown;
-		} else {
+		}
+		else {
 			behaviorRequest_ = Behavior::kRoot;
 		}
 	}
@@ -974,11 +981,11 @@ Vector3 Enemy::GetWorldPosition() {
 	return { 0,0,0 };*/
 
 	Matrix4x4 world = MyMath::MakeAffineMatrix(object3d_->GetScale(),
-                                               object3d_->GetRotate(),
-                                               object3d_->GetTranslate());
+		object3d_->GetRotate(),
+		object3d_->GetTranslate());
 
-    // ワールド行列の平行移動成分が「世界座標」
-    return Vector3{world.m[3][0], world.m[3][1], world.m[3][2]};
+	// ワールド行列の平行移動成分が「世界座標」
+	return Vector3{ world.m[3][0], world.m[3][1], world.m[3][2] };
 }
 
 AABB Enemy::GetAABB() {
@@ -1005,7 +1012,7 @@ void Enemy::PlayerHitDamage(const Player& player) {
 		}
 	}
 	if (hp_ <= 0) {
-        hp_ = 0;
+		hp_ = 0;
 		behaviorRequest_ = Behavior::kDeath;
 		isCollisionDisabled_ = true;
 		isDeath_ = true;
