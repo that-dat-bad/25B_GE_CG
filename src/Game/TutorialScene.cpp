@@ -147,8 +147,6 @@ void TutorialScene::CheckAllCollisions() {
 
     if (player_->IsDead() && enemy_->IsCollisionDisabled()) {
       isCleared_ = true;
-      AudioManager* audio = TDEngine::GetAudioManager();
-      audio->StopVoice(pBgmVoice_);
     }
   }
 }
