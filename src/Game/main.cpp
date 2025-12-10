@@ -60,7 +60,7 @@ void UpdateDebugCamera() {
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
-	TDEngine::Initialize(L"TDEngine Game", 1280, 720);
+	TDEngine::Initialize(L"2230_風船の灯火", 1280, 720);
 	SceneManager* sceneManager = new SceneManager();
 	sceneManager->Initialize();
 	while (TDEngine::Update()) {

@@ -201,8 +201,11 @@ void Player::UpdateAlive() {
 			isExplode_ = true;
 			state_ = State::kDead;
 			respawnTimer_ = kRespawnTimeSelf;
-			TDEngine::GetAudioManager()->SoundPlayWave(clashSe_, false, 1.0f);
-
+			if (!isClashSe_)
+			{
+				TDEngine::GetAudioManager()->SoundPlayWave(clashSe_, false, 1.0f);
+				isClashSe_ = true;
+			}
 			// パーティクル生成 (TDEngine対応版のコンストラクタを使う想定)
 			deathParticle_ = new EnemyDeathParticle();
 			deathParticle_->Initialize(object3d_->GetTranslate());
@@ -276,6 +279,7 @@ void Player::StartRespawn() {
 	state_ = State::kRespawn;
 	isAlive_ = true;
 	isExplode_ = false;
+	isClashSe_ = false;
 
 	startPos_ = { kScreenLeft - 20.0f, -15.0f, 0.0f };
 	endPos_ = { -27.0f, 0.0f, 0.0f };
@@ -343,12 +347,16 @@ void Player::SetPosition(const Vector3& position) {
 
 // 衝突応答 (死亡処理共通)
 void Player::OnCollision(const Enemy* enemy) {
-	if (!isAlive_ || state_ == State::kInvincible) return;
+	if (!isAlive_ || state_ == State::kInvincible || state_ == State::kRespawn) return;
 
 	isAlive_ = false;
 	respawnTimer_ = kRespawnTimeKilled;
 	state_ = State::kDead;
-	TDEngine::GetAudioManager()->SoundPlayWave(clashSe_, false, 1.0f);
+	if (!isClashSe_)
+	{
+		TDEngine::GetAudioManager()->SoundPlayWave(clashSe_, false, 1.0f);
+		isClashSe_ = true;
+	}
 
 	// パーティクル生成 (簡易化)
 	if (deathParticle_) delete deathParticle_;

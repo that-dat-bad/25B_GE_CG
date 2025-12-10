@@ -9,7 +9,7 @@ ChainBomb::~ChainBomb() {
 	if (object3d_) delete object3d_;
 	if (deathParticle_) delete deathParticle_;
 	AudioManager* audio = TDEngine::GetAudioManager();
-	audio->StopAllVoices();
+	//audio->StopAllVoices();
 	audio->SoundUnload(&bombSe_);
 
 }
