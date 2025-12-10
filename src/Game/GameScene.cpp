@@ -202,8 +202,9 @@ void GameScene::CheckAllCollisions() {
 
 	// 4. 敵と連鎖ボム
 	for (ChainBomb* chainBomb : chainBombs_) {
-		if (!chainBomb->IsExplode()) return;
-        if (!chainBomb->IsDestroy()) return;
+          if (!chainBomb->IsExplode() || chainBomb->IsDestroy()) {
+            continue;
+          }
 
 		AABB aabbChainBomb = chainBomb->GetAABB();
 		if (Collision::IsCollision(aabbEnemy, aabbChainBomb)) {

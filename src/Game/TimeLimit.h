@@ -32,9 +32,6 @@ private:
 	Sprite* centerDigit_ = nullptr;
 
 private:
-	void UpdateStartCountDown();
-	void UpdateActive();
-	void UpdateLast5Second();
 
 	void LayoutGlyphs(Vector2 size);
 	void UpdateGlyphTexturesFromTime();
