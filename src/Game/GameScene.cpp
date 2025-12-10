@@ -33,7 +33,8 @@ GameScene::~GameScene() {
 	delete skydome_;
 	delete timeLimit_;
 	delete fade_;
-  delete hpGauge_;
+    delete hpGauge_;    
+    delete operation_;
   
 	AudioManager* audio = TDEngine::GetAudioManager();
 	//audio->StopAllVoices();
@@ -80,7 +81,7 @@ void GameScene::Initialize() {
 	// 風の初期化
 	wind_ = new Wind();
 	wind_->Initialize(windPos_);
-        wind_->Update();
+    wind_->Update();
 
 	// UI: 時間制限
 	timeLimit_ = new TimeLimit();
@@ -92,6 +93,13 @@ void GameScene::Initialize() {
 	fade_->Start(Fade::Status::kFadeIn, duration_);
 
 	phase_ = Phase::kFadeIn;
+
+	TextureManager::LoadTexture("./Resources/operation.png");
+        // スプライト生成
+        operation_ =
+            Sprite::Create("./Resources/operation.png", {250.0f, 670.0f},
+                           {1, 1, 1, 1}, {0.5f, 0.5f});
+        operation_->SetScale(Vector2{0.5f, 0.5f});
 
 	// BGM
 	AudioManager* audio = TDEngine::GetAudioManager();
@@ -106,6 +114,7 @@ void GameScene::Update() {
      skydome_->Update();
     }
 
+	operation_->Update();
 
 	switch (phase_) {
 	case Phase::kFadeIn:
@@ -158,6 +167,9 @@ void GameScene::Draw() {
 	// --- 2Dスプライト描画 ---
 	// スプライト共通設定の適用
 	TDEngine::GetSpriteCommon()->SetupCommonState();
+
+	  operation_->Draw(TDEngine::GetSpriteCommon()->GetDirectXCommon());
+
 
 	// UI類
 	if (timeLimit_) timeLimit_->Draw();
