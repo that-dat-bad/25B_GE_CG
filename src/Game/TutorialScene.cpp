@@ -1,12 +1,15 @@
 #include "TutorialScene.h"
 #include "CameraManager.h"
 #include "TDEngine.h"
+#include "TextureManager.h"
 
 TutorialScene::~TutorialScene() {
   delete fade_;
   delete player_;
   delete enemy_;
   delete skydome_;
+  delete rule_;
+  delete operation_;
   AudioManager* audio = TDEngine::GetAudioManager();
   audio->StopAllVoices();
   pBgmVoice_ = nullptr;
@@ -14,8 +17,15 @@ TutorialScene::~TutorialScene() {
 }
 
 void TutorialScene::Initialize() {
-  CameraManager::GetInstance()->GetActiveCamera()->SetTranslate(
-      {0.0f, 0.0f, -100.0f});
+  // カメラ初期化 (CameraManagerを利用)
+  // "GameCamera" という名前で作成し、アクティブにする
+  CameraManager::GetInstance()->CreateCamera("TutorialCamera");
+  CameraManager::GetInstance()->SetActiveCamera("TutorialCamera");
+
+  // カメラの位置設定 (TDEngineのCameraクラスの仕様に合わせる)
+  Camera *camera = CameraManager::GetInstance()->GetActiveCamera();
+  camera->SetTranslate({0.0f, 0.0f, -50.0f}); // 適切な距離に設定
+  camera->SetRotate({0.0f, 0.0f, 0.0f});
 
   skydome_ = new Skydome();
   skydome_->Initialize();
@@ -32,6 +42,18 @@ void TutorialScene::Initialize() {
   fade_->Initialize();
   fade_->Start(Fade::Status::kFadeIn, duration_);
   phase_ = Phase::kFadeIn;
+
+  TextureManager::LoadTexture("./Resources/rule.png");
+  // スプライト生成
+  rule_ = Sprite::Create("./Resources/rule.png", {640.0f, 70.0f}, {1, 1, 1, 1},
+                         {0.5f, 0.5f});
+
+  TextureManager::LoadTexture("./Resources/operation.png");
+  // スプライト生成
+  operation_ = Sprite::Create("./Resources/operation.png", {250.0f, 670.0f},
+                             {1, 1, 1, 1},
+                         {0.5f, 0.5f});
+  operation_->SetScale(Vector2{0.5f, 0.5f});
 
   // BGM
   AudioManager* audio = TDEngine::GetAudioManager();
@@ -51,6 +73,9 @@ void TutorialScene::Update() {
   if (enemy_) {
     enemy_->Update();
   }
+
+  rule_->Update();
+  operation_->Update();
 
   switch (phase_) {
   case Phase::kFadeIn:
@@ -77,7 +102,12 @@ void TutorialScene::Draw() {
     enemy_->Draw();
   }
 
+
   TDEngine::GetSpriteCommon()->SetupCommonState();
+
+  rule_->Draw(TDEngine::GetSpriteCommon()->GetDirectXCommon());
+  operation_->Draw(TDEngine::GetSpriteCommon()->GetDirectXCommon());
+
   if (fade_) {
     fade_->Draw();
   }

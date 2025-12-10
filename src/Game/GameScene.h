@@ -3,6 +3,7 @@
 #include <vector>
 #include <list>
 #include "AudioManager.h"
+#include "Sprite.h"
 
 // 前方宣言
 class Player;
@@ -75,6 +76,9 @@ private:
 	bool isFinished_ = false;
 	bool isClear_ = false;
 	bool isGameover_ = false;
+
+	  Sprite *operation_ = nullptr;
+
 
 	// SE
 	SoundData soundBgm_;
