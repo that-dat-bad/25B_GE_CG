@@ -10,6 +10,7 @@ TutorialScene::~TutorialScene() {
   delete skydome_;
   delete rule_;
   delete operation_;
+  delete system_;
   AudioManager* audio = TDEngine::GetAudioManager();
   audio->StopAllVoices();
   pBgmVoice_ = nullptr;
@@ -48,6 +49,13 @@ void TutorialScene::Initialize() {
   rule_ = Sprite::Create("./Resources/rule.png", {640.0f, 70.0f}, {1, 1, 1, 1},
                          {0.5f, 0.5f});
 
+  TextureManager::LoadTexture("./Resources/system.png");
+  // スプライト生成
+  system_ = Sprite::Create("./Resources/system.png", {640.0f, 200.0f},
+                           {1, 1, 1, 1},
+                         {0.5f, 0.5f});
+  system_->SetScale(Vector2{0.5f, 0.5f});
+
   TextureManager::LoadTexture("./Resources/operation.png");
   // スプライト生成
   operation_ = Sprite::Create("./Resources/operation.png", {250.0f, 670.0f},
@@ -76,6 +84,7 @@ void TutorialScene::Update() {
 
   rule_->Update();
   operation_->Update();
+  system_->Update();
 
   switch (phase_) {
   case Phase::kFadeIn:
@@ -107,6 +116,7 @@ void TutorialScene::Draw() {
 
   rule_->Draw(TDEngine::GetSpriteCommon()->GetDirectXCommon());
   operation_->Draw(TDEngine::GetSpriteCommon()->GetDirectXCommon());
+  system_->Draw(TDEngine::GetSpriteCommon()->GetDirectXCommon());
 
   if (fade_) {
     fade_->Draw();
