@@ -30,7 +30,7 @@ public:
 
 	void Initialize();
 
-	SoundData SoundLoadWave(const char* filename);
+	SoundData SoundLoadFile(const char* filename);
 
 	void SoundUnload(SoundData* soundData);
 

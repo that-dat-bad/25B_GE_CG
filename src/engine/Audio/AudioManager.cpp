@@ -1,6 +1,9 @@
 #include "AudioManager.h"
+#include "../base/StringUtility.h"
 #include<fstream>
 #include<cassert>
+#include<mfreadwrite.h>
+#include <string>
 
 
 void AudioManager::Initialize() {
@@ -11,33 +14,8 @@ void AudioManager::Initialize() {
 	assert(SUCCEEDED(hr));
 }
 
-SoundData AudioManager::SoundLoadWave(const char* filename) {
-	std::ifstream file;
-	file.open(filename, std::ios_base::binary);
-	assert(file.is_open());
-	RiffHeader riff;
-	file.read((char*)&riff, sizeof(riff));
-	if (strncmp(riff.chunk.id, "RIFF", 4) != 0) assert(0);
-	if (strncmp(riff.type, "WAVE", 4) != 0) assert(0);
-	FormatChunk format = {};
-	file.read((char*)&format, sizeof(ChunkHeader));
-	if (strncmp(format.chunk.id, "fmt ", 4) != 0) assert(0);
-	file.read((char*)&format.fmt, format.chunk.size);
-	ChunkHeader data;
-	file.read((char*)&data, sizeof(data));
-	if (strncmp(data.id, "JUNK", 4) == 0) {
-		file.seekg(data.size, std::ios_base::cur);
-		file.read((char*)&data, sizeof(data));
-	}
-	if (strncmp(data.id, "data", 4) != 0) assert(0);
-	char* pBuffer = new char[data.size];
-	file.read(pBuffer, data.size);
-	file.close();
-	SoundData soundData = {};
-	soundData.wfex = format.fmt;
-	soundData.pBuffer = reinterpret_cast<BYTE*>(pBuffer);
-	soundData.buffersize = data.size;
-	return soundData;
+SoundData AudioManager::SoundLoadFile(const char* filename) {
+	std::wstring filePathW = StringUtility::ConvertString(fullpath);
 }
 
 void AudioManager::SoundUnload(SoundData* soundData) {

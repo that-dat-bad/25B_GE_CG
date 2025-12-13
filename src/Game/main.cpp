@@ -64,6 +64,10 @@ using namespace MyMath;
 #include <Xinput.h>
 #pragma comment(lib, "xinput.lib")
 
+
+#include <mfapi.h>
+#pragma comment(lib, "mfplat.lib")
+
 // 構造体の定義
 
 
@@ -218,6 +222,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	//3Dモデルマネージャーの初期化
 	ModelManager::GetInstance()->Initialize(dxCommon);
 
+
+
 	// DirectXCommonから必要なオブジェクトを取得
 	ID3D12Device* device = dxCommon->GetDevice();
 	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
@@ -225,6 +231,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	HRESULT hr = dxCommon->GetCommandAllocator()->Reset();
 	assert(SUCCEEDED(hr));
 	hr = commandList->Reset(dxCommon->GetCommandAllocator(), nullptr);
+	assert(SUCCEEDED(hr));
+
+	hr = MFStartup(MF_VERSION,MFSTARTUP_NOSOCKET);
 	assert(SUCCEEDED(hr));
 
 	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager);
@@ -353,7 +362,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(hrXAudio2));
 
 	// サウンドデータの読み込み
-	SoundData alarmSound =audioManager->SoundLoadWave("assets/sounds/Alarm01.wav");
+	SoundData alarmSound =audioManager->SoundLoadFile("assets/sounds/Alarm01.wav");
 
 	int selectedLightingOption = 0;
 
@@ -386,7 +395,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 			}
 		}
 #ifdef USE_IMGUI
-
 
 
 		ImGui::Begin("Settings");
@@ -527,6 +535,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	if (xAudio2) {
 		xAudio2->Release();
 	}
+
+	hr = MFShutdown();
+	assert(SUCCEEDED(hr));
 
 	CloseHandle(dxCommon->GetFenceEvent());
 	CoUninitialize();
