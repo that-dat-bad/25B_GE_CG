@@ -550,6 +550,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		delete sprite;
 	}
 	delete object3dCommon;
+	CameraManager::GetInstance()->Finalize();
+	if (CameraManager::GetInstance() != nullptr) {
+		delete CameraManager::GetInstance();
+	}
 	delete dxCommon;
 	delete winApp;
 

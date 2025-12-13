@@ -18,10 +18,6 @@ void CameraManager::Initialize() {
 
 void CameraManager::Finalize() {
 	cameras_.clear();
-	if (instance_ != nullptr) {
-		delete instance_;
-		instance_ = nullptr;
-	}
 }
 
 void CameraManager::CreateCamera(const std::string& name) {
@@ -45,5 +41,16 @@ void CameraManager::SetActiveCamera(const std::string& name) {
 void CameraManager::Update() {
 	if (activeCamera_) {
 		activeCamera_->Update();
+	}
+}
+
+void CameraManager::DeleteCamera(const std::string& name) {
+	if (cameras_.contains(name)) {
+		// アクティブカメラが削除対象ならアクティブカメラをクリア
+		if (activeCamera_ == cameras_[name].get()) {
+			activeCamera_ = nullptr;
+		}
+		// カメラを削除
+		cameras_.erase(name);
 	}
 }

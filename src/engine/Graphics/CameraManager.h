@@ -5,8 +5,9 @@
 #include <memory>
 
 class CameraManager {
-public: // シングルトンパターン
+public: 
 	static CameraManager* GetInstance();
+	~CameraManager() = default;
 	void Initialize();
 	void Finalize();
 
@@ -22,10 +23,13 @@ public: // シングルトンパターン
 	// 更新 (アクティブなカメラだけ更新する)
 	void Update();
 
+	//指定されたカメラの削除
+	void DeleteCamera(const std::string& name);
+
 private:
 	static CameraManager* instance_;
 	CameraManager() = default;
-	~CameraManager() = default;
+
 	CameraManager(const CameraManager&) = delete;
 	CameraManager& operator=(const CameraManager&) = delete;
 
