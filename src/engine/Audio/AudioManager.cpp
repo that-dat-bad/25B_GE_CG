@@ -3,8 +3,9 @@
 #include<fstream>
 #include<cassert>
 #include<mfreadwrite.h>
+#pragma comment(lib,"Mfreadwrite.lib")
 #include <string>
-
+#include <wrl/client.h>
 
 void AudioManager::Initialize() {
 	// XAudio2の初期化
@@ -15,7 +16,13 @@ void AudioManager::Initialize() {
 }
 
 SoundData AudioManager::SoundLoadFile(const char* filename) {
-	std::wstring filePathW = StringUtility::ConvertString(fullpath);
+	std::wstring filePathW = StringUtility::ConvertString(filename);
+	HRESULT hr;
+
+	//SourceReaderの作成
+	Microsoft::WRL::ComPtr<IMFSourceReader> pReader;
+	hr = MFCreateSourceReaderFromURL(filePathW.c_str(), nullptr, &pReader);
+	assert(SUCCEEDED(hr));
 }
 
 void AudioManager::SoundUnload(SoundData* soundData) {
