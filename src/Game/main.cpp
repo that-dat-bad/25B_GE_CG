@@ -52,9 +52,6 @@ using namespace MyMath;
 
 #pragma comment(lib,"dxcompiler.lib")
 
-
-
-
 #include "../../external/DirectXTex/DirectXTex.h"
 #include "../../external/DirectXTex/d3dx12.h"
 
@@ -64,22 +61,19 @@ using namespace MyMath;
 #include <Xinput.h>
 #pragma comment(lib, "xinput.lib")
 
-// 構造体の定義
-
-
+// 構造体の定義など（省略せずそのまま残しています）
 struct VertexData {
 	Vector4 position;
 	Vector2 texcoord;
 	Vector3 normal;
 };
 
-
 struct Material {
 	Vector4 color;
 	int32_t enableLighting;
 	float shininess;
 	float padding[2];
-	Matrix4x4 uvTransform; // UV変換行列
+	Matrix4x4 uvTransform;
 };
 
 struct TransformationMatrix {
@@ -93,61 +87,52 @@ struct DirectionalLight {
 	float intensity;
 };
 
-
 struct LightingSettings {
-	int32_t lightingModel; // 0: Lambert, 1: Half-Lambert
+	int32_t lightingModel;
 	float padding[3];
 };
 
 struct MaterialData {
 	std::string textureFilePath;
-	std::string name; // マテリアル名を追加
+	std::string name;
 };
 
-// 各メッシュの情報を保持する構造体
 struct MeshObject {
 	std::string name;
 	std::vector<VertexData> vertices;
-	MaterialData material; // このメッシュに適用されるマテリアル
-	Transform transform; // このメッシュ固有のSRT
-	Transform uvTransform; // メッシュ固有のUV変換
+	MaterialData material;
+	Transform transform;
+	Transform uvTransform;
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexBuffer;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource;
 	Material* materialData = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource;
 	TransformationMatrix* wvpData = nullptr;
-	int textureAssetIndex = 0; // このメッシュが使用するテクスチャのインデックス
-	bool hasUV = false; // このメッシュがUVを持つか
+	int textureAssetIndex = 0;
+	bool hasUV = false;
 };
 
-// 読み込んだモデルアセット (複数のメッシュを含む)
 struct ModelData {
 	std::string name;
-	std::vector<MeshObject> meshes; // 複数のメッシュを保持
+	std::vector<MeshObject> meshes;
 };
 
-// 読み込んだテクスチャアセット
 struct TextureAsset {
 	std::string name;
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
-	// テクスチャのメタデータを保持するためのフィールドを追加
 	DirectX::TexMetadata metadata;
 };
 
-// 読み込んだモデルアセット (ModelDataを保持)
 struct ModelAsset {
 	ModelData modelData;
-	// ModelAssetレベルでの頂点バッファは不要になる
 };
 
-
-// シーン内のオブジェクト (ModelAssetを参照し、その中のメッシュを管理)
 struct GameObject {
-	Transform transform; // オブジェクト全体の変換 (各メッシュに適用される)
-	int modelAssetIndex = 0; // どのModelAssetを使用するか
+	Transform transform;
+	int modelAssetIndex = 0;
 };
 
 struct ChunkHeader {
@@ -174,9 +159,8 @@ struct SoundData {
 
 #pragma region 関数群
 
-
-
 static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) {
+	// (省略せずそのまま)
 	SYSTEMTIME time;
 	GetLocalTime(&time);
 	wchar_t filePath[MAX_PATH] = { 0 };
@@ -196,10 +180,6 @@ static LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception) {
 	MiniDumpWriteDump(GetCurrentProcess(), processId, dumpFileHandle, MiniDumpNormal, &minidumpInformation, nullptr, nullptr);
 	return EXCEPTION_EXECUTE_HANDLER;
 }
-
-
-
-
 
 SoundData SoundLoadWave(const char* filename) {
 	std::ifstream file;
@@ -271,7 +251,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	srvManager = new SrvManager();
 	srvManager->Initialize(dxCommon);
 
-
 	//ImguiManagerの初期化
 	ImGuiManager* imguiManager = nullptr;
 	imguiManager = new ImGuiManager();
@@ -288,7 +267,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	Object3dCommon* object3dCommon = new Object3dCommon();
 	object3dCommon->Initialize(dxCommon);
 
-
 	//3Dモデルマネージャーの初期化
 	ModelManager::GetInstance()->Initialize(dxCommon);
 
@@ -301,29 +279,35 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	hr = commandList->Reset(dxCommon->GetCommandAllocator(), nullptr);
 	assert(SUCCEEDED(hr));
 
+	// パーティクルマネージャ初期化
 	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager);
+
+	// --- 炎の設定 ---
 	ParticleManager::GetInstance()->CreateParticleGroup("Fire", "assets/textures/whiteCircle128_84.png");
 	ParticleManager::GetInstance()->SetBlendMode("Fire", BlendMode::kAdd);
-	ParticleManager::GetInstance()->CreateParticleGroup("Spark", "assets/textures/whiteCircle128_84.png");
-	ParticleManager::GetInstance()->SetBlendMode("Spark", BlendMode::kAdd);
-	Vector3 prevMousePos = { 0, 0, 0 };
 	Transform emitterTransform;
 	emitterTransform.translate = { 0.0f, 0.0f, -2.0f };
 	emitterTransform.rotate = { 0.0f, 0.0f, 0.0f };
 	emitterTransform.scale = { 1.0f, 1.0f, 1.0f };
+
+	Vector3 defaultVelocity = { 0.0f, 0.1f, 0.0f }; // デフォルトの上昇速度
+
+	// 炎エミッター作成
 	ParticleEmitter* fireEmitter = new ParticleEmitter(
 		"Fire",
 		emitterTransform,
 		10,                         // 一度に出す数
 		0.1f,                       // 0.1秒ごとに発生
-		{ 1.0f, 0.8f, 0.2f, 1.0f }, // 黄色っぽい明るい色（フェード演出用）
-		{ 0.0f, 0.1f, 0.0f },       // 上昇速度
+		{ 1.0f, 0.8f, 0.2f, 1.0f }, // 黄色っぽい明るい色
+		defaultVelocity,            // 上昇速度
 		0.05f                       // 拡散
 	);
 
+	// --- マウス火花の設定 ---
+	ParticleManager::GetInstance()->CreateParticleGroup("Spark", "assets/textures/whiteCircle128_84.png");
+	ParticleManager::GetInstance()->SetBlendMode("Spark", BlendMode::kAdd);
+
 #pragma endregion
-
-
 
 	std::vector<std::string> texturePaths = {
 		"assets/textures/uvchecker.png",
@@ -331,7 +315,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		"assets/textures/checkerBoard.png",
 		"assets/textures/black_1920x1080.png"
 	};
-
 
 	for (const auto& path : texturePaths) {
 		TextureManager::GetInstance()->LoadTexture(path);
@@ -344,9 +327,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		//"plane.obj",
 	};
 
-
-
-
 	int selectedMeshIndex = 0;
 
 	// スプライトの初期化
@@ -355,19 +335,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	sprite->SetAnchorPoint({ 0.5f,0.5f });
 	sprite->SetPosition({ float(winApp->kClientWidth) / 2.0f,float(winApp->kClientHeight) / 2.0f });
 
-
-
 	CameraManager::GetInstance()->Initialize();
 	CameraManager::GetInstance()->CreateCamera("Global");
 	CameraManager::GetInstance()->SetActiveCamera("Global");
 	CameraManager::GetInstance()->GetActiveCamera()->SetTranslate({ 0, 20, -20 });
 	CameraManager::GetInstance()->GetActiveCamera()->SetRotate({ 0.8f, 0, 0 });
-
-
-
-
-
-
 
 	int currentSpriteIndex = 0;
 	int spriteTextureIndex = 0;
@@ -405,7 +377,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	hr = commandList->Reset(dxCommon->GetCommandAllocator(), nullptr);
 	assert(SUCCEEDED(hr));
 
-
 	// 入力とカメラ
 	DebugCamera g_debugCamera;
 
@@ -424,6 +395,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	int selectedLightingOption = 0;
 	const char* modes[] = { "None", "Normal", "Add", "Subtract", "Multiply", "Screen" };
 	static int currentBlendMode = 1;
+
+	// マウス位置保存用
+	Vector3 prevMousePos = { 0, 0, 0 };
+
 	while (true) {
 
 		if (winApp->ProcessMessage()) {
@@ -432,36 +407,59 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 		imguiManager->Begin();
 
-		input->Update();
-		POINT mousePoint;
-		GetCursorPos(&mousePoint);
-		ScreenToClient(winApp->GetHwnd(), &mousePoint);
+		input->Update(); // 入力更新
+
 		XINPUT_STATE gamepadState;
 		ZeroMemory(&gamepadState, sizeof(XINPUT_STATE));
 		DWORD dwResult = XInputGetState(0, &gamepadState);
 
-		float x = (float(mousePoint.x) - float(winApp->kClientWidth) / 2.0f) / 100.0f;
-		float y = -(float(mousePoint.y) - float(winApp->kClientHeight) / 2.0f) / 100.0f; // Y軸は反転
-		Vector3 currentMousePos = { x, y, -2.0f }; // 炎と同じくらいの奥行き(-2.0f)
-		//g_debugCamera.Update(keys_, mouseState);
-		// ImGuiウィンドウ
+		// ★風の処理（アプリケーション層で実装）
+		if (input->pushKey(DIK_SPACE)) {
+			// スペースを押している間、左向きの成分を加える
+			Vector3 windyVelocity = { -0.1f, 0.1f, 0.0f };
+			fireEmitter->SetVelocity(windyVelocity);
+		}
+		else {
+			// 離したら元の速度に戻す
+			fireEmitter->SetVelocity(defaultVelocity);
+		}
+
+
+		// ★マウスの火花処理
+		// マウス座標取得
+		POINT mousePoint;
+		GetCursorPos(&mousePoint);
+		ScreenToClient(winApp->GetHwnd(), &mousePoint);
+
+		// 3D座標変換 (簡易版)
+		float mouseX = (float(mousePoint.x) - float(winApp->kClientWidth) / 2.0f) / 100.0f;
+		float mouseY = -(float(mousePoint.y) - float(winApp->kClientHeight) / 2.0f) / 100.0f;
+		Vector3 currentMousePos = { mouseX, mouseY, -2.0f };
+
+		// 左クリック(0)判定
 		if (input->PushMouse(0)) {
-
-
 			ParticleManager::GetInstance()->Emit(
 				"Spark",
 				currentMousePos,
-				prevMousePos, 
+				prevMousePos,
 				5,
-				{ 1.0f, 0.1f, 0.2f, 1.0f },
+				{ 1.0f, 0.1f, 0.1f, 1.0f }, // 赤色
 				{ 0.0f, 0.0f, 0.0f },
 				0.1f
 			);
 		}
 		prevMousePos = currentMousePos;
+
+
+		//g_debugCamera.Update(keys_, mouseState);
+		// ImGuiウィンドウ
+
 		CameraManager::GetInstance()->SetActiveCamera("Global");
 		CameraManager::GetInstance()->Update();
+
+		// エミッター更新 (風処理適用後)
 		fireEmitter->Update();
+
 		ParticleManager::GetInstance()->Update();
 		// 更新処理
 		const Matrix4x4& viewMatrix = g_debugCamera.GetViewMatrix();
@@ -490,8 +488,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		// スプライト描画
 		//spriteの描画前処理
 		spriteCommon->SetupCommonState();
-		//sprite->Draw(dxCommon, texturePaths[spriteTextureIndex].gpuHandle);
 		sprite->Draw(dxCommon);
+
+		// パーティクル描画 (スプライトの後 = 最前面)
 		ParticleManager::GetInstance()->Draw();
 
 		// ImGui描画
@@ -514,18 +513,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 
 	CloseHandle(dxCommon->GetFenceEvent());
 	CoUninitialize();
-	ModelManager::GetInstance()->Finalize();
 
-	TextureManager::GetInstance()->Finalize();
-	delete srvManager;
-	ParticleManager::GetInstance()->Finalize();
+	// 1. ゲーム内オブジェクト削除
 	delete fireEmitter;
-	delete input;
-	delete dxCommon;
-	delete winApp;
+
+	// 2. マネージャー/Common系のFinalizeと削除
+	ModelManager::GetInstance()->Finalize();
+	TextureManager::GetInstance()->Finalize();
+	ParticleManager::GetInstance()->Finalize();
+
 	delete spriteCommon;
 	delete object3dCommon;
+	delete srvManager;
 
+	// 3. DirectX系削除
+	delete dxCommon;
+
+	// 4. 入力/Window系削除
+	delete input;
+	delete winApp;
 
 	return 0;
 }

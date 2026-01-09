@@ -7,7 +7,7 @@ using namespace MyMath;
 // パーティクル発生器
 class ParticleEmitter {
 public:
-	// コンストラクタ（引数を追加）
+	// コンストラクタ
 	ParticleEmitter(const std::string& name, const Transform& transform, uint32_t count, float frequency,
 		const Vector4& color = { 1.0f, 1.0f, 1.0f, 1.0f }, // デフォルト白
 		const Vector3& velocity = { 0.0f, 1.0f, 0.0f },    // デフォルト上方向
@@ -19,6 +19,12 @@ public:
 	// 発生させる
 	void Emit();
 
+	// ★追加：速度を変更するセッター（これで風向きを変える）
+	void SetVelocity(const Vector3& velocity) { velocity_ = velocity; }
+
+	// ★追加：現在の速度を取得するゲッター
+	Vector3 GetVelocity() const { return velocity_; }
+
 private:
 	std::string name_;      // 発生させるパーティクルグループ名
 	Transform transform_;   // 発生位置などの情報
@@ -26,7 +32,7 @@ private:
 	float frequency_;       // 発生頻度 (秒単位の間隔)
 	float frequencyTime_;   // 経過時間計測用
 
-	//パーティクルのパラメータ
+	// パーティクルのパラメータ
 	Vector4 color_;         // 色
 	Vector3 velocity_;      // 速度
 	float velocityDiff_;    // ランダム拡散値
