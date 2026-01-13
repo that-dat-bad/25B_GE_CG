@@ -35,6 +35,10 @@ void Object3d::Initialize(Object3dCommon* object3dCommon) {
 	directionalLightData_->direction = { 0.0f, -1.0f, 0.0f };
 	directionalLightData_->intensity = 1.0f;
 
+	cameraResource_ = dxCommon->CreateBufferResource(sizeof(CameraForGPU));
+	cameraResource_->Map(0, nullptr, reinterpret_cast<void**>(&cameraData_));
+	cameraData_->worldPosition = { 0.0f, 0.0f, 0.0f };
+
 	// 7. Transform初期値設定
 
 	transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
@@ -51,6 +55,8 @@ void Object3d::Update() {
 	if (camera_) {
 		// カメラがセットされていれば、そのカメラの ViewProjection 行列をもらう
 		const Matrix4x4& viewProjectionMatrix = camera_->GetViewProjectionMatrix();
+		const Matrix4x4& cameraWorldMatrix = camera_->GetWorldMatrix();
+		
 		worldViewProjectionMatrix = Multiply(worldMatrix, viewProjectionMatrix);
 	} else {
 		// カメラが無い場合はとりあえずWorld行列だけ（または単位行列など）
@@ -71,6 +77,9 @@ void Object3d::Draw() {
 
 	// 平行光源CBufferの設定 (RootParameter Index: 3)
 	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource_->GetGPUVirtualAddress());
+
+	//カメラ情報CBufferの設定 (RootParameter Index: 5)
+	commandList->SetGraphicsRootConstantBufferView(5, cameraResource_->GetGPUVirtualAddress());
 
 	if (model_) {
 		model_->Draw();

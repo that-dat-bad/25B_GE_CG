@@ -5,7 +5,7 @@
 #include <vector>
 #include "../base/Math/MyMath.h"
 #include "DirectXCommon.h"
-
+#include "Camera.h"
 using namespace MyMath;
 
 class Object3dCommon;
@@ -15,7 +15,9 @@ class Camera;
 class Object3d
 {
 public:
-	
+	struct CameraForGPU {
+		Vector3 worldPosition;
+	};
 	struct TransformationMatrix {
 		Matrix4x4 WVP;
 		Matrix4x4 World;
@@ -64,4 +66,7 @@ private:
 	//--平行光源--//
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource_ = nullptr;
 	DirectionalLight* directionalLightData_ = nullptr;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> cameraResource_ = nullptr;
+	CameraForGPU* cameraData_ = nullptr;
 };

@@ -22,6 +22,11 @@ struct TransformationMatrix
     matrix World; // World
 };
 
+struct Camera
+{
+    float32_t3 worldPosition;
+};
+
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
 
 VertexOutput main(VertexInput input)
@@ -40,5 +45,6 @@ VertexOutput main(VertexInput input)
     // 頂点位置をワールド空間に変換
     output.worldPosition = mul(input.position, gTransformationMatrix.World).xyz;
     
+        
     return output;
 }

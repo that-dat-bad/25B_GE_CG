@@ -2,6 +2,8 @@
 #include "../base/Math/MyMath.h"
 using namespace MyMath;
 
+
+
 class Camera
 {
 public:

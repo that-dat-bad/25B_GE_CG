@@ -17,6 +17,7 @@
 #include "../engine/base/winApp.h"
 #include "../engine/io/Input.h"
 #include"../engine/base/logger.h"
+#include <wrl/client.h>
 using namespace logger;
 #include"../engine/base/StringUtility.h"
 using namespace StringUtility;
@@ -301,25 +302,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	hr = commandList->Reset(dxCommon->GetCommandAllocator(), nullptr);
 	assert(SUCCEEDED(hr));
 
-	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager);
-	ParticleManager::GetInstance()->CreateParticleGroup("Fire", "assets/textures/whiteCircle128_84.png");
-	ParticleManager::GetInstance()->SetBlendMode("Fire", BlendMode::kAdd);
-	ParticleManager::GetInstance()->CreateParticleGroup("Spark", "assets/textures/whiteCircle128_84.png");
-	ParticleManager::GetInstance()->SetBlendMode("Spark", BlendMode::kAdd);
-	Vector3 prevMousePos = { 0, 0, 0 };
-	Transform emitterTransform;
-	emitterTransform.translate = { 0.0f, 0.0f, -2.0f };
-	emitterTransform.rotate = { 0.0f, 0.0f, 0.0f };
-	emitterTransform.scale = { 1.0f, 1.0f, 1.0f };
-	ParticleEmitter* fireEmitter = new ParticleEmitter(
-		"Fire",
-		emitterTransform,
-		10,                         // 一度に出す数
-		0.1f,                       // 0.1秒ごとに発生
-		{ 1.0f, 0.8f, 0.2f, 1.0f }, // 黄色っぽい明るい色（フェード演出用）
-		{ 0.0f, 0.1f, 0.0f },       // 上昇速度
-		0.05f                       // 拡散
-	);
+
+
 
 #pragma endregion
 
@@ -338,22 +322,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	}
 
 	// モデル読み込み
-	std::vector<ModelAsset> modelAssets;
-	std::vector<std::string> modelPaths = {
-		//"sphere.obj",
-		//"plane.obj",
-	};
-
-
+	ModelManager::GetInstance()->LoadModel("models/sphere.obj");
+	Object3d* sphereObject = new Object3d();
+	sphereObject->Initialize(object3dCommon);
+	sphereObject->SetModel("models/sphere.obj");
 
 
 	int selectedMeshIndex = 0;
 
 	// スプライトの初期化
-	Sprite* sprite = new Sprite();
-	sprite->Initialize(spriteCommon, dxCommon, "assets/textures/black_1920x1080.png");
-	sprite->SetAnchorPoint({ 0.5f,0.5f });
-	sprite->SetPosition({ float(winApp->kClientWidth) / 2.0f,float(winApp->kClientHeight) / 2.0f });
+	//Sprite* sprite = new Sprite();
+	//sprite->Initialize(spriteCommon, dxCommon, "assets/textures/black_1920x1080.png");
+	//sprite->SetAnchorPoint({ 0.5f,0.5f });
+	//sprite->SetPosition({ float(winApp->kClientWidth) / 2.0f,float(winApp->kClientHeight) / 2.0f });
 
 
 
@@ -362,17 +343,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	CameraManager::GetInstance()->SetActiveCamera("Global");
 	CameraManager::GetInstance()->GetActiveCamera()->SetTranslate({ 0, 20, -20 });
 	CameraManager::GetInstance()->GetActiveCamera()->SetRotate({ 0.8f, 0, 0 });
+	sphereObject->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
 
 
-
-
-
-
-
-	int currentSpriteIndex = 0;
-	int spriteTextureIndex = 0;
-	bool isSpriteVisible = false;
-	bool isObjectVisible = true;
 
 	// ライトの初期化
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = dxCommon->CreateBufferResource(sizeof(DirectionalLight));
@@ -431,7 +404,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		}
 
 		imguiManager->Begin();
+		ImGui::Begin("Lighting Settings");
 
+		if (ImGui::CollapsingHeader("Directional Light", ImGuiTreeNodeFlags_DefaultOpen)) {
+			// 1. ライトの色 (Vector4)
+			// ImGui::ColorEdit4 は内部で float[4] を期待するため、xのアドレスを渡します
+			ImGui::ColorEdit4("Light Color", &directionalLightData->color.x); //
+
+			// 2. ライトの方向 (Vector3)
+			// ドラッグで方向を変更
+			ImGui::DragFloat3("Light Direction", &directionalLightData->direction.x, 0.01f, -1.0f, 1.0f); //
+
+			// ★重要: ライトの方向は常に正規化（長さ1）されている必要があるため計算後に正規化します
+			directionalLightData->direction = Normalize(directionalLightData->direction); //
+
+			// 3. 輝度 (Intensity)
+			ImGui::DragFloat("Intensity", &directionalLightData->intensity, 0.01f, 0.0f, 10.0f); //
+		}
+
+		if (ImGui::CollapsingHeader("Lighting Model")) {
+			// 4. ライティングモデルの切り替え (Lambert: 0, Half-Lambert: 1)
+			const char* models[] = { "Lambert", "Half-Lambert" };
+			ImGui::Combo("Model Select", &lightingSettingsData->lightingModel, models, IM_ARRAYSIZE(models)); //
+		}
+
+		ImGui::End();
 		input->Update();
 		POINT mousePoint;
 		GetCursorPos(&mousePoint);
@@ -440,42 +437,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		ZeroMemory(&gamepadState, sizeof(XINPUT_STATE));
 		DWORD dwResult = XInputGetState(0, &gamepadState);
 
-		float x = (float(mousePoint.x) - float(winApp->kClientWidth) / 2.0f) / 100.0f;
-		float y = -(float(mousePoint.y) - float(winApp->kClientHeight) / 2.0f) / 100.0f; // Y軸は反転
-		Vector3 currentMousePos = { x, y, -2.0f }; // 炎と同じくらいの奥行き(-2.0f)
+
 		//g_debugCamera.Update(keys_, mouseState);
 		// ImGuiウィンドウ
-		if (input->PushMouse(0)) {
 
-
-			ParticleManager::GetInstance()->Emit(
-				"Spark",
-				currentMousePos,
-				prevMousePos, 
-				5,
-				{ 1.0f, 0.1f, 0.2f, 1.0f },
-				{ 0.0f, 0.0f, 0.0f },
-				0.1f
-			);
-		}
-		prevMousePos = currentMousePos;
 		CameraManager::GetInstance()->SetActiveCamera("Global");
 		CameraManager::GetInstance()->Update();
-		fireEmitter->Update();
 		ParticleManager::GetInstance()->Update();
+		sphereObject->Update();
 		// 更新処理
 		const Matrix4x4& viewMatrix = g_debugCamera.GetViewMatrix();
 		Matrix4x4 projectionMatrix = MakePerspectiveMatrix(0.45f, float(winApp->kClientWidth) / float(winApp->kClientHeight), 0.1f, 100.0f);
-#ifdef USE_IMGUI
 
-		ImGui::Begin("Sprite Settings");
-		if (ImGui::Combo("Blend Mode", &currentBlendMode, modes, IM_ARRAYSIZE(modes))) {
-			sprite->SetBlendMode(static_cast<BlendMode>(currentBlendMode));
-		}
-
-		ImGui::End();
-#endif // USE_IMGUI
-		sprite->Update();
+		//sprite->Update();
 
 
 		// --- 描画処理 ---
@@ -486,13 +460,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 		object3dCommon->SetupCommonState();
 		commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 		commandList->SetGraphicsRootConstantBufferView(4, lightingSettingsResource->GetGPUVirtualAddress());
-
+		sphereObject->Draw();
 		// スプライト描画
 		//spriteの描画前処理
 		spriteCommon->SetupCommonState();
-		//sprite->Draw(dxCommon, texturePaths[spriteTextureIndex].gpuHandle);
-		sprite->Draw(dxCommon);
-		ParticleManager::GetInstance()->Draw();
+		//sprite->Draw(dxCommon);
 
 		// ImGui描画
 		imguiManager->End();
@@ -515,11 +487,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	CloseHandle(dxCommon->GetFenceEvent());
 	CoUninitialize();
 	ModelManager::GetInstance()->Finalize();
-
+	delete sphereObject;
 	TextureManager::GetInstance()->Finalize();
 	delete srvManager;
 	ParticleManager::GetInstance()->Finalize();
-	delete fireEmitter;
 	delete input;
 	delete dxCommon;
 	delete winApp;
