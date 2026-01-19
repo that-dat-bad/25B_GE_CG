@@ -52,6 +52,12 @@ void DirectXCommon::Initialize(WinApp* winApp) {
 
 void DirectXCommon::PreDraw()
 {
+	HRESULT hr;
+	hr = commandAllocator_->Reset();
+	assert(SUCCEEDED(hr));
+	hr = commandList_->Reset(commandAllocator_.Get(), nullptr);
+	assert(SUCCEEDED(hr));
+
 	// 描画処理
 	UINT backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
 	D3D12_RESOURCE_BARRIER barrier = {};
@@ -96,10 +102,6 @@ void DirectXCommon::PostDraw()
 		WaitForSingleObject(fenceEvent_, INFINITE);
 	}
 	UpdateFixFPS();
-	hr = commandAllocator_->Reset();
-	assert(SUCCEEDED(hr));
-	hr = commandList_->Reset(commandAllocator_.Get(), nullptr);
-	assert(SUCCEEDED(hr));
 
 }
 

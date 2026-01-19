@@ -35,13 +35,13 @@ void Game::Initialize() {
 
 	// --- リソース読み込み ---
 	TextureManager::GetInstance()->LoadTexture("assets/textures/uvchecker.png");
-	ModelManager::GetInstance()->LoadModel("sphere.obj");
+	ModelManager::GetInstance()->LoadModel("models/sphere.obj");
 	alarmSound = audioManager->SoundLoadFile("assets/sounds/Alarm01.wav");
 
 	// --- オブジェクト生成 ---
 	sphereObject = new Object3d();
 	sphereObject->Initialize(object3dCommon);
-	sphereObject->SetModel("sphere.obj");
+	sphereObject->SetModel("models/sphere.obj");
 
 	// ライト設定 (b1, b2レジスタ用)
 	directionalLightResource = dxCommon->CreateBufferResource(sizeof(DirectionalLight));
@@ -110,6 +110,27 @@ void Game::Draw() {
 
 	// 描画後処理
 	dxCommon->PostDraw();
+}
+
+void Game::Run() {
+	// メインループ
+	while (true) {
+		// Windows メッセージの処理
+		if (winApp->ProcessMessage()) {
+			break;
+		}
+
+		// ゲーム更新
+		Update();
+
+		// 終了リクエストが来たら抜ける
+		if (IsEndRequest()) {
+			break;
+		}
+
+		// 描画
+		Draw();
+	}
 }
 
 void Game::Finalize() {

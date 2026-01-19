@@ -33,7 +33,7 @@ public:
 	void Finalize();
 	void Update();
 	void Draw();
-
+	void Run();
 	// ゲーム終了フラグのチェック
 	bool IsEndRequest() const { return endRequest_; }
 

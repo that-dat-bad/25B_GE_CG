@@ -15,10 +15,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	Game game;
 	game.Initialize();
 
-	while (!game.IsEndRequest()) {
-		game.Update();
-		game.Draw();
-	}
+	game.Run();
 
 	game.Finalize();
 
