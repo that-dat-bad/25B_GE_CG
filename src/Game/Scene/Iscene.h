@@ -1,5 +1,5 @@
 #pragma once
-#include <dinput.h>
+#include"Input.h"
 
 enum SCENE {
 	TITLE,
@@ -10,9 +10,7 @@ enum SCENE {
 class IScene {
 protected:
 	static int sceneID;
-	// キー入力状態
-	static char keys[256];
-	static char preKeys[256];
+
 
 public:
 	virtual void Initialize() = 0;
@@ -21,9 +19,8 @@ public:
 	virtual void Finalize() = 0;
 	virtual ~IScene();
 
-	static void PollKeys();
-
-	static bool IsKeyTriggered(int dik);
+	static bool IsKeyTriggered(BYTE keyNumber);
+	static bool IsKeyPressed(BYTE keyNumber);
 
 	int GetSceneID();
 };

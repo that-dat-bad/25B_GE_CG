@@ -18,8 +18,6 @@ SceneManager::~SceneManager() {
 }
 
 void SceneManager::Update() {
-	// フレームごとのキー状態を取得（各シーンはこれを参照して判定する）
-	IScene::PollKeys();
 
 	// 現在のシーンの更新
 	if (currentScene != nullptr) {

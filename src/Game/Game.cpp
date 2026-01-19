@@ -10,8 +10,7 @@ void Game::Initialize() {
 	//DirectXCommon::GetInstance()->Initialize(winApp);
 	DirectXCommon::GetInstance()->Initialize(winApp);
 
-	input = new Input();
-	input->Initialize(GetModuleHandle(nullptr), winApp->GetHwnd());
+	Input::GetInstance()->Initialize(GetModuleHandle(nullptr), winApp->GetHwnd());
 
 	srvManager = new SrvManager();
 	srvManager->Initialize(DirectXCommon::GetInstance());
@@ -58,7 +57,7 @@ void Game::Initialize() {
 
 void Game::Update() {
 	// システムの更新
-	input->Update();
+	Input::GetInstance()->Update();
 	imguiManager->Begin();
 	sceneManager->Update();
 	// カメラ更新
@@ -83,7 +82,7 @@ void Game::Update() {
 #endif // USE_IMGUI
 
 	// 終了リクエストの例 (Escキーで終了など)
-	if (input->triggerKey(DIK_ESCAPE)) {
+	if (Input::GetInstance()->TriggerKey(DIK_ESCAPE)) {
 		endRequest_ = true;
 	}
 }
@@ -145,6 +144,5 @@ void Game::Finalize() {
 
 	delete spriteCommon;
 	delete srvManager;
-	delete input;
 	delete winApp;
 }

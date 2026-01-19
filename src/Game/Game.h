@@ -32,7 +32,6 @@ public:
 
 private:
 	WinApp* winApp = nullptr;
-	Input* input = nullptr;
 	SrvManager* srvManager = nullptr;
 	ImGuiManager* imguiManager = nullptr;
 	AudioManager* audioManager = nullptr;
