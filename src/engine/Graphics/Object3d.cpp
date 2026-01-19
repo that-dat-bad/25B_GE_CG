@@ -58,8 +58,8 @@ void Object3d::Update() {
 	}
 
 	// 3. 定数バッファに転送
-	transformationMatrixData_->WVP = Transpose(worldViewProjectionMatrix);
-	transformationMatrixData_->World = Transpose(worldMatrix);
+	transformationMatrixData_->WVP = worldViewProjectionMatrix;
+	transformationMatrixData_->World = worldMatrix;
 }
 
 void Object3d::Draw() {

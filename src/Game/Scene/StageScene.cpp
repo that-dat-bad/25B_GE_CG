@@ -5,6 +5,7 @@
 #include "SpriteCommon.h"
 
 #include <cmath>
+#include <ModelManager.h>
 
 void StageScene::Initialize() {
 	sceneID = SCENE::STAGE;
@@ -13,6 +14,7 @@ void StageScene::Initialize() {
 	sphereObject = new Object3d();
 	sphereObject->Initialize(Object3dCommon::GetInstance());
 	sphereObject->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
+	ModelManager::GetInstance()->LoadModel("models/sphere.obj");
 	sphereObject->SetModel("models/sphere.obj");
 
 	// --- スプライト ---
