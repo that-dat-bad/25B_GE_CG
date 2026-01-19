@@ -6,7 +6,6 @@
 
 #pragma comment(lib, "xaudio2.lib")
 
-// チャンクヘッダなどの定義は残しておきますが、MF読み込みでは直接使いません
 struct ChunkHeader {
 	char id[4];
 	int32_t size;

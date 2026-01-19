@@ -19,6 +19,12 @@ void StageScene::Update() {
 }
 
 void StageScene::Draw() {
+	Object3dCommon::GetInstance()->SetupCommonState();
+	// 定数バッファをセット
+	ID3D12GraphicsCommandList* commandList = DirectXCommon::GetInstance()->GetCommandList();
+	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(4, lightingSettingsResource->GetGPUVirtualAddress());
+
 	sphereObject->Draw();
 }
 void StageScene::Finalize() {

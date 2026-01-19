@@ -6,8 +6,9 @@ void Game::Initialize() {
 	winApp = new WinApp();
 	winApp->Initialize();
 
-	dxCommon = new DirectXCommon();
-	dxCommon->Initialize(winApp);
+	//dxCommon = new DirectXCommon();
+	//dxCommon->Initialize(winApp);
+	DirectXCommon::GetInstance()->Initialize(winApp);
 
 	input = new Input();
 	input->Initialize(GetModuleHandle(nullptr), winApp->GetHwnd());
@@ -94,10 +95,6 @@ void Game::Draw() {
 	// 3Dオブジェクト描画
 	Object3dCommon::GetInstance()->SetupCommonState();
 
-	// 定数バッファをセット
-	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
-	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
-	commandList->SetGraphicsRootConstantBufferView(4, lightingSettingsResource->GetGPUVirtualAddress());
 
 	sceneManager->Draw();
 	ParticleManager::GetInstance()->Draw();
@@ -149,6 +146,5 @@ void Game::Finalize() {
 	delete spriteCommon;
 	delete srvManager;
 	delete input;
-	delete dxCommon;
 	delete winApp;
 }
