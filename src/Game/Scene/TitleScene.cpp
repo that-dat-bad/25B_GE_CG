@@ -1,5 +1,6 @@
+#include <dinput.h>
 #include "TitleScene.h"
-#include <Novice.h>
+
 
 void TitleScene::Initialize() {
 
@@ -13,5 +14,8 @@ void TitleScene::Update() {
 }
 
 void TitleScene::Draw() {
-	Novice::ScreenPrintf(0, 0, "Title Scene");
+
+}
+
+void TitleScene::Finalize() {
 }

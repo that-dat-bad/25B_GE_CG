@@ -2,7 +2,7 @@
 #include "TitleScene.h"
 #include "StageScene.h"
 #include "ClearScene.h"
-#include "IScene.h" // PollKeys を呼ぶために明示的に include
+#include "IScene.h"
 
 SceneManager::SceneManager() {
 	// 初期シーン生成

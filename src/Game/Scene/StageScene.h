@@ -1,33 +1,15 @@
 #pragma once
 #include "IScene.h"
 #include <vector>
+#include "Object3d.h"
 
-struct Bullet {
-	float x;
-	float y;
-	float vy;
-	bool active;
-};
 
 class StageScene : public IScene {
 public:
 	void Initialize() override;
 	void Update() override;
 	void Draw() override;
-
+	void Finalize() override;
 private:
-	float playerX_;
-	float playerY_;
-	int playerSize_;
-	float playerSpeed_;
-
-	float enemyX_;
-	float enemyY_;
-	int enemySize_;
-	bool enemyAlive_;
-
-	std::vector<Bullet> bullets_;
-	int maxBullets_;
-	static constexpr int kBulletSize = 20;
-	float bulletSpeed_;
+	Object3d* sphereObject = nullptr;
 };

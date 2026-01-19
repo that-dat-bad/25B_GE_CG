@@ -21,6 +21,9 @@ void Game::Initialize() {
 	audioManager = new AudioManager();
 	audioManager->Initialize();
 
+	sceneManager = new SceneManager();
+
+
 	// マネージャ類の初期化
 	TextureManager::GetInstance()->Initialize(dxCommon, srvManager);
 	ModelManager::GetInstance()->Initialize(dxCommon);
@@ -39,9 +42,7 @@ void Game::Initialize() {
 	alarmSound = audioManager->SoundLoadFile("assets/sounds/Alarm01.wav");
 
 	// --- オブジェクト生成 ---
-	sphereObject = new Object3d();
-	sphereObject->Initialize(object3dCommon);
-	sphereObject->SetModel("models/sphere.obj");
+
 
 	// ライト設定 (b1, b2レジスタ用)
 	directionalLightResource = dxCommon->CreateBufferResource(sizeof(DirectionalLight));
@@ -59,13 +60,11 @@ void Game::Update() {
 	// システムの更新
 	input->Update();
 	imguiManager->Begin();
-
+	sceneManager->Update();
 	// カメラ更新
 	CameraManager::GetInstance()->Update();
 
-	// 球体オブジェクトの更新 (カメラを教えてからUpdate)
-	sphereObject->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
-	sphereObject->Update();
+
 
 	ParticleManager::GetInstance()->Update();
 
@@ -93,16 +92,15 @@ void Game::Draw() {
 	// 描画前処理
 	dxCommon->PreDraw();
 	srvManager->PreDraw();
-
 	// 3Dオブジェクト描画
 	object3dCommon->SetupCommonState();
+
 	// 定数バッファをセット
 	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
 	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 	commandList->SetGraphicsRootConstantBufferView(4, lightingSettingsResource->GetGPUVirtualAddress());
 
-	sphereObject->Draw();
-
+	sceneManager->Draw();
 	ParticleManager::GetInstance()->Draw();
 
 	// ImGui描画
@@ -142,7 +140,6 @@ void Game::Finalize() {
 	audioManager->Finalize();
 	delete audioManager;
 
-	delete sphereObject;
 
 	// シングルトン類
 	ModelManager::GetInstance()->Finalize();

@@ -80,6 +80,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -103,6 +104,7 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -127,6 +129,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
