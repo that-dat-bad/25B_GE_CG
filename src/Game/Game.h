@@ -48,7 +48,6 @@ private:
 	AudioManager* audioManager = nullptr;
 
 	SpriteCommon* spriteCommon = nullptr;
-	Object3dCommon* object3dCommon = nullptr;
 
 	// ゲームオブジェクト
 	SoundData alarmSound;

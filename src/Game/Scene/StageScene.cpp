@@ -5,7 +5,7 @@
 
 void StageScene::Initialize() {
 	sceneID = SCENE::STAGE;
-	Object3dCommon* common;
+	Object3dCommon* common = Object3dCommon::GetInstance();
 
 	sphereObject = new Object3d();
 	sphereObject->Initialize(common);

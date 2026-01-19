@@ -29,12 +29,11 @@ void Game::Initialize() {
 	ModelManager::GetInstance()->Initialize(dxCommon);
 	CameraManager::GetInstance()->Initialize();
 	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager);
+	Object3dCommon::GetInstance()->Initialize(dxCommon);
 
 	spriteCommon = new SpriteCommon();
 	spriteCommon->Initialize(dxCommon);
 
-	object3dCommon = new Object3dCommon();
-	object3dCommon->Initialize(dxCommon);
 
 	// --- リソース読み込み ---
 	TextureManager::GetInstance()->LoadTexture("assets/textures/uvchecker.png");
@@ -93,7 +92,7 @@ void Game::Draw() {
 	dxCommon->PreDraw();
 	srvManager->PreDraw();
 	// 3Dオブジェクト描画
-	object3dCommon->SetupCommonState();
+	Object3dCommon::GetInstance()->SetupCommonState();
 
 	// 定数バッファをセット
 	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
@@ -147,7 +146,6 @@ void Game::Finalize() {
 	CameraManager::GetInstance()->Finalize();
 	ParticleManager::GetInstance()->Finalize();
 
-	delete object3dCommon;
 	delete spriteCommon;
 	delete srvManager;
 	delete input;
