@@ -69,7 +69,10 @@ void Game::Update() {
 
 	ParticleManager::GetInstance()->Update();
 
-	// --- ImGui によるライト調整 (前回の実装) ---
+
+#ifdef USE_IMGUI
+
+	// --- ImGui によるライト調整---
 	ImGui::Begin("Lighting Settings");
 	ImGui::ColorEdit4("Light Color", &directionalLightData->color.x);
 	ImGui::DragFloat3("Light Direction", &directionalLightData->direction.x, 0.01f, -1.0f, 1.0f);
@@ -78,6 +81,7 @@ void Game::Update() {
 	const char* models[] = { "Lambert", "Half-Lambert" };
 	ImGui::Combo("Model Select", &lightingSettingsData->lightingModel, models, 2);
 	ImGui::End();
+#endif // USE_IMGUI
 
 	// 終了リクエストの例 (Escキーで終了など)
 	if (input->triggerKey(DIK_ESCAPE)) {
