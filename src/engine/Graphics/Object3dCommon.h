@@ -38,6 +38,7 @@ public:
 	Camera* GetDefaultCamera() const { return defaultCamera_; }
 	ID3D12Resource* GetDirectionalLightResource() { return directionalLightResource_.Get(); }
 	ID3D12Resource* GetLightingSettingsResource() { return lightingSettingsResource_.Get(); }
+	DirectionalLight* GetDirectionalLightData() { return directionalLightData; }
 private:
 	Object3dCommon() = default;
 	~Object3dCommon() = default;
