@@ -6,18 +6,18 @@ void Game::Initialize() {
 	winApp = new WinApp();
 	winApp->Initialize();
 
-	//dxCommon = new DirectXCommon();
-	//dxCommon->Initialize(winApp);
+	//DirectXCommon::GetInstance() = new DirectXCommon();
+	//DirectXCommon::GetInstance()->Initialize(winApp);
 	DirectXCommon::GetInstance()->Initialize(winApp);
 
 	input = new Input();
 	input->Initialize(GetModuleHandle(nullptr), winApp->GetHwnd());
 
 	srvManager = new SrvManager();
-	srvManager->Initialize(dxCommon);
+	srvManager->Initialize(DirectXCommon::GetInstance());
 
 	imguiManager = new ImGuiManager();
-	imguiManager->Initialize(winApp, dxCommon, srvManager);
+	imguiManager->Initialize(winApp, DirectXCommon::GetInstance(), srvManager);
 
 	audioManager = new AudioManager();
 	audioManager->Initialize();
@@ -26,14 +26,14 @@ void Game::Initialize() {
 
 
 	// マネージャ類の初期化
-	TextureManager::GetInstance()->Initialize(dxCommon, srvManager);
-	ModelManager::GetInstance()->Initialize(dxCommon);
+	TextureManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager);
+	ModelManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
 	CameraManager::GetInstance()->Initialize();
-	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager);
-	Object3dCommon::GetInstance()->Initialize(dxCommon);
+	ParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager);
+	Object3dCommon::GetInstance()->Initialize(DirectXCommon::GetInstance());
 
 	spriteCommon = new SpriteCommon();
-	spriteCommon->Initialize(dxCommon);
+	spriteCommon->Initialize(DirectXCommon::GetInstance());
 
 
 	// --- リソース読み込み ---
@@ -45,13 +45,13 @@ void Game::Initialize() {
 
 
 	// ライト設定 (b1, b2レジスタ用)
-	directionalLightResource = dxCommon->CreateBufferResource(sizeof(DirectionalLight));
+	directionalLightResource = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(DirectionalLight));
 	directionalLightResource->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
 	directionalLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
 	directionalLightData->intensity = 1.0f;
 
-	lightingSettingsResource = dxCommon->CreateBufferResource(sizeof(LightingSettings));
+	lightingSettingsResource = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(LightingSettings));
 	lightingSettingsResource->Map(0, nullptr, reinterpret_cast<void**>(&lightingSettingsData));
 	lightingSettingsData->lightingModel = 0; // Lambert
 }
@@ -90,7 +90,7 @@ void Game::Update() {
 
 void Game::Draw() {
 	// 描画前処理
-	dxCommon->PreDraw();
+	DirectXCommon::GetInstance()->PreDraw();
 	srvManager->PreDraw();
 	// 3Dオブジェクト描画
 	Object3dCommon::GetInstance()->SetupCommonState();
@@ -103,7 +103,7 @@ void Game::Draw() {
 	imguiManager->End();
 
 	// 描画後処理
-	dxCommon->PostDraw();
+	DirectXCommon::GetInstance()->PostDraw();
 }
 
 void Game::Run() {

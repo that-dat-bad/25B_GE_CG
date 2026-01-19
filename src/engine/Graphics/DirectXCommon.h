@@ -80,7 +80,7 @@ private:
 	~DirectXCommon() = default;
 	DirectXCommon(const DirectXCommon&) = delete;
 	DirectXCommon& operator=(const DirectXCommon&) = delete;
-
+	static DirectXCommon* instance_;
 
 
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_ = nullptr;

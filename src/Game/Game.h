@@ -18,16 +18,7 @@
 #include "SceneManager.h"
 
 
-struct DirectionalLight {
-    Vector4 color;
-    Vector3 direction;
-    float intensity;
-};
 
-struct LightingSettings {
-    int32_t lightingModel; // 0: Lambert, 1: Half-Lambert
-    float padding[3];
-};
 
 class Game {
 public:
@@ -41,7 +32,6 @@ public:
 
 private:
 	WinApp* winApp = nullptr;
-	DirectXCommon* dxCommon = nullptr;
 	Input* input = nullptr;
 	SrvManager* srvManager = nullptr;
 	ImGuiManager* imguiManager = nullptr;
