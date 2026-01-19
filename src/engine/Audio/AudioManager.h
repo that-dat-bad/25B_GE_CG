@@ -29,6 +29,7 @@ struct SoundData {
 
 class AudioManager {
 public:
+	static AudioManager* GetInstance();
 	// 初期化
 	void Initialize();
 	// 終了処理
@@ -45,5 +46,8 @@ public:
 
 private:
 	IXAudio2* xAudio2_ = nullptr;
+	AudioManager() = default;
+	static AudioManager* instance;
+
 	IXAudio2MasteringVoice* masteringVoice_ = nullptr;
 };

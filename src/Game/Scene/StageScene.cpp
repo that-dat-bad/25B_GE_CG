@@ -1,38 +1,48 @@
 #include "CameraManager.h"
 #include "StageScene.h"
 #include "Object3dCommon.h"
+#include "TextureManager.h"
+#include "SpriteCommon.h"
+
 #include <cmath>
 
 void StageScene::Initialize() {
 	sceneID = SCENE::STAGE;
-	Object3dCommon* common = Object3dCommon::GetInstance();
 
+	// --- 3Dオブジェクト ---
 	sphereObject = new Object3d();
-	sphereObject->Initialize(common);
+	sphereObject->Initialize(Object3dCommon::GetInstance());
+	sphereObject->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
 	sphereObject->SetModel("models/sphere.obj");
+
+	// --- スプライト ---
+	sprite_ = new Sprite();
+	TextureManager::GetInstance()->LoadTexture("assets/textures/uvChecker.png");
+	sprite_->Initialize(SpriteCommon::GetInstance(), "assets/textures/uvChecker.png");
+	sprite_->SetPosition({ 0.0f, 360.0f });
+
+	CameraManager::GetInstance()->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -10.0f });
+	CameraManager::GetInstance()->Update();
 }
 
 void StageScene::Update() {
 
-	sphereObject->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
 	sphereObject->Update();
+
+	sprite_->Update();
 }
 
 void StageScene::Draw() {
+	// 1. 3D描画
 	Object3dCommon::GetInstance()->SetupCommonState();
-	// 定数バッファをセット
-	ID3D12GraphicsCommandList* commandList = DirectXCommon::GetInstance()->GetCommandList();
-	commandList->SetGraphicsRootConstantBufferView(
-		3,
-		Object3dCommon::GetInstance()->GetDirectionalLightResource()->GetGPUVirtualAddress()
-	);
-	commandList->SetGraphicsRootConstantBufferView(
-		4,
-		Object3dCommon::GetInstance()->GetLightingSettingsResource()->GetGPUVirtualAddress()
-	);
-
 	sphereObject->Draw();
+
+	// 2. スプライト描画
+	SpriteCommon::GetInstance()->SetupCommonState();
+	sprite_->Draw();
 }
+
 void StageScene::Finalize() {
 	delete sphereObject;
+	delete sprite_;
 }

@@ -6,9 +6,9 @@
 
 SceneManager::SceneManager() {
 	// 初期シーン生成
-	currentScene = new TitleScene();
+	currentScene = new StageScene();
 	currentScene->Initialize();
-	currentSceneID = SCENE::TITLE;
+	currentSceneID = SCENE::STAGE;
 }
 
 SceneManager::~SceneManager() {

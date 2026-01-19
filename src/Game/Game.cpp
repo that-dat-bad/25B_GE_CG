@@ -12,12 +12,12 @@ void Game::Initialize() {
 	srvManager->Initialize(DirectXCommon::GetInstance());
 
 	// 2. マネージャ類の初期化 (SceneManager より先に！ )
+	SpriteCommon::GetInstance()->Initialize(DirectXCommon::GetInstance());
 	TextureManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager);
 	ModelManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
 	CameraManager::GetInstance()->Initialize();
 	ParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager);
 
-	// ★ ここでライトのリソースが作られる
 	Object3dCommon::GetInstance()->Initialize(DirectXCommon::GetInstance());
 
 	imguiManager = new ImGuiManager();
@@ -52,6 +52,25 @@ void Game::Update() {
 		ImGui::DragFloat3("Light Direction", &lightData->direction.x, 0.01f);
 		ImGui::End();
 	}
+	ImGui::Begin("Camera Controls");
+
+	// アクティブなカメラを取得
+	Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
+	if (camera) {
+		// 現在の値を取得
+		Vector3 rotate = camera->GetRotate();
+		Vector3 translate = camera->GetTranslate();
+
+		// ImGuiで値を操作 (DragFloat3)
+		// 第3引数は感度（ドラッグ時の変化量）です
+		ImGui::DragFloat3("Rotate", &rotate.x, 0.01f);
+		ImGui::DragFloat3("Translate", &translate.x, 0.1f);
+
+		// 変更した値をカメラにセットし直す
+		camera->SetRotate(rotate);
+		camera->SetTranslate(translate);
+	}
+	ImGui::End();
 #endif // USE_IMGUI
 
 	// 終了リクエストの例 (Escキーで終了など)

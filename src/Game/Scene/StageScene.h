@@ -2,6 +2,7 @@
 #include "IScene.h"
 #include <vector>
 #include "Object3d.h"
+#include "Sprite.h"
 
 
 class StageScene : public IScene {
@@ -12,4 +13,5 @@ public:
 	void Finalize() override;
 private:
 	Object3d* sphereObject = nullptr;
+	Sprite* sprite_ = nullptr;
 };

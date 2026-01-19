@@ -64,11 +64,17 @@ void Model::Draw() {
 
 
 	// テクスチャ (DescriptorTable) の設定 (RootParameter Index: 2)
-	if (modelData_.material.textureIndex != 0) {
-		D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle = TextureManager::GetInstance()->GetSrvHandleGPU(modelData_.material.textureIndex);
-		commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandle);
+	//if (modelData_.material.textureIndex != 0) {
+	//	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle = TextureManager::GetInstance()->GetSrvHandleGPU(modelData_.material.textureIndex);
+	//	commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandle);
+	//}
+	uint32_t useTextureIndex = modelData_.material.textureIndex;
+	if (useTextureIndex == 0) {
+		useTextureIndex = 1; // 1番(uvChecker)を強制使用
 	}
 
+	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle = TextureManager::GetInstance()->GetSrvHandleGPU(useTextureIndex);
+	commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandle);
 	// 描画コマンド発行
 	commandList->DrawInstanced(UINT(modelData_.vertices.size()), 1, 0, 0);
 

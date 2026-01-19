@@ -4,6 +4,13 @@
 #include <cassert>
 using namespace logger;
 
+SpriteCommon* SpriteCommon::instance = nullptr;
+SpriteCommon* SpriteCommon::GetInstance() {
+	if (instance == nullptr) {instance = new SpriteCommon();
+	}
+	return instance;
+}
+
 void SpriteCommon::Initialize(DirectXCommon* dxCommon)
 {
 	dxCommon_ = dxCommon;
@@ -105,7 +112,7 @@ void SpriteCommon::CreateGraphicsPipeline(DirectXCommon* dxCommon)
 	graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;
 
 	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
-	depthStencilDesc.DepthEnable = true;
+	depthStencilDesc.DepthEnable = false;
 	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 	graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;

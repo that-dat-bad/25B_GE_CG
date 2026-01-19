@@ -12,15 +12,17 @@ class DirectXCommon;
 class Sprite
 {
 public:
-	void Initialize(SpriteCommon* spriteCommon, DirectXCommon* dxCommon,std::string textureFilePath);
+	// 初期化
+	void Initialize(SpriteCommon* spriteCommon, std::string textureFilePath = "");
 
+	// 更新
 	void Update();
 
-	void Draw(DirectXCommon* dxCommon, D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle);
+	// 描画 (引数なしに変更)
+	void Draw();
 
+	// テクスチャ変更
 	void ChangeTexture(std::string textureFilePath);
-
-
 
 	//--アクセッサ--//
 	//---セッター---//
@@ -35,6 +37,12 @@ public:
 	void SetTextureLeftTop(const Vector2& leftTop) { textureLeftTop_ = leftTop; }
 	void SetTextureSize(const Vector2& size) { textureSize_ = size; }
 
+	// テクスチャインデックス設定時にサイズも合わせるように変更
+	void SetTextureIndex(uint32_t textureIndex) {
+		textureIndex_ = textureIndex;
+		AdjustTextureSize();
+	}
+
 	//---ゲッター---//
 	Vector2 GetPosition() const { return { transform_.translate.x, transform_.translate.y }; }
 	float GetRotation() const { return transform_.rotate.z; }
@@ -47,10 +55,10 @@ public:
 	Vector2 GetTextureSize() const { return textureSize_; }
 
 private:
+	// テクスチャサイズをイメージに合わせる
+	void AdjustTextureSize();
 
 	SpriteCommon* spriteCommon_ = nullptr;
-	//テクスチャサイズをイメージに合わせる
-	void AdjustTextureSize();
 
 	//---頂点データ---//
 	struct VertexData {
@@ -94,4 +102,3 @@ private:
 	Vector2 textureSize_ = { 100.0f,100.0f };
 	Vector2 size_ = { 100.0f,100.0f };
 };
-

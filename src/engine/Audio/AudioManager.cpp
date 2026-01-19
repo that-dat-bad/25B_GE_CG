@@ -17,8 +17,14 @@
 
 using namespace Microsoft::WRL;
 
-// 文字列変換用（環境に合わせてパスなどを調整してください）
 #include "../base/StringUtility.h" 
+
+AudioManager* AudioManager::instance = nullptr;
+
+AudioManager* AudioManager::GetInstance() {
+	if (instance == nullptr) instance = new AudioManager();
+	return instance;
+}
 
 void AudioManager::Initialize() {
 	HRESULT result;

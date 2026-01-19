@@ -58,8 +58,8 @@ void Object3d::Update() {
 	}
 
 	// 3. 定数バッファに転送
-	transformationMatrixData_->WVP = worldViewProjectionMatrix;
-	transformationMatrixData_->World = worldMatrix;
+	transformationMatrixData_->WVP = Transpose(worldViewProjectionMatrix);
+	transformationMatrixData_->World = Transpose(worldMatrix);
 }
 
 void Object3d::Draw() {
@@ -71,6 +71,8 @@ void Object3d::Draw() {
 
 	// 平行光源CBufferの設定 (RootParameter Index: 3)
 	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource_->GetGPUVirtualAddress());
+
+	commandList->SetGraphicsRootConstantBufferView(4, object3dCommon_->GetLightingSettingsResource()->GetGPUVirtualAddress());
 
 	if (model_) {
 		model_->Draw();

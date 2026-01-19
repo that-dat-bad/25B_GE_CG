@@ -477,6 +477,10 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateTextureResource(ID3D
 }
 
 
+// DirectXCommon.cpp
+
+// DirectXCommon.cpp
+
 Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages)
 {
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
@@ -496,6 +500,12 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 	// 中間リソースの作成
 	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = CreateBufferResource(intermediateSize);
 
+
+	HRESULT hr = commandAllocator_->Reset();
+	assert(SUCCEEDED(hr));
+	hr = commandList_->Reset(commandAllocator_.Get(), nullptr);
+	assert(SUCCEEDED(hr));
+
 	// データ転送命令を積む
 	UpdateSubresources(commandList_.Get(), texture, intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
 
@@ -509,8 +519,25 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
 	commandList_->ResourceBarrier(1, &barrier);
 
+
+
+	hr = commandList_->Close();
+	assert(SUCCEEDED(hr));
+
+	ID3D12CommandList* commandLists[] = { commandList_.Get() };
+	commandQueue_->ExecuteCommandLists(1, commandLists);
+
+	// 実行完了を待つ (フェンス)
+	fenceValue_++;
+	commandQueue_->Signal(fence_.Get(), fenceValue_);
+
+	if (fence_->GetCompletedValue() < fenceValue_) {
+		fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
+		WaitForSingleObject(fenceEvent_, INFINITE);
+	}
+
+
 	// 中間リソースを返す
 	return intermediateResource;
 }
-
 
