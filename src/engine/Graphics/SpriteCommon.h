@@ -3,6 +3,8 @@
 #include <wrl/client.h>
 class DirectXCommon;
 
+#include <memory> 
+
 class SpriteCommon
 {
 public:
@@ -15,7 +17,7 @@ public:
 	DirectXCommon* GetDirectXCommon() { return dxCommon_; }
 
 private:
-	static SpriteCommon* instance;
+	static std::unique_ptr<SpriteCommon> instance;
 	DirectXCommon* dxCommon_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState_;

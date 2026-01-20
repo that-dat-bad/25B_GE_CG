@@ -44,6 +44,8 @@ struct ParticleGroup {
 	ParticleInstancingData* instancingDataPtr = nullptr; // 書き込み用ポインタ
 };
 
+#include <memory> 
+
 class ParticleManager
 {
 public: // シングルトンパターン
@@ -59,14 +61,14 @@ public: // シングルトンパターン
 
 	// パーティクルの発生
 	void Emit(const std::string& name, const Vector3& position, uint32_t count);
+	~ParticleManager() = default;
 
 private:
 	ParticleManager() = default;
-	~ParticleManager() = default;
 	ParticleManager(const ParticleManager&) = delete;
 	ParticleManager& operator=(const ParticleManager&) = delete;
 
-	static ParticleManager* instance_;
+	static std::unique_ptr<ParticleManager> instance_;
 
 	// メンバ変数
 	DirectXCommon* dxCommon_ = nullptr;

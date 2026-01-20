@@ -19,11 +19,11 @@ using namespace Microsoft::WRL;
 
 #include "../base/StringUtility.h" 
 
-AudioManager* AudioManager::instance = nullptr;
+std::unique_ptr<AudioManager> AudioManager::instance = nullptr;
 
 AudioManager* AudioManager::GetInstance() {
-	if (instance == nullptr) instance = new AudioManager();
-	return instance;
+	if (instance == nullptr) instance.reset(new AudioManager());
+	return instance.get();
 }
 
 void AudioManager::Initialize() {

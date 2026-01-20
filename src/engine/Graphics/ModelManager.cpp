@@ -2,28 +2,28 @@
 #include "ModelCommon.h"
 #include "DirectXCommon.h"
 
-ModelManager* ModelManager::instance_ = nullptr;
+std::unique_ptr<ModelManager> ModelManager::instance_ = nullptr;
+
+ModelManager::ModelManager() = default;
+ModelManager::~ModelManager() = default;
 
 ModelManager* ModelManager::GetInstance()
 {
 	if (instance_ == nullptr) {
-		instance_ = new ModelManager();
+		instance_.reset(new ModelManager());
 	}
-	return instance_;
+	return instance_.get();
 }
 
 void ModelManager::Initialize(DirectXCommon* dxCommon)
 {
-	modelCommon_ = new ModelCommon();
+	modelCommon_ = std::make_unique<ModelCommon>();
 	modelCommon_->Initialize(dxCommon);
 }
 
 void ModelManager::Finalize()
 {
-	if (instance_ != nullptr) {
-		delete instance_;
-		instance_ = nullptr;
-	}
+	instance_.reset();
 }
 
 void ModelManager::LoadModel(const std::string& filePath)
@@ -37,7 +37,7 @@ void ModelManager::LoadModel(const std::string& filePath)
 	std::unique_ptr<Model> model = std::make_unique<Model>();
 	//model->Initialize(modelCommon_, "assets", filePath);
 	std::string fullPath = "assets/" + filePath;
-	model->Initialize(modelCommon_, "", fullPath);
+	model->Initialize(modelCommon_.get(), "", fullPath);
 
 	//モデルをmapコンテナに格納する
 	models_.insert(std::make_pair(filePath, std::move(model)));

@@ -4,11 +4,13 @@
 #include <cassert>
 using namespace logger;
 
-SpriteCommon* SpriteCommon::instance = nullptr;
+std::unique_ptr<SpriteCommon> SpriteCommon::instance = nullptr;
+
 SpriteCommon* SpriteCommon::GetInstance() {
-	if (instance == nullptr) {instance = new SpriteCommon();
+	if (instance == nullptr) {
+		instance.reset(new SpriteCommon());
 	}
-	return instance;
+	return instance.get();
 }
 
 void SpriteCommon::Initialize(DirectXCommon* dxCommon)

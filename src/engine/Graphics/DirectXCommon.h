@@ -11,6 +11,8 @@
 #include<string>
 #include<chrono>
 
+#include <memory> 
+
 class DirectXCommon
 {
 public:
@@ -74,13 +76,13 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata);
 	Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
+	~DirectXCommon() = default;
 
 private:
 	DirectXCommon() = default;
-	~DirectXCommon() = default;
 	DirectXCommon(const DirectXCommon&) = delete;
 	DirectXCommon& operator=(const DirectXCommon&) = delete;
-	static DirectXCommon* instance_;
+	static std::unique_ptr<DirectXCommon> instance_;
 
 
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_ = nullptr;

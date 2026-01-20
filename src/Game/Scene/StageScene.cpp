@@ -11,14 +11,15 @@ void StageScene::Initialize() {
 	sceneID = SCENE::STAGE;
 
 	// --- 3Dオブジェクト ---
-	sphereObject = new Object3d();
+	// --- 3Dオブジェクト ---
+	sphereObject = std::make_unique<Object3d>();
 	sphereObject->Initialize(Object3dCommon::GetInstance());
 	sphereObject->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
 	ModelManager::GetInstance()->LoadModel("models/sphere.obj");
 	sphereObject->SetModel("models/sphere.obj");
 
 	// --- スプライト ---
-	sprite_ = new Sprite();
+	sprite_ = std::make_unique<Sprite>();
 	TextureManager::GetInstance()->LoadTexture("assets/textures/uvChecker.png");
 	sprite_->Initialize(SpriteCommon::GetInstance(), "assets/textures/uvChecker.png");
 	sprite_->SetPosition({ 0.0f, 360.0f });
@@ -45,6 +46,4 @@ void StageScene::Draw() {
 }
 
 void StageScene::Finalize() {
-	delete sphereObject;
-	delete sprite_;
 }

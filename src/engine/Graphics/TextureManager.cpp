@@ -3,7 +3,9 @@
 #include <cassert>
 #include <filesystem> 
 #include"SrvManager.h"
-TextureManager* TextureManager::instance_ = nullptr;
+#include <memory> // Required for std::unique_ptr
+
+std::unique_ptr<TextureManager> TextureManager::instance_ = nullptr;
 
 
 std::wstring ConvertString(const std::string& str) {
@@ -16,20 +18,22 @@ std::wstring ConvertString(const std::string& str) {
 
 TextureManager* TextureManager::GetInstance() {
 	if (instance_ == nullptr) {
-		instance_ = new TextureManager();
+		instance_.reset(new TextureManager());
 	}
-	return instance_;
+	return instance_.get();
 }
 
-void TextureManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager) {
+void TextureManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager)
+{
 	dxCommon_ = dxCommon;
 	srvManager_ = srvManager;
-	textureDatas_.reserve(128);
+
+	textureDatas_.reserve(SrvManager::kMaxSRVCount_);
 }
 
-void TextureManager::Finalize() {
-	delete instance_;
-	instance_ = nullptr;
+void TextureManager::Finalize()
+{
+	instance_.reset();
 }
 
 void TextureManager::LoadTexture(const std::string& filePath) {

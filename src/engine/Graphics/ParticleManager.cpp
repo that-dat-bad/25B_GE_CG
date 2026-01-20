@@ -8,13 +8,13 @@
 
 using namespace MyMath;
 
-ParticleManager* ParticleManager::instance_ = nullptr;
+std::unique_ptr<ParticleManager> ParticleManager::instance_ = nullptr;
 
 ParticleManager* ParticleManager::GetInstance() {
 	if (instance_ == nullptr) {
-		instance_ = new ParticleManager();
+		instance_.reset(new ParticleManager());
 	}
-	return instance_;
+	return instance_.get();
 }
 
 void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager) {
@@ -135,8 +135,7 @@ void ParticleManager::Draw() {
 void ParticleManager::Finalize() {
 	// リソースの解放など
 	particleGroups_.clear();
-	delete instance_;
-	instance_ = nullptr;
+	instance_.reset();
 }
 
 void ParticleManager::CreateParticleGroup(const std::string& name, const std::string& textureFilePath) {

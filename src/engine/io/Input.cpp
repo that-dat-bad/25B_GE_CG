@@ -6,18 +6,17 @@
 #include <cassert>
 
 
-Input* Input::instance_ = nullptr;
+std::unique_ptr<Input> Input::instance_ = nullptr;
 
 Input* Input::GetInstance() {
 	if (instance_ == nullptr) {
-		instance_ = new Input();
+		instance_.reset(new Input());
 	}
-	return instance_;
+	return instance_.get();
 }
 
 void Input::Initialize(HINSTANCE hInstance,HWND hwnd)
 {
-	instance_ = this;
 	HRESULT result;
 
 

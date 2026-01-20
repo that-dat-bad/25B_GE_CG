@@ -4,13 +4,13 @@
 using namespace logger;
 
 
-Object3dCommon* Object3dCommon::instance = nullptr;
+std::unique_ptr<Object3dCommon> Object3dCommon::instance = nullptr;
 
 Object3dCommon* Object3dCommon::GetInstance() {
 	if (instance == nullptr) {
-		instance = new Object3dCommon();
+		instance.reset(new Object3dCommon());
 	}
-	return instance;
+	return instance.get();
 }
 
 void Object3dCommon::Initialize(DirectXCommon* dxCommon)
