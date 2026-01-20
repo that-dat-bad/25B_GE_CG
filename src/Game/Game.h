@@ -2,7 +2,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "winApp.h"
+#include "WinApp.h"
 #include "DirectXCommon.h"
 #include "Input.h"
 #include "AudioManager.h"
