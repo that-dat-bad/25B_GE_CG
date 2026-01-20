@@ -6,7 +6,6 @@
 
 #pragma comment(lib, "xaudio2.lib")
 
-// チャンクヘッダなどの定義は残しておきますが、MF読み込みでは直接使いません
 struct ChunkHeader {
 	char id[4];
 	int32_t size;
@@ -30,6 +29,7 @@ struct SoundData {
 
 class AudioManager {
 public:
+	static AudioManager* GetInstance();
 	// 初期化
 	void Initialize();
 	// 終了処理
@@ -46,5 +46,8 @@ public:
 
 private:
 	IXAudio2* xAudio2_ = nullptr;
+	AudioManager() = default;
+	static AudioManager* instance;
+
 	IXAudio2MasteringVoice* masteringVoice_ = nullptr;
 };

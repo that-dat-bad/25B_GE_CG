@@ -2,30 +2,23 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "../engine/base/winApp.h"
-#include "../engine/Graphics/DirectXCommon.h"
-#include "../engine/io/Input.h"
-#include "../engine/Audio/AudioManager.h"
-#include "../engine/Graphics/SrvManager.h"
-#include "../engine/Debug/ImguiManager.h"
-#include "../engine/Graphics/TextureManager.h"
-#include "../engine/Graphics/ModelManager.h"
-#include "../engine/Graphics/CameraManager.h"
-#include "../engine/Graphics/SpriteCommon.h"
-#include "../engine/Graphics/Object3dCommon.h"
-#include "../engine/Graphics/Object3d.h"
-#include "../engine/Graphics/ParticleManager.h"
+#include "winApp.h"
+#include "DirectXCommon.h"
+#include "Input.h"
+#include "AudioManager.h"
+#include "SrvManager.h"
+#include "ImguiManager.h"
+#include "TextureManager.h"
+#include "ModelManager.h"
+#include "CameraManager.h"
+#include "SpriteCommon.h"
+#include "Object3dCommon.h"
+#include "Object3d.h"
+#include "ParticleManager.h"
+#include "SceneManager.h"
 
-struct DirectionalLight {
-    Vector4 color;
-    Vector3 direction;
-    float intensity;
-};
 
-struct LightingSettings {
-    int32_t lightingModel; // 0: Lambert, 1: Half-Lambert
-    float padding[3];
-};
+
 
 class Game {
 public:
@@ -39,17 +32,13 @@ public:
 
 private:
 	WinApp* winApp = nullptr;
-	DirectXCommon* dxCommon = nullptr;
-	Input* input = nullptr;
 	SrvManager* srvManager = nullptr;
 	ImGuiManager* imguiManager = nullptr;
 	AudioManager* audioManager = nullptr;
 
 	SpriteCommon* spriteCommon = nullptr;
-	Object3dCommon* object3dCommon = nullptr;
 
 	// ゲームオブジェクト
-	Object3d* sphereObject = nullptr;
 	SoundData alarmSound;
 
 	// ライト・設定用リソース
@@ -60,4 +49,7 @@ private:
 
 	// ゲーム終了フラグ
 	bool endRequest_ = false;
+
+	//シーン管理
+	SceneManager* sceneManager = nullptr;
 };

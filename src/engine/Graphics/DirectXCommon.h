@@ -14,6 +14,7 @@
 class DirectXCommon
 {
 public:
+	static DirectXCommon* GetInstance();
 
 	static const uint32_t kRtvHeapDescriptorNum_ = 2; // ダブルバッファ用
 	static const uint32_t kDsvHeapDescriptorNum_ = 1; // 深度バッファ用
@@ -75,8 +76,11 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
 
 private:
-
-
+	DirectXCommon() = default;
+	~DirectXCommon() = default;
+	DirectXCommon(const DirectXCommon&) = delete;
+	DirectXCommon& operator=(const DirectXCommon&) = delete;
+	static DirectXCommon* instance_;
 
 
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_ = nullptr;

@@ -80,6 +80,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -103,6 +104,7 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -127,6 +129,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -230,6 +233,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\base\Math\Transform.h" />
     <ClInclude Include="src\engine\Graphics\TextureManager.h" />
     <ClInclude Include="src\engine\Graphics\SrvManager.h" />
+    <ClInclude Include="src\Game\Scene\ClearScene.h" />
+    <ClInclude Include="src\Game\Scene\Iscene.h" />
+    <ClInclude Include="src\Game\Scene\SceneManager.h" />
+    <ClInclude Include="src\Game\Scene\StageScene.h" />
+    <ClInclude Include="src\Game\Scene\TitleScene.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\engine\Debug\Dump.cpp" />
@@ -291,6 +299,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\engine\base\Math\Transform.cpp" />
     <ClCompile Include="src\engine\Graphics\TextureManager.cpp" />
     <ClCompile Include="src\engine\Graphics\SrvManager.cpp" />
+    <ClCompile Include="src\Game\Scene\ClearScene.cpp" />
+    <ClCompile Include="src\Game\Scene\IScene.cpp" />
+    <ClCompile Include="src\Game\Scene\SceneManager.cpp" />
+    <ClCompile Include="src\Game\Scene\StageScene.cpp" />
+    <ClCompile Include="src\Game\Scene\TitleScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="external\imgui\LICENSE.txt" />

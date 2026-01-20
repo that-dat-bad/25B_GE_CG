@@ -6,7 +6,8 @@ class DirectXCommon;
 class SpriteCommon
 {
 public:
-	void Initialize(DirectXCommon* dxCommon);
+	static SpriteCommon* GetInstance();
+    void Initialize(DirectXCommon* dxCommon);
 
 	//共通描画設定
 	void SetupCommonState();
@@ -14,6 +15,7 @@ public:
 	DirectXCommon* GetDirectXCommon() { return dxCommon_; }
 
 private:
+	static SpriteCommon* instance;
 	DirectXCommon* dxCommon_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState_;

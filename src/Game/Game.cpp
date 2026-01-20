@@ -2,70 +2,42 @@
 #include <cassert>
 
 void Game::Initialize() {
-	// --- 各種システムの初期化 ---
+	// 1. 基盤システムの初期化
 	winApp = new WinApp();
 	winApp->Initialize();
-
-	dxCommon = new DirectXCommon();
-	dxCommon->Initialize(winApp);
-
-	input = new Input();
-	input->Initialize(GetModuleHandle(nullptr), winApp->GetHwnd());
+	DirectXCommon::GetInstance()->Initialize(winApp);
+	Input::GetInstance()->Initialize(GetModuleHandle(nullptr), winApp->GetHwnd());
 
 	srvManager = new SrvManager();
-	srvManager->Initialize(dxCommon);
+	srvManager->Initialize(DirectXCommon::GetInstance());
+
+	// 2. マネージャ類の初期化 (SceneManager より先に！ )
+	SpriteCommon::GetInstance()->Initialize(DirectXCommon::GetInstance());
+	TextureManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager);
+	ModelManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
+	CameraManager::GetInstance()->Initialize();
+	ParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager);
+
+	Object3dCommon::GetInstance()->Initialize(DirectXCommon::GetInstance());
 
 	imguiManager = new ImGuiManager();
-	imguiManager->Initialize(winApp, dxCommon, srvManager);
+	imguiManager->Initialize(winApp, DirectXCommon::GetInstance(), srvManager);
 
-	audioManager = new AudioManager();
-	audioManager->Initialize();
+	// 3. シーンマネージャの生成 (全ての準備が整ってから)
+	sceneManager = new SceneManager(); // 内部でシーンの Initialize が走る
 
-	// マネージャ類の初期化
-	TextureManager::GetInstance()->Initialize(dxCommon, srvManager);
-	ModelManager::GetInstance()->Initialize(dxCommon);
-	CameraManager::GetInstance()->Initialize();
-	ParticleManager::GetInstance()->Initialize(dxCommon, srvManager);
-
-	spriteCommon = new SpriteCommon();
-	spriteCommon->Initialize(dxCommon);
-
-	object3dCommon = new Object3dCommon();
-	object3dCommon->Initialize(dxCommon);
-
-	// --- リソース読み込み ---
-	TextureManager::GetInstance()->LoadTexture("assets/textures/uvchecker.png");
-	ModelManager::GetInstance()->LoadModel("models/sphere.obj");
-	alarmSound = audioManager->SoundLoadFile("assets/sounds/Alarm01.wav");
-
-	// --- オブジェクト生成 ---
-	sphereObject = new Object3d();
-	sphereObject->Initialize(object3dCommon);
-	sphereObject->SetModel("models/sphere.obj");
-
-	// ライト設定 (b1, b2レジスタ用)
-	directionalLightResource = dxCommon->CreateBufferResource(sizeof(DirectionalLight));
-	directionalLightResource->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
-	directionalLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
-	directionalLightData->intensity = 1.0f;
-
-	lightingSettingsResource = dxCommon->CreateBufferResource(sizeof(LightingSettings));
-	lightingSettingsResource->Map(0, nullptr, reinterpret_cast<void**>(&lightingSettingsData));
-	lightingSettingsData->lightingModel = 0; // Lambert
 }
 
 void Game::Update() {
 	// システムの更新
-	input->Update();
+	Input::GetInstance()->Update();
 	imguiManager->Begin();
 
+	sceneManager->Update();
 	// カメラ更新
 	CameraManager::GetInstance()->Update();
 
-	// 球体オブジェクトの更新 (カメラを教えてからUpdate)
-	sphereObject->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
-	sphereObject->Update();
+
 
 	ParticleManager::GetInstance()->Update();
 
@@ -73,43 +45,56 @@ void Game::Update() {
 #ifdef USE_IMGUI
 
 	// --- ImGui によるライト調整---
-	ImGui::Begin("Lighting Settings");
-	ImGui::ColorEdit4("Light Color", &directionalLightData->color.x);
-	ImGui::DragFloat3("Light Direction", &directionalLightData->direction.x, 0.01f, -1.0f, 1.0f);
-	directionalLightData->direction = MyMath::Normalize(directionalLightData->direction);
-	ImGui::DragFloat("Intensity", &directionalLightData->intensity, 0.01f, 0.0f, 10.0f);
-	const char* models[] = { "Lambert", "Half-Lambert" };
-	ImGui::Combo("Model Select", &lightingSettingsData->lightingModel, models, 2);
+	DirectionalLight* lightData = Object3dCommon::GetInstance()->GetDirectionalLightData();
+	if (lightData != nullptr) {
+		ImGui::Begin("Lighting Settings");
+		ImGui::ColorEdit4("Light Color", &lightData->color.x);
+		ImGui::DragFloat3("Light Direction", &lightData->direction.x, 0.01f);
+		ImGui::End();
+	}
+	ImGui::Begin("Camera Controls");
+
+	// アクティブなカメラを取得
+	Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
+	if (camera) {
+		// 現在の値を取得
+		Vector3 rotate = camera->GetRotate();
+		Vector3 translate = camera->GetTranslate();
+
+		// ImGuiで値を操作 (DragFloat3)
+		// 第3引数は感度（ドラッグ時の変化量）です
+		ImGui::DragFloat3("Rotate", &rotate.x, 0.01f);
+		ImGui::DragFloat3("Translate", &translate.x, 0.1f);
+
+		// 変更した値をカメラにセットし直す
+		camera->SetRotate(rotate);
+		camera->SetTranslate(translate);
+	}
 	ImGui::End();
 #endif // USE_IMGUI
 
 	// 終了リクエストの例 (Escキーで終了など)
-	if (input->triggerKey(DIK_ESCAPE)) {
+	if (Input::GetInstance()->TriggerKey(DIK_ESCAPE)) {
 		endRequest_ = true;
 	}
 }
 
 void Game::Draw() {
 	// 描画前処理
-	dxCommon->PreDraw();
+	DirectXCommon::GetInstance()->PreDraw();
 	srvManager->PreDraw();
-
 	// 3Dオブジェクト描画
-	object3dCommon->SetupCommonState();
-	// 定数バッファをセット
-	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
-	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
-	commandList->SetGraphicsRootConstantBufferView(4, lightingSettingsResource->GetGPUVirtualAddress());
+	Object3dCommon::GetInstance()->SetupCommonState();
 
-	sphereObject->Draw();
 
+	sceneManager->Draw();
 	ParticleManager::GetInstance()->Draw();
 
 	// ImGui描画
 	imguiManager->End();
 
 	// 描画後処理
-	dxCommon->PostDraw();
+	DirectXCommon::GetInstance()->PostDraw();
 }
 
 void Game::Run() {
@@ -142,7 +127,6 @@ void Game::Finalize() {
 	audioManager->Finalize();
 	delete audioManager;
 
-	delete sphereObject;
 
 	// シングルトン類
 	ModelManager::GetInstance()->Finalize();
@@ -150,10 +134,7 @@ void Game::Finalize() {
 	CameraManager::GetInstance()->Finalize();
 	ParticleManager::GetInstance()->Finalize();
 
-	delete object3dCommon;
 	delete spriteCommon;
 	delete srvManager;
-	delete input;
-	delete dxCommon;
 	delete winApp;
 }

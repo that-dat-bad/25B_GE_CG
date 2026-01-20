@@ -6,10 +6,18 @@
 #include <cassert>
 
 
+Input* Input::instance_ = nullptr;
 
+Input* Input::GetInstance() {
+	if (instance_ == nullptr) {
+		instance_ = new Input();
+	}
+	return instance_;
+}
 
 void Input::Initialize(HINSTANCE hInstance,HWND hwnd)
 {
+	instance_ = this;
 	HRESULT result;
 
 
@@ -59,7 +67,7 @@ void Input::Update()
 
 }
 
-bool Input::pushKey(BYTE keyNumber)
+bool Input::PushKey(BYTE keyNumber)
 {
 	if (keys_[keyNumber])
 	{
@@ -68,7 +76,7 @@ bool Input::pushKey(BYTE keyNumber)
 	return false;
 }
 
-bool Input::triggerKey(BYTE keyNumber)
+bool Input::TriggerKey(BYTE keyNumber)
 {
 	if (!preKeys_[keyNumber]&&keys_[keyNumber])
 	{
