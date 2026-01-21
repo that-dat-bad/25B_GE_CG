@@ -43,6 +43,18 @@ struct ParticleInstancingData {
 	Vector4 color;
 };
 
+// AABB (Axis Aligned Bounding Box)
+struct AABB {
+	Vector3 min; // 最小点
+	Vector3 max; // 最大点
+};
+
+// 加速度場
+struct AccelerationField {
+	Vector3 acceleration; // 加速度
+	AABB area;            // 適用範囲
+};
+
 // パーティクルグループ
 struct ParticleGroup {
 	// マテリアルデータ
@@ -80,6 +92,9 @@ public: // シングルトンパターン
 	// ブレンドモード設定
 	void SetBlendMode(const std::string& name, BlendMode mode);
 
+	// 加速度場の追加
+	void AddAccelerationField(const std::string& name, const Vector3& acceleration, const AABB& area);
+
 private:
 	ParticleManager() = default;
 	~ParticleManager() = default;
@@ -94,6 +109,9 @@ private:
 
 	// パーティクルグループコンテナ
 	std::unordered_map<std::string, ParticleGroup> particleGroups_;
+
+	// 加速度場コンテナ
+	std::unordered_map<std::string, AccelerationField> accelerationFields_;
 
 	// 共通リソース
 	// 頂点データ（板ポリゴン）

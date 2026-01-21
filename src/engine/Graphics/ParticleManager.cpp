@@ -71,8 +71,19 @@ void ParticleManager::Update() {
 				continue;
 			}
 
-			// 移動処理 (速度を加算)
-			it->velocity = Add(it->velocity, it->acceleration);
+			// フィールドの影響計算
+			Vector3 fieldAcceleration = { 0.0f, 0.0f, 0.0f };
+			for (const auto& [fieldName, field] : accelerationFields_) {
+				// AABB内判定
+				if (it->transform.translate.x >= field.area.min.x && it->transform.translate.x <= field.area.max.x &&
+					it->transform.translate.y >= field.area.min.y && it->transform.translate.y <= field.area.max.y &&
+					it->transform.translate.z >= field.area.min.z && it->transform.translate.z <= field.area.max.z) {
+					fieldAcceleration = Add(fieldAcceleration, field.acceleration);
+				}
+			}
+
+			// 移動処理 (速度を加算: パーティクルの個別加速度 + フィールド加速度)
+			it->velocity = Add(it->velocity, Add(it->acceleration, fieldAcceleration));
 			it->transform.translate = Add(it->transform.translate, it->velocity);
 
 			// 経過時間を加算
@@ -145,6 +156,13 @@ void ParticleManager::SetBlendMode(const std::string& name, BlendMode mode) {
 	if (particleGroups_.contains(name)) {
 		particleGroups_[name].blendMode = mode;
 	}
+}
+
+void ParticleManager::AddAccelerationField(const std::string& name, const Vector3& acceleration, const AABB& area) {
+	AccelerationField field;
+	field.acceleration = acceleration;
+	field.area = area;
+	accelerationFields_[name] = field;
 }
 
 
