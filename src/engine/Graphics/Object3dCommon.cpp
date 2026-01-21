@@ -37,7 +37,8 @@ void Object3dCommon::SetupCommonState()
 #endif // _DEBUG
 
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
-	commandList->SetPipelineState(graphicsPipelineState_.Get());
+	// デフォルトでNormalモードを設定
+	SetBlendMode(BlendMode::kNormal);
 	commandList->SetGraphicsRootSignature(rootSignature_.Get());
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
@@ -97,6 +98,8 @@ void Object3dCommon::CreateRootSignature(DirectXCommon* dxCommon)
 	assert(SUCCEEDED(hr));
 }
 
+
+
 void Object3dCommon::CreateGraphicsPipeline(DirectXCommon* dxCommon)
 {
 	CreateRootSignature(dxCommon);
@@ -113,17 +116,6 @@ void Object3dCommon::CreateGraphicsPipeline(DirectXCommon* dxCommon)
 	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = dxCommon->CompileShader(L"./assets/shaders/Object3D.PS.hlsl", L"ps_6_0");
 	graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
 	graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
-
-	D3D12_BLEND_DESC blendDesc{};
-	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-	blendDesc.RenderTarget[0].BlendEnable = TRUE;
-	blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-	blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-	graphicsPipelineStateDesc.BlendState = blendDesc;
 
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
 	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
@@ -143,7 +135,18 @@ void Object3dCommon::CreateGraphicsPipeline(DirectXCommon* dxCommon)
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	HRESULT hr = dxCommon->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineState_));
-	assert(SUCCEEDED(hr));
+	// 全ブレンドモードのPSOを生成
+	for (size_t i = 0; i < static_cast<size_t>(BlendMode::kCountOf); ++i) {
+		BlendMode mode = static_cast<BlendMode>(i);
+		graphicsPipelineStateDesc.BlendState = GetBlendDesc(mode);
 
+		HRESULT hr = dxCommon->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineStates_[i]));
+		assert(SUCCEEDED(hr));
+	}
+}
+
+void Object3dCommon::SetBlendMode(BlendMode mode)
+{
+	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+	commandList->SetPipelineState(graphicsPipelineStates_[static_cast<size_t>(mode)].Get());
 }

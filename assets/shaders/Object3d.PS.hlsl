@@ -57,6 +57,12 @@ PixelShaderOutput main(PixelInput input)
     {
         float32_t2 transformedUV = mul(float32_t4(input.texcoord, 0.0, 1.0), gMaterial.uvTransform).xy;
         texColor = gTexture.Sample(gSampler, transformedUV);
+
+        // Alpha testing (Binary Alpha)
+        if (texColor.a < 0.5f)
+        {
+            discard;
+        }
     }
 
     // マテリアルの色を乗算

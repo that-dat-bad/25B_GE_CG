@@ -10,16 +10,31 @@
 #include "../base/Math/MyMath.h"
 #include "DirectXCommon.h"
 #include "SrvManager.h"
+#include "BlendMode.h"
+#include <array>
 
 using namespace MyMath;
 
 // パーティクル1粒の情報（CPU側での計算用）
+// パーティクル1粒の情報（CPU側での計算用）
 struct Particle {
 	Transform transform;
 	Vector3 velocity;
+	Vector3 acceleration; // 加速度
 	Vector4 color;
 	float lifeTime;
 	float currentTime;
+};
+
+// パーティクル発生パラメータ
+struct ParticleParameters {
+	Vector3 minVelocity = { -1.0f, -1.0f, -1.0f };
+	Vector3 maxVelocity = { 1.0f, 1.0f, 1.0f };
+	Vector4 minColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+	Vector4 maxColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+	float minLifeTime = 1.0f;
+	float maxLifeTime = 3.0f;
+	Vector3 acceleration = { 0.0f, 0.0f, 0.0f }; // 重力など
 };
 
 // GPUに送るインスタンシングデータ (StructuredBuffer用)
@@ -42,6 +57,7 @@ struct ParticleGroup {
 	Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource;
 	UINT instanceCount; // 描画するインスタンス数
 	ParticleInstancingData* instancingDataPtr = nullptr; // 書き込み用ポインタ
+	BlendMode blendMode = BlendMode::kNormal;
 };
 
 class ParticleManager
@@ -59,6 +75,10 @@ public: // シングルトンパターン
 
 	// パーティクルの発生
 	void Emit(const std::string& name, const Vector3& position, uint32_t count);
+	void Emit(const std::string& name, const Vector3& position, const ParticleParameters& params, uint32_t count);
+
+	// ブレンドモード設定
+	void SetBlendMode(const std::string& name, BlendMode mode);
 
 private:
 	ParticleManager() = default;
@@ -87,7 +107,7 @@ private:
 
 	// パイプライン関連
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState_;
+	std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, static_cast<size_t>(BlendMode::kCountOf)> graphicsPipelineStates_;
 
 	// ランダムエンジン
 	std::mt19937 randomEngine_;

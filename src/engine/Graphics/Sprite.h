@@ -6,6 +6,7 @@ using namespace MyMath;
 #include <wrl/client.h>
 #include<string>
 
+#include "../Graphics/BlendMode.h"
 class SpriteCommon;
 class DirectXCommon;
 
@@ -42,6 +43,8 @@ public:
 		textureIndex_ = textureIndex;
 		AdjustTextureSize();
 	}
+
+	void SetBlendMode(BlendMode mode) { blendMode_ = mode; }
 
 	//---ゲッター---//
 	Vector2 GetPosition() const { return { transform_.translate.x, transform_.translate.y }; }
@@ -101,4 +104,5 @@ private:
 	//テクスチャ切り出しサイズ
 	Vector2 textureSize_ = { 100.0f,100.0f };
 	Vector2 size_ = { 100.0f,100.0f };
+	BlendMode blendMode_ = BlendMode::kNormal;
 };

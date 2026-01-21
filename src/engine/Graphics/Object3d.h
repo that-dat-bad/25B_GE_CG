@@ -5,6 +5,7 @@
 #include <vector>
 #include "../base/Math/MyMath.h"
 #include "DirectXCommon.h"
+#include "BlendMode.h"
 
 using namespace MyMath;
 
@@ -41,6 +42,7 @@ public: // メンバ関数
 	void SetModel(Model* model) { model_ = model; }
 	void SetModel(const std::string& filePath);
 	void SetCamera(Camera* camera) { camera_ = camera; }
+	void SetBlendMode(BlendMode mode) { blendMode_ = mode; }
 
 	// ゲッター
 	Vector3 GetScale() const { return transform_.scale; }
@@ -64,4 +66,6 @@ private:
 	//--平行光源--//
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource_ = nullptr;
 	DirectionalLight* directionalLightData_ = nullptr;
+	
+	BlendMode blendMode_ = BlendMode::kNormal;
 };

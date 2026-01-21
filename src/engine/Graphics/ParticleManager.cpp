@@ -72,6 +72,7 @@ void ParticleManager::Update() {
 			}
 
 			// 移動処理 (速度を加算)
+			it->velocity = Add(it->velocity, it->acceleration);
 			it->transform.translate = Add(it->transform.translate, it->velocity);
 
 			// 経過時間を加算
@@ -106,8 +107,8 @@ void ParticleManager::Draw() {
 	// ルートシグネチャの設定
 	commandList->SetGraphicsRootSignature(rootSignature_.Get());
 
-	// PSOの設定
-	commandList->SetPipelineState(graphicsPipelineState_.Get());
+	// PSOの設定 (グループごとに変更するのでここでは設定しない、あるいはデフォルトを設定)
+	// commandList->SetPipelineState(graphicsPipelineState_.Get());
 
 	// プリミティブトポロジーの設定
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -116,8 +117,16 @@ void ParticleManager::Draw() {
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 
 	// 全てのパーティクルグループについて処理
+	BlendMode currentBlendMode = BlendMode::kCountOf; // 初期値として無効な値をセット
+
 	for (auto& [name, group] : particleGroups_) {
 		if (group.instanceCount == 0) continue;
+
+		// ブレンドモードが切り替わったらPSO再設定
+		if (group.blendMode != currentBlendMode) {
+			commandList->SetPipelineState(graphicsPipelineStates_[static_cast<size_t>(group.blendMode)].Get());
+			currentBlendMode = group.blendMode;
+		}
 
 		// テクスチャのSRVを設定
 		D3D12_GPU_DESCRIPTOR_HANDLE textureHandle = srvManager_->GetGPUDescriptorHandle(group.textureSrvIndex);
@@ -131,6 +140,13 @@ void ParticleManager::Draw() {
 		commandList->DrawInstanced(6, group.instanceCount, 0, 0);
 	}
 }
+
+void ParticleManager::SetBlendMode(const std::string& name, BlendMode mode) {
+	if (particleGroups_.contains(name)) {
+		particleGroups_[name].blendMode = mode;
+	}
+}
+
 
 void ParticleManager::Finalize() {
 	// リソースの解放など
@@ -177,15 +193,30 @@ void ParticleManager::CreateParticleGroup(const std::string& name, const std::st
 }
 
 void ParticleManager::Emit(const std::string& name, const Vector3& position, uint32_t count) {
+	ParticleParameters params; // デフォルトパラメータ
+	Emit(name, position, params, count);
+}
+
+void ParticleManager::Emit(const std::string& name, const Vector3& position, const ParticleParameters& params, uint32_t count) {
 	// 登録済みのグループかチェック
 	assert(particleGroups_.contains(name));
 
 	ParticleGroup& group = particleGroups_[name];
 
-	std::uniform_real_distribution<float> distPos(-1.0f, 1.0f);
-	std::uniform_real_distribution<float> distVel(-1.0f, 1.0f);
-	std::uniform_real_distribution<float> distColor(0.0f, 1.0f);
-	std::uniform_real_distribution<float> distTime(1.0f, 3.0f);
+	std::uniform_real_distribution<float> distVelX(params.minVelocity.x, params.maxVelocity.x);
+	std::uniform_real_distribution<float> distVelY(params.minVelocity.y, params.maxVelocity.y);
+	std::uniform_real_distribution<float> distVelZ(params.minVelocity.z, params.maxVelocity.z);
+
+	std::uniform_real_distribution<float> distColorR(params.minColor.x, params.maxColor.x);
+	std::uniform_real_distribution<float> distColorG(params.minColor.y, params.maxColor.y);
+	std::uniform_real_distribution<float> distColorB(params.minColor.z, params.maxColor.z);
+	std::uniform_real_distribution<float> distColorA(params.minColor.w, params.maxColor.w);
+
+	std::uniform_real_distribution<float> distTime(params.minLifeTime, params.maxLifeTime);
+
+	// 位置のランダム分布（もし必要ならパラメータ化するが、一旦既存のまま固定範囲にするか、パラメータに入れるか。
+	// ここでは元のEmitに合わせて少し散らす処理は入れておくが、velocityメインで制御する）
+	std::uniform_real_distribution<float> distPos(-1.0f, 1.0f); // 散らし具合は固定で残すか、これもパラメータ化すべきだが
 
 	for (uint32_t i = 0; i < count; ++i) {
 		Particle particle{};
@@ -196,14 +227,13 @@ void ParticleManager::Emit(const std::string& name, const Vector3& position, uin
 		Vector3 randomPos = { distPos(randomEngine_), distPos(randomEngine_), distPos(randomEngine_) };
 		particle.transform.translate = Add(position, randomPos);
 
-		// 速度もランダムに
-		Vector3 randomVel = { distVel(randomEngine_), distVel(randomEngine_), distVel(randomEngine_) };
-		particle.velocity = Normalize(randomVel); // 方向
-		particle.velocity.x *= 0.1f; // スピード調整
-		particle.velocity.y *= 0.1f;
-		particle.velocity.z *= 0.1f;
+		// 速度設定
+		particle.velocity = { distVelX(randomEngine_), distVelY(randomEngine_), distVelZ(randomEngine_) };
+		// 既存コードにあった0.1倍はパラメータ側で制御すべきなので削除
 
-		particle.color = { distColor(randomEngine_), distColor(randomEngine_), distColor(randomEngine_), 1.0f };
+		particle.acceleration = params.acceleration;
+
+		particle.color = { distColorR(randomEngine_), distColorG(randomEngine_), distColorB(randomEngine_), distColorA(randomEngine_) };
 		particle.lifeTime = distTime(randomEngine_);
 		particle.currentTime = 0.0f;
 
@@ -306,6 +336,8 @@ void ParticleManager::CreateRootSignature() {
 	assert(SUCCEEDED(hr));
 }
 
+
+
 void ParticleManager::CreateGraphicsPipeline() {
 	// シェーダーコンパイル
 	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = dxCommon_->CompileShader(L"./assets/shaders/Particle.VS.hlsl", L"vs_6_0");
@@ -329,16 +361,6 @@ void ParticleManager::CreateGraphicsPipeline() {
 	graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
 	graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
 
-	// ブレンドステート
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].BlendEnable = TRUE;
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ONE;
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	graphicsPipelineStateDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-
 	// ラスタライザステート
 	graphicsPipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // 両面描画
 	graphicsPipelineStateDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
@@ -355,6 +377,12 @@ void ParticleManager::CreateGraphicsPipeline() {
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineState_));
-	assert(SUCCEEDED(hr));
+	// 全ブレンドモードのPSOを生成
+	for (size_t i = 0; i < static_cast<size_t>(BlendMode::kCountOf); ++i) {
+		BlendMode mode = static_cast<BlendMode>(i);
+		graphicsPipelineStateDesc.BlendState = GetBlendDesc(mode);
+
+		HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineStates_[i]));
+		assert(SUCCEEDED(hr));
+	}
 }

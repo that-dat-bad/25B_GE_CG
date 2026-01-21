@@ -66,6 +66,8 @@ void Object3d::Draw() {
 	// コマンドリストの取得
 	ID3D12GraphicsCommandList* commandList = object3dCommon_->GetDirectXCommon()->GetCommandList();
 
+	object3dCommon_->SetBlendMode(blendMode_);
+
 	// 座標変換行列CBufferの設定 (RootParameter Index: 1)
 	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource_->GetGPUVirtualAddress());
 

@@ -2,6 +2,8 @@
 #include <d3d12.h>
 #include <wrl/client.h>
 #include <cstdint>
+#include <array>
+#include "BlendMode.h"
 #include "../../engine/base/Math/MyMath.h"
 class DirectXCommon;
 class Camera;
@@ -28,6 +30,9 @@ public:
 	//共通描画設定
 	void SetupCommonState();
 
+	// ブレンドモード設定
+	void SetBlendMode(BlendMode mode);
+
 	DirectXCommon* GetDirectXCommon() { return dxCommon_; }
 
 	//アクセッサ
@@ -50,8 +55,9 @@ private:
 	DirectXCommon* dxCommon_ = nullptr;
 	Camera* defaultCamera_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState_;
+	std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, static_cast<size_t>(BlendMode::kCountOf)> graphicsPipelineStates_;
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource_;
+
 	Microsoft::WRL::ComPtr<ID3D12Resource> lightingSettingsResource_;
 
 	DirectionalLight* directionalLightData = nullptr;
