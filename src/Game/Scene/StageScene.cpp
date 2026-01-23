@@ -20,6 +20,8 @@ void StageScene::Initialize() {
 	sphereObject->Initialize(Object3dCommon::GetInstance());
 	sphereObject->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
 	ModelManager::GetInstance()->LoadModel("models/sphere.obj");
+	ModelManager::GetInstance()->LoadModel("models/plane.gltf");
+	ModelManager::GetInstance()->LoadModel("models/plane.obj");
 	sphereObject->SetModel("models/sphere.obj");
 
 	terrainObject = std::make_unique<Object3d>();
@@ -92,7 +94,7 @@ void StageScene::Update() {
 
 
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 	ImGui::Begin("Lighting Settings");
 	if (ImGui::CollapsingHeader("Controls Help")) {
 		ImGui::Text("WASD : Move Horizontal");
@@ -174,6 +176,31 @@ void StageScene::Update() {
 		float shininess = sphereObject->GetModel()->GetShininess();
 		if (ImGui::DragFloat("Shininess", &shininess, 1.0f, 1.0f, 256.0f)) {
 			sphereObject->GetModel()->SetShininess(shininess);
+		}
+	}
+
+	if (ImGui::CollapsingHeader("Model Selection")) {
+		static int currentModelIndex = 0;
+		if (ImGui::RadioButton("Sphere", &currentModelIndex, 0)) {
+			ModelManager::GetInstance()->LoadModel("models/sphere.obj");
+			sphereObject->SetModel("models/sphere.obj");
+			sphereObject->SetRotate({ 0.0f, 0.0f, 0.0f });
+		}
+		ImGui::SameLine();
+		if (ImGui::RadioButton("Plane", &currentModelIndex, 1)) {
+			ModelManager::GetInstance()->LoadModel("models/plane.gltf");
+			sphereObject->SetModel("models/plane.gltf");
+			sphereObject->SetRotate({ 0.0f, 3.141592f, 0.0f });
+		}
+		ImGui::SameLine();
+		if (ImGui::RadioButton("PlaneOBJ", &currentModelIndex, 2)) {
+			ModelManager::GetInstance()->LoadModel("models/plane.obj");
+			sphereObject->SetModel("models/plane.obj");
+			sphereObject->SetRotate({ 0.0f, 3.141592f, 0.0f });
+		}
+		Vector3 modelPos = sphereObject->GetTranslate();
+		if (ImGui::DragFloat3("Model Translate", &modelPos.x, 0.01f)) {
+			sphereObject->SetTranslate(modelPos);
 		}
 	}
 

@@ -34,6 +34,10 @@ void Object3d::Initialize(Object3dCommon* object3dCommon) {
 void Object3d::Update() {
 	// 1. World行列を作る
 	Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+	
+	if (model_) {
+		worldMatrix = Multiply(model_->GetModelData().rootNode.localMatrix, worldMatrix);
+	}
 
 	// 2. Camera行列を使ってWVPを作る
 	Matrix4x4 worldViewProjectionMatrix;

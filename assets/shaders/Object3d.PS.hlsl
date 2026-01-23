@@ -80,18 +80,14 @@ PixelShaderOutput main(PixelInput input)
 {
     PixelShaderOutput output;
 
-    float32_t4 texColor = float32_t4(1.0, 1.0, 1.0, 1.0); // UV無い時は白
+    float32_t4 texColor = float32_t4(1.0, 1.0, 1.0, 1.0);
     
-    if (gMaterial.shininess >= 0.0f)
-    {
-        float32_t2 transformedUV = mul(float32_t4(input.texcoord, 0.0, 1.0), gMaterial.uvTransform).xy;
-        texColor = gTexture.Sample(gSampler, transformedUV);
-
-        // Alpha testing (Binary Alpha)
-        if (texColor.a < 0.5f)
-        {
-            discard;
-        }
+    // Texture Sampling & Alpha Test
+    float32_t4 uv = float32_t4(input.texcoord, 0.0f, 1.0f);
+    uv = mul(uv, gMaterial.uvTransform);
+    texColor = gTexture.Sample(gSampler, uv.xy);
+    if (texColor.a < 0.5f) {
+        discard;
     }
 
     // ライティングが有効な場合
@@ -150,7 +146,7 @@ PixelShaderOutput main(PixelInput input)
             float32_t3 pointLightL = normalize(gPointLight.position - input.worldPosition);
             float pointLightDistance = length(gPointLight.position - input.worldPosition);
             
-            // Attenuation (Inverse Square Law with Radius control)
+            // Attenuation
             float pointLightFactor = pow(saturate(1.0f - pointLightDistance / gPointLight.radius), gPointLight.decay);
             
             float pointNdotL = dot(N, pointLightL);
@@ -193,58 +189,61 @@ PixelShaderOutput main(PixelInput input)
         // --- Spot Light Calculation ---
         if (gLightingSettings.lightType & 4)
         {
-            float32_t3 spotDir = normalize(gSpotLight.direction);
-            float32_t3 L = normalize(gSpotLight.position - input.worldPosition);
-            float distance = length(gSpotLight.position - input.worldPosition);
+             float32_t3 spotDir = normalize(gSpotLight.direction);
+             float32_t3 L = normalize(gSpotLight.position - input.worldPosition);
+             float distance = length(gSpotLight.position - input.worldPosition);
+              
+             float distAttenuation = pow(saturate(1.0f - distance / gSpotLight.distance), gSpotLight.decay);
+              
+             float32_t3 directionOnSurface = normalize(input.worldPosition - gSpotLight.position);
+             float cosAngle = dot(directionOnSurface, spotDir);
              
-            float distAttenuation = pow(saturate(1.0f - distance / gSpotLight.distance), gSpotLight.decay);
+             float falloffFactor = 0.0f;
+             float cosDiff = gSpotLight.cosFalloffStart - gSpotLight.cosAngle;
+             // Avoid divide by zero
+             if (abs(cosDiff) > 0.0001f) {
+                 falloffFactor = saturate((cosAngle - gSpotLight.cosAngle) / cosDiff);
+             } else if (cosAngle >= gSpotLight.cosAngle) {
+                 falloffFactor = 1.0f; // Simplified handling
+             }
+              
+             float totalData = distAttenuation * falloffFactor * gSpotLight.intensity;
              
-            float32_t3 directionOnSurface = normalize(input.worldPosition - gSpotLight.position);
-            float cosAngle = dot(directionOnSurface, spotDir);
-            
-            float falloffFactor = 0.0f;
-            float cosDiff = gSpotLight.cosFalloffStart - gSpotLight.cosAngle;
-            if (cosDiff != 0.0f) {
-                falloffFactor = saturate((cosAngle - gSpotLight.cosAngle) / cosDiff);
-            }
-             
-            float totalData = distAttenuation * falloffFactor * gSpotLight.intensity;
-            
-            float NdotL = dot(N, L);
-            float cos = saturate(NdotL);
-             
-            if (gLightingSettings.shadingModel == 1)
-            {
-                cos = NdotL * 0.5f + 0.5f;
-                cos = cos * cos;
-            }
-
-            float32_t3 spotDiffuse = gMaterial.color.rgb * texColor.rgb * gSpotLight.color.rgb * cos * totalData;
-            float32_t3 spotSpecular = float32_t3(0.0f, 0.0f, 0.0f);
-
-            if (gLightingSettings.specularModel > 0)
-            {
-                 if (NdotL > 0.0f || gLightingSettings.shadingModel == 1) 
-                 {
-                     float specularPow = 0.0f;
-                     if (gLightingSettings.specularModel == 1) // Phong
-                     {
-                         float32_t3 incident = -L;
-                         float32_t3 reflectLight = reflect(incident, N);
-                         float RdotE = dot(reflectLight, toEye);
-                         specularPow = pow(saturate(RdotE), gMaterial.shininess);
-                     }
-                     else if (gLightingSettings.specularModel == 2) // Blinn-Phong
-                     {
-                         float32_t3 halfVector = normalize(L + toEye);
-                         float NDotH = dot(N, halfVector);
-                         specularPow = pow(saturate(NDotH), gMaterial.shininess);
-                     }
-                     spotSpecular = gSpotLight.color.rgb * totalData * specularPow * float32_t3(1.0f, 1.0f, 1.0f);
-                 }
-            }
-            totalDiffuse += spotDiffuse;
-            totalSpecular += spotSpecular;
+             float NdotL = dot(N, L);
+             float cos = saturate(NdotL);
+              
+             if (gLightingSettings.shadingModel == 1)
+             {
+                 cos = NdotL * 0.5f + 0.5f;
+                 cos = cos * cos;
+             }
+ 
+             float32_t3 spotDiffuse = gMaterial.color.rgb * texColor.rgb * gSpotLight.color.rgb * cos * totalData;
+             float32_t3 spotSpecular = float32_t3(0.0f, 0.0f, 0.0f);
+ 
+             if (gLightingSettings.specularModel > 0)
+             {
+                  if (NdotL > 0.0f || gLightingSettings.shadingModel == 1) 
+                  {
+                      float specularPow = 0.0f;
+                      if (gLightingSettings.specularModel == 1) // Phong
+                      {
+                          float32_t3 incident = -L;
+                          float32_t3 reflectLight = reflect(incident, N);
+                          float RdotE = dot(reflectLight, toEye);
+                          specularPow = pow(saturate(RdotE), gMaterial.shininess);
+                      }
+                      else if (gLightingSettings.specularModel == 2) // Blinn-Phong
+                      {
+                          float32_t3 halfVector = normalize(L + toEye);
+                          float NDotH = dot(N, halfVector);
+                          specularPow = pow(saturate(NDotH), gMaterial.shininess);
+                      }
+                      spotSpecular = gSpotLight.color.rgb * totalData * specularPow * float32_t3(1.0f, 1.0f, 1.0f);
+                  }
+             }
+             totalDiffuse += spotDiffuse;
+             totalSpecular += spotSpecular;
         }
 
         // Combine

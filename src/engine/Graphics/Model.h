@@ -32,15 +32,21 @@ public:
 		std::string textureFilePath;
 		uint32_t textureIndex;
 	};
+	struct Node {
+		Matrix4x4 localMatrix;
+		std::string name;
+		std::vector<Node> children;
+	};
 	struct ModelData
 	{
 		std::vector<VertexData> vertices;
 		MaterialData material;
+		Node rootNode;
 	};
 
 
-	static MaterialData LoadMaterialTemplate(const std::string& directoryPath, const std::string& filename);
-	static ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
+	static ModelData LoadModelFile(const std::string& directoryPath, const std::string& filename);
+	ModelData GetModelData() const { return modelData_; }
 private:
 
 	ModelCommon* modelCommon_ = nullptr;
