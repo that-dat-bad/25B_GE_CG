@@ -9,6 +9,8 @@
 class SrvManager;
 class DirectXCommon;
 
+#include <memory> 
+
 class TextureManager
 {
 public:
@@ -33,13 +35,14 @@ public:
 
 	const DirectX::TexMetadata& GetMetaData(uint32_t textureIndex);
 
+	~TextureManager() = default;
+
 private:
 
 
 
-	static TextureManager* instance_;
+	static std::unique_ptr<TextureManager> instance_;
 	TextureManager() = default;
-	~TextureManager() = default;
 	TextureManager(const TextureManager&) = delete;
 	TextureManager& operator=(const TextureManager&) = delete;
 

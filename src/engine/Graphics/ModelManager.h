@@ -25,13 +25,13 @@ public:
 	/// <param name="filePath"></param>
 	/// <returns></returns>
 	Model* FindModel(const std::string& filePath);
+	~ModelManager();
 private:
-	static ModelManager* instance_;
-	ModelManager() = default;
-	~ModelManager() = default;
+	static std::unique_ptr<ModelManager> instance_;
+	ModelManager();
 	ModelManager(const ModelManager&) = delete;
 	ModelManager& operator=(const ModelManager&) = delete;
-	ModelCommon* modelCommon_ = nullptr;
+	std::unique_ptr<ModelCommon> modelCommon_ = nullptr;
 
 	//モデルデータ
 	std::map<std::string, std::unique_ptr<Model>> models_;

@@ -5,6 +5,8 @@
 #include <array>
 #include "BlendMode.h"
 #include "../../engine/base/Math/MyMath.h"
+#include <memory> 
+
 class DirectXCommon;
 class Camera;
 using namespace MyMath;
@@ -44,13 +46,13 @@ public:
 	ID3D12Resource* GetDirectionalLightResource() { return directionalLightResource_.Get(); }
 	ID3D12Resource* GetLightingSettingsResource() { return lightingSettingsResource_.Get(); }
 	DirectionalLight* GetDirectionalLightData() { return directionalLightData; }
+	~Object3dCommon() = default;
 private:
 	Object3dCommon() = default;
-	~Object3dCommon() = default;
 	Object3dCommon(const Object3dCommon&) = delete;
 	Object3dCommon& operator=(const Object3dCommon&) = delete;
 
-	static Object3dCommon* instance;
+	static std::unique_ptr<Object3dCommon> instance;
 
 	DirectXCommon* dxCommon_ = nullptr;
 	Camera* defaultCamera_ = nullptr;

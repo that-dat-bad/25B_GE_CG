@@ -6,15 +6,12 @@
 
 SceneManager::SceneManager() {
 	// 初期シーン生成
-	currentScene = new StageScene();
+	currentScene = std::make_unique<StageScene>();
 	currentScene->Initialize();
 	currentSceneID = SCENE::STAGE;
 }
 
 SceneManager::~SceneManager() {
-	if (currentScene != nullptr) {
-		delete currentScene;
-	}
 }
 
 void SceneManager::Update() {
@@ -28,17 +25,15 @@ void SceneManager::Update() {
 	int nextSceneID = currentScene->GetSceneID();
 	if (nextSceneID != currentSceneID) {
 
-		delete currentScene;
-
 		switch (nextSceneID) {
 		case SCENE::TITLE:
-			currentScene = new TitleScene();
+			currentScene = std::make_unique<TitleScene>();
 			break;
 		case SCENE::STAGE:
-			currentScene = new StageScene();
+			currentScene = std::make_unique<StageScene>();
 			break;
 		case SCENE::CLEAR:
-			currentScene = new ClearScene();
+			currentScene = std::make_unique<ClearScene>();
 			break;
 		default:
 			currentScene = nullptr;

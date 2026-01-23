@@ -5,6 +5,8 @@
 #include "BlendMode.h"
 class DirectXCommon;
 
+#include <memory> 
+
 class SpriteCommon
 {
 public:
@@ -20,7 +22,7 @@ public:
 	DirectXCommon* GetDirectXCommon() { return dxCommon_; }
 
 private:
-	static SpriteCommon* instance;
+	static std::unique_ptr<SpriteCommon> instance;
 	DirectXCommon* dxCommon_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
 	std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, static_cast<size_t>(BlendMode::kCountOf)> graphicsPipelineStates_;

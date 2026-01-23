@@ -72,6 +72,8 @@ struct ParticleGroup {
 	BlendMode blendMode = BlendMode::kNormal;
 };
 
+#include <memory> 
+
 class ParticleManager
 {
 public: // シングルトンパターン
@@ -97,11 +99,10 @@ public: // シングルトンパターン
 
 private:
 	ParticleManager() = default;
-	~ParticleManager() = default;
 	ParticleManager(const ParticleManager&) = delete;
 	ParticleManager& operator=(const ParticleManager&) = delete;
 
-	static ParticleManager* instance_;
+	static std::unique_ptr<ParticleManager> instance_;
 
 	// メンバ変数
 	DirectXCommon* dxCommon_ = nullptr;

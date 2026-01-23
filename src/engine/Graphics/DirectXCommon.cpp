@@ -15,17 +15,16 @@
 using namespace logger;
 using namespace StringUtility;
 
-DirectXCommon* DirectXCommon::instance_ = nullptr;
+std::unique_ptr<DirectXCommon> DirectXCommon::instance_ = nullptr;
 
 DirectXCommon* DirectXCommon::GetInstance() {
 	if (instance_ == nullptr) {
-		instance_ = new DirectXCommon();
+		instance_.reset(new DirectXCommon());
 	}
-	return instance_;
+	return instance_.get();
 }
 
 void DirectXCommon::Initialize(WinApp* winApp) {
-	instance_ = this;
 
 	//FPS固定初期化
 	InitializeFixFPS();

@@ -1,9 +1,8 @@
-#pragma once
 #include "IScene.h"
 #include <vector>
 #include "Object3d.h"
 #include "Sprite.h"
-
+#include <memory> 
 
 class StageScene : public IScene {
 public:
@@ -12,6 +11,6 @@ public:
 	void Draw() override;
 	void Finalize() override;
 private:
-	Object3d* sphereObject = nullptr;
-	Sprite* sprite_ = nullptr;
+	std::unique_ptr<Object3d> sphereObject = nullptr;
+	std::unique_ptr<Sprite> sprite_ = nullptr;
 };

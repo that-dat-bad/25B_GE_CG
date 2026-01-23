@@ -3,28 +3,28 @@
 
 void Game::Initialize() {
 	// 1. 基盤システムの初期化
-	winApp = new WinApp();
+	winApp = std::make_unique<WinApp>();
 	winApp->Initialize();
-	DirectXCommon::GetInstance()->Initialize(winApp);
+	DirectXCommon::GetInstance()->Initialize(winApp.get());
 	Input::GetInstance()->Initialize(GetModuleHandle(nullptr), winApp->GetHwnd());
 
-	srvManager = new SrvManager();
+	srvManager = std::make_unique<SrvManager>();
 	srvManager->Initialize(DirectXCommon::GetInstance());
 
 	// 2. マネージャ類の初期化 (SceneManager より先に！ )
 	SpriteCommon::GetInstance()->Initialize(DirectXCommon::GetInstance());
-	TextureManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager);
+	TextureManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager.get());
 	ModelManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
 	CameraManager::GetInstance()->Initialize();
-	ParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager);
+	ParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager.get());
 
 	Object3dCommon::GetInstance()->Initialize(DirectXCommon::GetInstance());
 
-	imguiManager = new ImGuiManager();
-	imguiManager->Initialize(winApp, DirectXCommon::GetInstance(), srvManager);
+	imguiManager = std::make_unique<ImGuiManager>();
+	imguiManager->Initialize(winApp.get(), DirectXCommon::GetInstance(), srvManager.get());
 
 	// 3. シーンマネージャの生成 (全ての準備が整ってから)
-	sceneManager = new SceneManager(); // 内部でシーンの Initialize が走る
+	sceneManager = std::make_unique<SceneManager>(); // 内部でシーンの Initialize が走る
 
 }
 
@@ -120,13 +120,14 @@ void Game::Run() {
 
 void Game::Finalize() {
 	// クリーンアップ処理
-	imguiManager->Finalize();
-	delete imguiManager;
+	if (imguiManager) {
+		imguiManager->Finalize();
+	}
 
-	audioManager->SoundUnload(&alarmSound);
-	audioManager->Finalize();
-	delete audioManager;
-
+	if (audioManager) {
+		audioManager->SoundUnload(&alarmSound);
+		audioManager->Finalize();
+	}
 
 	// シングルトン類
 	ModelManager::GetInstance()->Finalize();
@@ -134,7 +135,4 @@ void Game::Finalize() {
 	CameraManager::GetInstance()->Finalize();
 	ParticleManager::GetInstance()->Finalize();
 
-	delete spriteCommon;
-	delete srvManager;
-	delete winApp;
 }
