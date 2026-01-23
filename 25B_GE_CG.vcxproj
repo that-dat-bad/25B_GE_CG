@@ -80,13 +80,15 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;$(SolutionDir)external\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
       <AdditionalOptions>/ignore:4049 /ignore:4098 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\assimp\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"</Command>
@@ -104,11 +106,13 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;$(SolutionDir)external\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\assimp\lib\Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
@@ -129,12 +133,14 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;$(SolutionDir)external\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration />
+      <AdditionalLibraryDirectories>$(SolutionDir)external\assimp\lib\Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
