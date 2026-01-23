@@ -20,6 +20,7 @@ public:
 	struct TransformationMatrix {
 		Matrix4x4 WVP;
 		Matrix4x4 World;
+		Matrix4x4 WorldInverseTranspose;
 	};
 	struct DirectionalLight {
 		Vector4 color;
@@ -48,6 +49,7 @@ public: // メンバ関数
 	Vector3 GetScale() const { return transform_.scale; }
 	Vector3 GetRotate() const { return transform_.rotate; }
 	Vector3 GetTranslate() const { return transform_.translate; }
+	Model* GetModel() const { return model_; }
 
 
 
@@ -63,9 +65,5 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource_ = nullptr;
 	TransformationMatrix* transformationMatrixData_ = nullptr;
 
-	//--平行光源--//
-	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource_ = nullptr;
-	DirectionalLight* directionalLightData_ = nullptr;
-	
 	BlendMode blendMode_ = BlendMode::kNormal;
 };

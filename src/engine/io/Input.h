@@ -18,6 +18,13 @@ public:
 
 	bool PushKey(BYTE keyNumber);
 	bool TriggerKey(BYTE keyNumber);
+	struct MouseMove {
+		long lX;
+		long lY;
+		long lZ;
+	};
+	MouseMove GetMouseMove();
+	bool PushMouse(int buttonNumber);
 	~Input() = default;
 
 private:
@@ -31,5 +38,6 @@ private:
 	ComPtr<IDirectInputDevice8> mouse_;
 	BYTE keys_[256] = {};
 	BYTE preKeys_[256] = {};
+	DIMOUSESTATE2 mouseState_ = {};
 };
 

@@ -44,14 +44,6 @@ void Game::Update() {
 
 #ifdef USE_IMGUI
 
-	// --- ImGui によるライト調整---
-	DirectionalLight* lightData = Object3dCommon::GetInstance()->GetDirectionalLightData();
-	if (lightData != nullptr) {
-		ImGui::Begin("Lighting Settings");
-		ImGui::ColorEdit4("Light Color", &lightData->color.x);
-		ImGui::DragFloat3("Light Direction", &lightData->direction.x, 0.01f);
-		ImGui::End();
-	}
 	ImGui::Begin("Camera Controls");
 
 	// アクティブなカメラを取得

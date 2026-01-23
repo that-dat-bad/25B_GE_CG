@@ -11,6 +11,10 @@ class Model
 public:
 	void Initialize(ModelCommon* modelCommon,const std::string& directorypath,const std::string& filename);
 	void Draw();
+
+	void SetShininess(float shininess) { materialData_->shininess = shininess; }
+	float GetShininess() const { return materialData_->shininess; }
+
 	struct VertexData {
 		Vector4 position;
 		Vector2 texcoord;

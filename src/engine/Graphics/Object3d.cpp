@@ -23,17 +23,7 @@ void Object3d::Initialize(Object3dCommon* object3dCommon) {
 
 	transformationMatrixData_->WVP = Identity4x4();
 	transformationMatrixData_->World = Identity4x4();
-
-
-
-	// 5. 平行光源の初期化
-
-	directionalLightResource_ = dxCommon->CreateBufferResource(sizeof(DirectionalLight));
-	directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData_));
-
-	directionalLightData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	directionalLightData_->direction = { 0.0f, -1.0f, 0.0f };
-	directionalLightData_->intensity = 1.0f;
+	transformationMatrixData_->WorldInverseTranspose = Identity4x4();
 
 	// 7. Transform初期値設定
 
@@ -60,6 +50,7 @@ void Object3d::Update() {
 	// 3. 定数バッファに転送
 	transformationMatrixData_->WVP = worldViewProjectionMatrix;
 	transformationMatrixData_->World = worldMatrix;
+	transformationMatrixData_->WorldInverseTranspose = Transpose(Inverse(worldMatrix));
 }
 
 void Object3d::Draw() {
@@ -72,9 +63,13 @@ void Object3d::Draw() {
 	commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResource_->GetGPUVirtualAddress());
 
 	// 平行光源CBufferの設定 (RootParameter Index: 3)
-	commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource_->GetGPUVirtualAddress());
+	commandList->SetGraphicsRootConstantBufferView(3, object3dCommon_->GetDirectionalLightResource()->GetGPUVirtualAddress());
 
 	commandList->SetGraphicsRootConstantBufferView(4, object3dCommon_->GetLightingSettingsResource()->GetGPUVirtualAddress());
+	
+	commandList->SetGraphicsRootConstantBufferView(5, object3dCommon_->GetPointLightResource()->GetGPUVirtualAddress());
+
+	commandList->SetGraphicsRootConstantBufferView(6, object3dCommon_->GetSpotLightResource()->GetGPUVirtualAddress());
 
 	if (model_) {
 		model_->Draw();

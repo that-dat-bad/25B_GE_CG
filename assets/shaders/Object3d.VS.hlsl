@@ -20,6 +20,7 @@ struct TransformationMatrix
 {
     matrix WVP; // World * View * Projection
     matrix World; // World
+    matrix WorldInverseTranspose; // WorldInverseTranspose for non-uniform scaling
 };
 
 ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
@@ -34,8 +35,8 @@ VertexOutput main(VertexInput input)
     // UV座標をそのまま渡す
     output.texcoord = input.texcoord;
     
-    // 法線をワールド空間に変換して正規化
-    output.normal = normalize(mul(input.normal, (float32_t3x3) gTransformationMatrix.World));
+    // 法線をワールド空間に変換して正規化 (WorldInverseTransposeを使用)
+    output.normal = normalize(mul(input.normal, (float32_t3x3) gTransformationMatrix.WorldInverseTranspose));
     
     // 頂点位置をワールド空間に変換
     output.worldPosition = mul(input.position, gTransformationMatrix.World).xyz;

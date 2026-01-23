@@ -61,9 +61,26 @@ void Input::Update()
 	keyboard_->Acquire();
 	mouse_->Acquire();
 	keyboard_->GetDeviceState(sizeof(keys_), keys_);
-	DIMOUSESTATE2 mouseState = {};
-	mouse_->GetDeviceState(sizeof(mouseState), &mouseState);
+	
+	mouse_->GetDeviceState(sizeof(mouseState_), &mouseState_);
 
+}
+
+Input::MouseMove Input::GetMouseMove() {
+	MouseMove tmp;
+	tmp.lX = mouseState_.lX;
+	tmp.lY = mouseState_.lY;
+	tmp.lZ = mouseState_.lZ;
+	return tmp;
+}
+
+bool Input::PushMouse(int buttonNumber)
+{
+	if (mouseState_.rgbButtons[buttonNumber])
+	{
+		return true;
+	}
+	return false;
 }
 
 bool Input::PushKey(BYTE keyNumber)

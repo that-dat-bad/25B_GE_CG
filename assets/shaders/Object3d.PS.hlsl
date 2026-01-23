@@ -27,13 +27,42 @@ struct DirectionalLight
 // ライティングモデルを選択するための定数バッファ
 struct LightingSettings
 {
-    int lightingModel; // 0: Lambert, 1: Half-Lambert
-    float32_t3 padding;
+    int shadingModel;  // 0: Lambert, 1: Half-Lambert
+    int specularModel; // 0: None, 1: Phong, 2: Blinn-Phong
+    int lightType;     // 0: Directional, 1: Point, 2: Both
+    float padding;
+    float32_t3 cameraPosition;
+    float padding2;
+};
+
+struct PointLight
+{
+    float32_t4 color;
+    float32_t3 position;
+    float intensity;
+    float radius;
+    float decay;
+    float32_t2 padding; 
+};
+
+struct SpotLight
+{
+    float32_t4 color;
+    float32_t3 position;
+    float intensity;
+    float32_t3 direction;
+    float distance;
+    float decay;
+    float cosAngle;
+    float cosFalloffStart;
+    float padding;
 };
 
 ConstantBuffer<Material> gMaterial : register(b0);
 ConstantBuffer<DirectionalLight> gDirectionalLight : register(b1);
 ConstantBuffer<LightingSettings> gLightingSettings : register(b2);
+ConstantBuffer<PointLight> gPointLight : register(b3);
+ConstantBuffer<SpotLight> gSpotLight : register(b4);
 
 Texture2D<float32_t4> gTexture : register(t0);
 SamplerState gSampler : register(s0);
@@ -65,32 +94,167 @@ PixelShaderOutput main(PixelInput input)
         }
     }
 
-    // マテリアルの色を乗算
-    output.color = texColor * gMaterial.color;
-
     // ライティングが有効な場合
     if (gMaterial.enableLighting != 0)
     {
         float32_t3 N = normalize(input.normal);
-        float32_t3 L = normalize(gDirectionalLight.direction);
-        float NdotL = dot(N, L);
+        float32_t3 toEye = normalize(gLightingSettings.cameraPosition - input.worldPosition);
 
-        float diffuse = 0.0f;
-        if (gLightingSettings.lightingModel == 0)
+        float32_t3 totalDiffuse = float32_t3(0.0f, 0.0f, 0.0f);
+        float32_t3 totalSpecular = float32_t3(0.0f, 0.0f, 0.0f);
+
+        // --- Directional Light Calculation ---
+        if (gLightingSettings.lightType & 1)
         {
-            diffuse = saturate(NdotL);
+            float32_t3 dirLightL = normalize(-gDirectionalLight.direction); 
+            float dirNdotL = dot(N, dirLightL);
+            float dirCos = saturate(dirNdotL);
+
+            // Half-Lambert
+            if (gLightingSettings.shadingModel == 1)
+            {
+                dirCos = dirNdotL * 0.5f + 0.5f;
+                dirCos = dirCos * dirCos;
+            }
+
+            float32_t3 dirDiffuse = gMaterial.color.rgb * texColor.rgb * gDirectionalLight.color.rgb * dirCos * gDirectionalLight.intensity;
+            float32_t3 dirSpecular = float32_t3(0.0f, 0.0f, 0.0f);
+
+            if (gLightingSettings.specularModel > 0)
+            {
+                 if (dirNdotL > 0.0f || gLightingSettings.shadingModel == 1) 
+                 {
+                     float specularPow = 0.0f;
+                     if (gLightingSettings.specularModel == 1) // Phong
+                     {
+                         float32_t3 reflectLight = reflect(gDirectionalLight.direction, N);
+                         float RdotE = dot(reflectLight, toEye);
+                         specularPow = pow(saturate(RdotE), gMaterial.shininess);
+                     }
+                     else if (gLightingSettings.specularModel == 2) // Blinn-Phong
+                     {
+                         float32_t3 halfVector = normalize(dirLightL + toEye);
+                         float NDotH = dot(N, halfVector);
+                         specularPow = pow(saturate(NDotH), gMaterial.shininess);
+                     }
+                     dirSpecular = gDirectionalLight.color.rgb * gDirectionalLight.intensity * specularPow * float32_t3(1.0f, 1.0f, 1.0f);
+                 }
+            }
+            totalDiffuse += dirDiffuse;
+            totalSpecular += dirSpecular;
         }
-        else
+
+        // --- Point Light Calculation ---
+        if (gLightingSettings.lightType & 2)
         {
-            diffuse = NdotL * 0.5f + 0.5f;
-            diffuse = diffuse * diffuse;
+            float32_t3 pointLightL = normalize(gPointLight.position - input.worldPosition);
+            float pointLightDistance = length(gPointLight.position - input.worldPosition);
+            
+            // Attenuation (Inverse Square Law with Radius control)
+            float pointLightFactor = pow(saturate(1.0f - pointLightDistance / gPointLight.radius), gPointLight.decay);
+            
+            float pointNdotL = dot(N, pointLightL);
+            float pointCos = saturate(pointNdotL);
+            
+            if (gLightingSettings.shadingModel == 1)
+            {
+                pointCos = pointNdotL * 0.5f + 0.5f;
+                pointCos = pointCos * pointCos;
+            }
+
+            float32_t3 pointDiffuse = gMaterial.color.rgb * texColor.rgb * gPointLight.color.rgb * pointCos * gPointLight.intensity * pointLightFactor;
+            float32_t3 pointSpecular = float32_t3(0.0f, 0.0f, 0.0f);
+
+            if (gLightingSettings.specularModel > 0)
+            {
+                 if (pointNdotL > 0.0f || gLightingSettings.shadingModel == 1) 
+                 {
+                     float specularPow = 0.0f;
+                     if (gLightingSettings.specularModel == 1) // Phong
+                     {
+                         float32_t3 incident = -pointLightL;
+                         float32_t3 reflectLight = reflect(incident, N);
+                         float RdotE = dot(reflectLight, toEye);
+                         specularPow = pow(saturate(RdotE), gMaterial.shininess);
+                     }
+                     else if (gLightingSettings.specularModel == 2) // Blinn-Phong
+                     {
+                         float32_t3 halfVector = normalize(pointLightL + toEye);
+                         float NDotH = dot(N, halfVector);
+                         specularPow = pow(saturate(NDotH), gMaterial.shininess);
+                     }
+                     pointSpecular = gPointLight.color.rgb * gPointLight.intensity * pointLightFactor * specularPow * float32_t3(1.0f, 1.0f, 1.0f);
+                 }
+            }
+            totalDiffuse += pointDiffuse;
+            totalSpecular += pointSpecular;
         }
 
-        float32_t3 light = gDirectionalLight.color.rgb * gDirectionalLight.intensity * diffuse;
+        // --- Spot Light Calculation ---
+        if (gLightingSettings.lightType & 4)
+        {
+            float32_t3 spotDir = normalize(gSpotLight.direction);
+            float32_t3 L = normalize(gSpotLight.position - input.worldPosition);
+            float distance = length(gSpotLight.position - input.worldPosition);
+             
+            float distAttenuation = pow(saturate(1.0f - distance / gSpotLight.distance), gSpotLight.decay);
+             
+            float32_t3 directionOnSurface = normalize(input.worldPosition - gSpotLight.position);
+            float cosAngle = dot(directionOnSurface, spotDir);
+            
+            float falloffFactor = 0.0f;
+            float cosDiff = gSpotLight.cosFalloffStart - gSpotLight.cosAngle;
+            if (cosDiff != 0.0f) {
+                falloffFactor = saturate((cosAngle - gSpotLight.cosAngle) / cosDiff);
+            }
+             
+            float totalData = distAttenuation * falloffFactor * gSpotLight.intensity;
+            
+            float NdotL = dot(N, L);
+            float cos = saturate(NdotL);
+             
+            if (gLightingSettings.shadingModel == 1)
+            {
+                cos = NdotL * 0.5f + 0.5f;
+                cos = cos * cos;
+            }
 
-        // 光を反映
-        output.color.rgb *= light;
-        
+            float32_t3 spotDiffuse = gMaterial.color.rgb * texColor.rgb * gSpotLight.color.rgb * cos * totalData;
+            float32_t3 spotSpecular = float32_t3(0.0f, 0.0f, 0.0f);
+
+            if (gLightingSettings.specularModel > 0)
+            {
+                 if (NdotL > 0.0f || gLightingSettings.shadingModel == 1) 
+                 {
+                     float specularPow = 0.0f;
+                     if (gLightingSettings.specularModel == 1) // Phong
+                     {
+                         float32_t3 incident = -L;
+                         float32_t3 reflectLight = reflect(incident, N);
+                         float RdotE = dot(reflectLight, toEye);
+                         specularPow = pow(saturate(RdotE), gMaterial.shininess);
+                     }
+                     else if (gLightingSettings.specularModel == 2) // Blinn-Phong
+                     {
+                         float32_t3 halfVector = normalize(L + toEye);
+                         float NDotH = dot(N, halfVector);
+                         specularPow = pow(saturate(NDotH), gMaterial.shininess);
+                     }
+                     spotSpecular = gSpotLight.color.rgb * totalData * specularPow * float32_t3(1.0f, 1.0f, 1.0f);
+                 }
+            }
+            totalDiffuse += spotDiffuse;
+            totalSpecular += spotSpecular;
+        }
+
+        // Combine
+        output.color.rgb = totalDiffuse + totalSpecular;
+        output.color.a = gMaterial.color.a * texColor.a;
+    }
+    else
+    {
+        // ライティング無効時
+         output.color = texColor * gMaterial.color;
     }
 
     return output;
