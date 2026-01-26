@@ -1,22 +1,22 @@
 #pragma once
-#include "Enemy.h"
-#include "Explosion.h"
-#include "Ground.h"
 #include "IScene.h"
-#include "KamataEngine.h"
-#include "Player.h"
-#include "Reticle.h"
 #include <list>
 #include <optional>
 #include <string>
 #include <vector>
+#include "ModelManager.h"
 
+#include "stage/Enemy.h"
+#include "stage/Explosion.h"
+#include "stage/Ground.h"
+#include "stage/Player.h"
+#include "stage/Reticle.h"
 // 敵出現データ
 struct EnemySpawnData {
 	int wave;      // ウェーブ数
 	int spawnTime; // ウェーブ開始からの経過時間
-	KamataEngine::Vector3 position;
-	KamataEngine::Vector3 velocity;
+	Vector3 position;
+	Vector3 velocity;
 	std::string type;
 	std::string attackPattern;
 };
@@ -28,12 +28,13 @@ enum class WaveState {
 	Clear,  // ウェーブクリア後の待機時間
 };
 
-class GameScene : public IScene {
+class StageScene : public IScene {
 public:
-	~GameScene() override;
+	~StageScene() override;
 	void Initialize() override;
 	std::optional<SceneID> Update() override;
 	void Draw() override;
+	void Finalize() override;
 
 private:
 	std::optional<SceneID> UpdateFadeIn();
@@ -60,22 +61,22 @@ private:
 	bool isLockSoundPlayed_ = false;
 
 	// 3Dモデル
-	KamataEngine::Model* playerModel_ = nullptr;
-	KamataEngine::Model* playerBulletModel_ = nullptr;
-	KamataEngine::Model* enemyModel_ = nullptr;
-	KamataEngine::Model* enemyBulletModel_ = nullptr;
-	KamataEngine::Model* enemyMissileModel_ = nullptr;
-	KamataEngine::Model* playerMissileModel_ = nullptr;
-	KamataEngine::Model* explosionModel_ = nullptr;
-	KamataEngine::Model* groundModel_ = nullptr;
+	Model* playerModel_ = nullptr;
+	Model* playerBulletModel_ = nullptr;
+	Model* enemyModel_ = nullptr;
+	Model* enemyBulletModel_ = nullptr;
+	Model* enemyMissileModel_ = nullptr;
+	Model* playerMissileModel_ = nullptr;
+	Model* explosionModel_ = nullptr;
+	Model* groundModel_ = nullptr;
 
 	// クラス・オブジェクト
-	KamataEngine::Camera camera_;
+	Camera camera_;
 	Player* player_ = nullptr;
 	Ground* ground_ = nullptr;
-	KamataEngine::WorldTransform worldTransform_;
-	KamataEngine::Input* input_ = nullptr;
-	KamataEngine::DebugCamera* debugCamera_ = nullptr;
+	// WorldTransform worldTransform_; // 削除
+	Input* input_ = nullptr;
+	DebugCamera* debugCamera_ = nullptr;
 	bool isDebugCameraActive_ = false;
 
 	// ゲームオブジェクトリスト
@@ -86,18 +87,18 @@ private:
 	// レティクル・ロックオン
 	Reticle* reticle_ = nullptr;
 	Enemy* lockedEnemy_ = nullptr;
-	KamataEngine::Sprite* lockOnMark_ = nullptr;
+	Sprite* lockOnMark_ = nullptr;
 
 	// UIスプライト
-	KamataEngine::Sprite* hpBarSprite_ = nullptr;
-	KamataEngine::Sprite* lifeIconSprite_ = nullptr;
-	KamataEngine::Sprite* fadeSprite_ = nullptr;
+	Sprite* hpBarSprite_ = nullptr;
+	Sprite* lifeIconSprite_ = nullptr;
+	Sprite* fadeSprite_ = nullptr;
 
 	// ★追加: 演出用スプライト
-	KamataEngine::Sprite* spriteWave_ = nullptr;
-	KamataEngine::Sprite* spriteReady_ = nullptr;
-	KamataEngine::Sprite* spriteStart_ = nullptr;
-	KamataEngine::Sprite* spriteClear_ = nullptr;
+	Sprite* spriteWave_ = nullptr;
+	Sprite* spriteReady_ = nullptr;
+	Sprite* spriteStart_ = nullptr;
+	Sprite* spriteClear_ = nullptr;
 
 	// ゲームステータス
 	int score_ = 0;

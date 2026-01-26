@@ -1,24 +1,27 @@
-#include "ResultScene.h"
-#include "KamataEngine.h"
+#include "ClearScene.h"
+#include "ImguiManager.h"
 
-using namespace KamataEngine;
+using namespace MyMath;
 
 // 静的変数の定義
-bool ResultScene::isWin = false;
-int ResultScene::finalScore = 0;
+bool ClearScene::isWin = false;
+int ClearScene::finalScore = 0;
 
-ResultScene::~ResultScene() { delete model_; }
+ClearScene::~ClearScene() { }
 
-void ResultScene::Initialize() {
+void ClearScene::Initialize() {
 	camera_.Initialize();
-	worldTransform_.Initialize();
 	input_ = Input::GetInstance();
 
+	// 画面中央に配置
 	// 画面中央に配置
 	camera_.translation_.z = -10.0f;
 }
 
-std::optional<SceneID> ResultScene::Update() {
+void ClearScene::Finalize() {
+}
+
+std::optional<SceneID> ClearScene::Update() {
 	// スペースキーでタイトルに戻る
 	if (input_->TriggerKey(DIK_SPACE)) {
 		return SceneID::kTitle;
@@ -26,13 +29,13 @@ std::optional<SceneID> ResultScene::Update() {
 	return std::nullopt;
 }
 
-void ResultScene::Draw() {
-	KamataEngine::DirectXCommon* dxCommon = KamataEngine::DirectXCommon::GetInstance();
-	KamataEngine::Model::PreDraw(dxCommon->GetCommandList());
+void ClearScene::Draw() {
+	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
+	Model::PreDraw(dxCommon->GetCommandList());
 	// モデルがあれば描画
-	KamataEngine::Model::PostDraw();
+	Model::PostDraw();
 
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 
 	// --- 結果表示 (ImGui) ---
 	ImGui::Begin("RESULT");

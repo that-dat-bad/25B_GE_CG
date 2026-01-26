@@ -243,7 +243,16 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\Game\Scene\Iscene.h" />
     <ClInclude Include="src\Game\Scene\SceneManager.h" />
     <ClInclude Include="src\Game\Scene\StageScene.h" />
+    <ClInclude Include="src\Game\Scene\Stage\Enemy.h" />
+    <ClInclude Include="src\Game\Scene\Stage\EnemyBullet.h" />
+    <ClInclude Include="src\Game\Scene\Stage\EnemyMissile.h" />
+    <ClInclude Include="src\Game\Scene\Stage\Explosion.h" />
+    <ClInclude Include="src\Game\Scene\Stage\Player.h" />
+    <ClInclude Include="src\Game\Scene\Stage\PlayerBullet.h" />
+    <ClInclude Include="src\Game\Scene\Stage\PlayerMissile.h" />
+    <ClInclude Include="src\Game\Scene\Stage\Reticle.h" />
     <ClInclude Include="src\Game\Scene\TitleScene.h" />
+    <ClInclude Include="src\Game\Scene\Title\TitleGuide.h" />
     <ClInclude Include="src\Game\Scene\Title\TitleLogo.h" />
   </ItemGroup>
   <ItemGroup>
@@ -288,6 +297,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Development|x64'">stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="src\engine\base\Math\Matrix4x4.cpp" />
+    <ClCompile Include="src\engine\base\Math\MyMath.cpp" />
     <ClCompile Include="src\engine\base\Math\Vector3.cpp" />
     <ClCompile Include="src\engine\base\WinApp.cpp" />
     <ClCompile Include="src\engine\Graphics\DebugCamera.cpp" />
@@ -310,7 +320,16 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\Game\Scene\IScene.cpp" />
     <ClCompile Include="src\Game\Scene\SceneManager.cpp" />
     <ClCompile Include="src\Game\Scene\StageScene.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\Enemy.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\EnemyBullet.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\EnemyMissile.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\Explosion.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\Player.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\PlayerBullet.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\PlayerMissile.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\Reticle.cpp" />
     <ClCompile Include="src\Game\Scene\TitleScene.cpp" />
+    <ClCompile Include="src\Game\Scene\Title\TitleGuide.cpp" />
     <ClCompile Include="src\Game\Scene\Title\TitleLogo.cpp" />
   </ItemGroup>
   <ItemGroup>

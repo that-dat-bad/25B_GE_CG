@@ -1,21 +1,22 @@
 #pragma once
 #include "IScene.h"
-#include "KamataEngine.h"
+#include "Camera.h"
+#include "Input.h"
+#include "math/MyMath.h"
 
-class ResultScene : public IScene {
+class ClearScene : public IScene {
 public:
-	~ResultScene() override;
+	~ClearScene() override;
 	void Initialize() override;
 	std::optional<SceneID> Update() override;
 	void Draw() override;
+	void Finalize() override;
 
 	// 勝敗フラグ
 	static bool isWin;
 	static int finalScore;
 
 private:
-	KamataEngine::Camera camera_;
-	KamataEngine::WorldTransform worldTransform_;
-	KamataEngine::Model* model_ = nullptr;
-	KamataEngine::Input* input_ = nullptr;
+	Camera camera_;
+	Input* input_ = nullptr;
 };

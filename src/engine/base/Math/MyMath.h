@@ -4,3 +4,7 @@
 #include"Vector4.h"
 #include"Matrix4x4.h"
 #include"Transform.h"
+
+namespace MyMath {
+	float LerpShort(float a, float b, float t);
+}

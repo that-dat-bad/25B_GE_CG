@@ -4,8 +4,8 @@
 
 class SceneManager {
 private:
-	std::unique_ptr<IScene> currentScene = nullptr;
-	int currentScene;
+	std::unique_ptr<IScene> currentScene_ = nullptr;
+	SceneID currentSceneID_ = SceneID::kTitle;
 
 public:
 	SceneManager();

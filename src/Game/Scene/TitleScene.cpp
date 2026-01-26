@@ -1,9 +1,22 @@
 #include "TitleScene.h"
 #include <assert.h>
 #include <cmath>
+#include "Title/TitleLogo.h"
+#include "Object3dCommon.h"
+#include "TextureManager.h"
+#include "ImguiManager.h"
 
+using namespace MyMath;
 
-TitleScene::~TitleScene() {}
+TitleScene::~TitleScene() {
+	delete debugCamera_;
+	delete logo_;
+	// unique_ptrは自動解放
+}
+
+void TitleScene::Finalize() {
+	// 必要ならモデル解放など
+}
 
 void TitleScene::Initialize() {
 	camera_.Initialize();
@@ -22,29 +35,46 @@ void TitleScene::Initialize() {
 	fadeTimer_ = kFadeDuration_;
 
 	// --- フェード用スプライトの初期化 ---
-	fadeTextureHandle_ = TextureManager::Load("white1x1.png");
+	TextureManager::GetInstance()->LoadTexture("white1x1.png");
+	fadeTextureHandle_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("white1x1.png");
 
 	// --- 3Dモデル (タイトルロゴ) の初期化 ---
 	logoPosition_ = { 0.0f, 0.0f, -45.0f };
 
+	// モデルのロード (存在確認してからロード)
+	ModelManager::GetInstance()->LoadModel("title");
+
 	logo_ = new TitleLogo();
-	logo_->Initialize(Model::CreateFromOBJ("title"), &camera_, logoPosition_);
+	// モデルマネージャからポインタを取得して渡す
+	Model* logoModel = ModelManager::GetInstance()->FindModel("title");
+	logo_->Initialize(logoModel, &camera_, logoPosition_);
 	logo_->SetPosition(logoPosition_);
 
 	// --- 背景 (天球) の初期化 ---
-	skydomeModel_ = Model::CreateFromOBJ("titleSkydome");
-	skydomeTransform_.Initialize();
-	// 行列更新
-	skydomeTransform_.matWorld_ = MakeAffineMatrix(skydomeTransform_.scale_, skydomeTransform_.rotation_, skydomeTransform_.translation_);
-	skydomeTransform_.TransferMatrix();
+	// モデルロード
+	ModelManager::GetInstance()->LoadModel("titleSkydome");
+	skydomeModelResource_ = ModelManager::GetInstance()->FindModel("titleSkydome");
+	
+	// Object3d生成
+	skydomeObject_ = std::make_unique<Object3d>();
+	skydomeObject_->Initialize(Object3dCommon::GetInstance());
+	skydomeObject_->SetModel(skydomeModelResource_);
+	skydomeObject_->SetCamera(&camera_); // カメラセット
+	
+	// 天球なので大きく
+	skydomeObject_->SetScale({ 100.0f, 100.0f, 100.0f });
+	
+	// 更新
+	skydomeObject_->Update();
 
 	// --- 誘導表示 (Press Space スプライト) の初期化 ---
-	pressSpaceTexture_ = TextureManager::Load("./Resources/pressSpace.png");
+	TextureManager::GetInstance()->LoadTexture("./Resources/pressSpace.png");
+	pressSpaceTexture_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("./Resources/pressSpace.png");
 
 	// スプライト生成
-	pressSpaceSprite_ = new Sprite(
+	pressSpaceSprite_.reset(new Sprite(
 		pressSpaceTexture_, { 640.0f, 550.0f }, { 1280.0f, 130.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, { 0.5f, 0.5f }, // アンカーポイントを中央に
-		false, false);
+		false, false));
 	pressSpaceSprite_->Initialize();
 	blinkTimer_ = 0.0f;
 
@@ -54,10 +84,9 @@ void TitleScene::Initialize() {
 
 	// フェード色を「白」に設定
 	Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
-
 	Vector2 anchorpoint = { 0.0f, 0.0f };
 
-	fadeSprite_ = new Sprite(fadeTextureHandle_, position, size, color, anchorpoint, false, false);
+	fadeSprite_.reset(new Sprite(fadeTextureHandle_, position, size, color, anchorpoint, false, false));
 	fadeSprite_->Initialize();
 	fadeSprite_->SetTextureRect({ 0.0f, 0.0f }, { 1.0f, 1.0f });
 }
@@ -82,35 +111,41 @@ std::optional<SceneID> TitleScene::Update() {
 	logo_->Update();
 
 	// カメラの更新
+	// カメラの更新
 	if (!isDebugCameraActive_) {
-		camera_.UpdateMatrix();
-		camera_.TransferMatrix();
+		camera_.Update();
+	}
+	
+	// 天球更新
+	if(skydomeObject_){
+		skydomeObject_->Update();
 	}
 
 	return result;
 }
 
 void TitleScene::Draw() {
-	KamataEngine::DirectXCommon* dxCommon = KamataEngine::DirectXCommon::GetInstance();
+	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
 	// ==========================================
 	// 3Dモデル描画フェーズ
 	// ==========================================
-	KamataEngine::Model::PreDraw(dxCommon->GetCommandList());
+	Model::PreDraw(dxCommon->GetCommandList());
 
 	// 1. 背景 (天球)
-
-	skydomeModel_->Draw(skydomeTransform_, camera_);
+	if(skydomeObject_){
+		skydomeObject_->Draw();
+	}
 
 	// 2. タイトルロゴ
 	logo_->Draw();
 
-	KamataEngine::Model::PostDraw();
+	Model::PostDraw();
 
 	// ==========================================
 	// スプライト描画フェーズ (2D)
 	// ==========================================
-	KamataEngine::Sprite::PreDraw(dxCommon->GetCommandList(), KamataEngine::Sprite::BlendMode::kNormal);
+	Sprite::PreDraw(dxCommon->GetCommandList(), Sprite::BlendMode::kNormal);
 
 	// 1. Press Space 誘導表示
 	if (pressSpaceSprite_) {
@@ -131,7 +166,7 @@ void TitleScene::Draw() {
 		fadeSprite_->Draw();
 	}
 
-	KamataEngine::Sprite::PostDraw();
+	Sprite::PostDraw();
 }
 
 std::optional<SceneID> TitleScene::UpdateFadeIn() {
@@ -143,7 +178,7 @@ std::optional<SceneID> TitleScene::UpdateFadeIn() {
 }
 
 std::optional<SceneID> TitleScene::UpdateMain() {
-#ifdef _DEBUG
+#ifdef USE_IMGUI
 	if (input_->TriggerKey(DIK_0)) {
 		isDebugCameraActive_ = !isDebugCameraActive_;
 	}
@@ -157,15 +192,10 @@ std::optional<SceneID> TitleScene::UpdateMain() {
 	ImGui::End();
 #endif
 
-	if (isDebugCameraActive_) {
-		debugCamera_->Update();
-		camera_.matView = debugCamera_->GetCamera().matView;
-		camera_.matProjection = debugCamera_->GetCamera().matProjection;
-		camera_.TransferMatrix();
-	} else {
-		camera_.UpdateMatrix();
-		camera_.TransferMatrix();
-	}
+
+
+		camera_.Update();
+	
 
 	// --- スプライトの点滅処理 ---
 	blinkTimer_ += 0.1f; // 点滅スピード
@@ -196,7 +226,7 @@ std::optional<SceneID> TitleScene::UpdateFadeOut() {
 	logo_->Update();
 
 	if (fadeTimer_ >= kFadeDuration_) {
-		return SceneID::kGame;
+		return SceneID::kStage; // GameではなくStageに変更
 	}
 	return std::nullopt;
 }
