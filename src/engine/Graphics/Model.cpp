@@ -36,7 +36,7 @@ void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypat
 	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
 
 	materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	materialData_->enableLighting = false;
+	materialData_->enableLighting = true;
 	materialData_->shininess = 50.0f;
 	materialData_->uvTransform = Identity4x4();
 
@@ -180,6 +180,12 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 
 				if (indices[2] != 0) triangle[faceVertex].normal = normals[indices[2] - 1];
 				else triangle[faceVertex].normal = { 0.0f, 0.0f, 1.0f };
+
+				// Sphere hack for smooth shading
+				if (filename.find("sphere") != std::string::npos) {
+					Vector3 p = { triangle[faceVertex].position.x, triangle[faceVertex].position.y, triangle[faceVertex].position.z };
+					triangle[faceVertex].normal = Normalize(p);
+				}
 			}
 			// 逆順登録 (カリング対策)
 			modelData.vertices.push_back(triangle[0]);

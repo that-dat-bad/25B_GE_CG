@@ -4,13 +4,13 @@
 using namespace logger;
 
 
-Object3dCommon* Object3dCommon::instance = nullptr;
+std::unique_ptr<Object3dCommon> Object3dCommon::instance = nullptr;
 
 Object3dCommon* Object3dCommon::GetInstance() {
 	if (instance == nullptr) {
-		instance = new Object3dCommon();
+		instance.reset(new Object3dCommon());
 	}
-	return instance;
+	return instance.get();
 }
 
 void Object3dCommon::Initialize(DirectXCommon* dxCommon)
@@ -23,9 +23,34 @@ void Object3dCommon::Initialize(DirectXCommon* dxCommon)
 	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
 	directionalLightData->intensity = 1.0f;
 
+	pointLightResource_ = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(PointLight));
+	pointLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&pointLightData));
+	pointLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	pointLightData->position = { 0.0f, 2.0f, 0.0f };
+	pointLightData->intensity = 1.0f;
+#include <cmath>
+
+// ...
+
+	pointLightData->radius = 10.0f;
+	pointLightData->decay = 1.0f;
+
+	spotLightResource_ = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(SpotLight));
+	spotLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&spotLightData));
+	spotLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	spotLightData->position = { 2.0f, 1.25f, 0.0f };
+	spotLightData->distance = 7.0f;
+	spotLightData->direction = Normalize({ -1.0f, -1.0f, 0.0f });
+	spotLightData->intensity = 4.0f;
+	spotLightData->decay = 2.0f;
+	spotLightData->cosAngle = std::cos(3.14159265f / 3.0f);
+	spotLightData->cosFalloffStart = 1.0f;
+
 	lightingSettingsResource_ = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(LightingSettings));
 	lightingSettingsResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightingSettingsData));
-	lightingSettingsData->lightingModel = 0; // Lambert
+	lightingSettingsData->shadingModel = 0; // Lambert
+	lightingSettingsData->specularModel = 0; // None
+	lightingSettingsData->lightType = 0; // Directional
 	CreateRootSignature(dxCommon_);
 	CreateGraphicsPipeline(dxCommon_);
 }
@@ -37,7 +62,8 @@ void Object3dCommon::SetupCommonState()
 #endif // _DEBUG
 
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
-	commandList->SetPipelineState(graphicsPipelineState_.Get());
+	// デフォルトでNormalモードを設定
+	SetBlendMode(BlendMode::kNormal);
 	commandList->SetGraphicsRootSignature(rootSignature_.Get());
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
@@ -54,7 +80,7 @@ void Object3dCommon::CreateRootSignature(DirectXCommon* dxCommon)
 	descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_ROOT_PARAMETER rootParameters[5] = {};
+	D3D12_ROOT_PARAMETER rootParameters[7] = {};
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[0].Descriptor.ShaderRegister = 0; // for Material
@@ -71,6 +97,12 @@ void Object3dCommon::CreateRootSignature(DirectXCommon* dxCommon)
 	rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[4].Descriptor.ShaderRegister = 2; // for LightingSettings
+	rootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameters[5].Descriptor.ShaderRegister = 3; // for PointLight
+	rootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameters[6].Descriptor.ShaderRegister = 4; // for SpotLight
 
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
 	staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -97,6 +129,8 @@ void Object3dCommon::CreateRootSignature(DirectXCommon* dxCommon)
 	assert(SUCCEEDED(hr));
 }
 
+
+
 void Object3dCommon::CreateGraphicsPipeline(DirectXCommon* dxCommon)
 {
 	CreateRootSignature(dxCommon);
@@ -113,17 +147,6 @@ void Object3dCommon::CreateGraphicsPipeline(DirectXCommon* dxCommon)
 	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = dxCommon->CompileShader(L"./assets/shaders/Object3D.PS.hlsl", L"ps_6_0");
 	graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
 	graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
-
-	D3D12_BLEND_DESC blendDesc{};
-	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-	blendDesc.RenderTarget[0].BlendEnable = TRUE;
-	blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-	blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-	blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-	graphicsPipelineStateDesc.BlendState = blendDesc;
 
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
 	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
@@ -143,7 +166,18 @@ void Object3dCommon::CreateGraphicsPipeline(DirectXCommon* dxCommon)
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	HRESULT hr = dxCommon->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineState_));
-	assert(SUCCEEDED(hr));
+	// 全ブレンドモードのPSOを生成
+	for (size_t i = 0; i < static_cast<size_t>(BlendMode::kCountOf); ++i) {
+		BlendMode mode = static_cast<BlendMode>(i);
+		graphicsPipelineStateDesc.BlendState = GetBlendDesc(mode);
 
+		HRESULT hr = dxCommon->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&graphicsPipelineStates_[i]));
+		assert(SUCCEEDED(hr));
+	}
+}
+
+void Object3dCommon::SetBlendMode(BlendMode mode)
+{
+	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+	commandList->SetPipelineState(graphicsPipelineStates_[static_cast<size_t>(mode)].Get());
 }

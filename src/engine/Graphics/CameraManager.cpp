@@ -1,13 +1,13 @@
 #include "CameraManager.h"
 #include <cassert>
 
-CameraManager* CameraManager::instance_ = nullptr;
+std::unique_ptr<CameraManager> CameraManager::instance_ = nullptr;
 
 CameraManager* CameraManager::GetInstance() {
 	if (instance_ == nullptr) {
-		instance_ = new CameraManager();
+		instance_.reset(new CameraManager());
 	}
-	return instance_;
+	return instance_.get();
 }
 
 void CameraManager::Initialize() {

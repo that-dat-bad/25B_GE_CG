@@ -112,6 +112,8 @@ void Sprite::Draw()
 	// SpriteCommonから dxCommon を取得
 	DirectXCommon* dxCommon = spriteCommon_->GetDirectXCommon();
 	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
+	
+	spriteCommon_->SetBlendMode(blendMode_);
 
 	// 1. 頂点バッファの設定
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView);

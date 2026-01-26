@@ -2,7 +2,7 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "winApp.h"
+#include "WinApp.h"
 #include "DirectXCommon.h"
 #include "Input.h"
 #include "AudioManager.h"
@@ -31,12 +31,12 @@ public:
 	bool IsEndRequest() const { return endRequest_; }
 
 private:
-	WinApp* winApp = nullptr;
-	SrvManager* srvManager = nullptr;
-	ImGuiManager* imguiManager = nullptr;
-	AudioManager* audioManager = nullptr;
+	std::unique_ptr<WinApp> winApp = nullptr;
+	std::unique_ptr<SrvManager> srvManager = nullptr;
+	std::unique_ptr<ImGuiManager> imguiManager = nullptr;
+	std::unique_ptr<AudioManager> audioManager = nullptr;
 
-	SpriteCommon* spriteCommon = nullptr;
+	std::unique_ptr<SpriteCommon> spriteCommon = nullptr;
 
 	// ゲームオブジェクト
 	SoundData alarmSound;
@@ -51,5 +51,5 @@ private:
 	bool endRequest_ = false;
 
 	//シーン管理
-	SceneManager* sceneManager = nullptr;
+	std::unique_ptr<SceneManager> sceneManager = nullptr;
 };

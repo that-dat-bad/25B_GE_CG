@@ -1,4 +1,4 @@
-#define DIRECTINPUT_VERSION 0x0800
+
 #include "Input.h"
 #include <dinput.h>
 #pragma comment(lib, "dinput8.lib")
@@ -6,18 +6,17 @@
 #include <cassert>
 
 
-Input* Input::instance_ = nullptr;
+std::unique_ptr<Input> Input::instance_ = nullptr;
 
 Input* Input::GetInstance() {
 	if (instance_ == nullptr) {
-		instance_ = new Input();
+		instance_.reset(new Input());
 	}
-	return instance_;
+	return instance_.get();
 }
 
 void Input::Initialize(HINSTANCE hInstance,HWND hwnd)
 {
-	instance_ = this;
 	HRESULT result;
 
 
@@ -62,9 +61,26 @@ void Input::Update()
 	keyboard_->Acquire();
 	mouse_->Acquire();
 	keyboard_->GetDeviceState(sizeof(keys_), keys_);
-	DIMOUSESTATE2 mouseState = {};
-	mouse_->GetDeviceState(sizeof(mouseState), &mouseState);
+	
+	mouse_->GetDeviceState(sizeof(mouseState_), &mouseState_);
 
+}
+
+Input::MouseMove Input::GetMouseMove() {
+	MouseMove tmp;
+	tmp.lX = mouseState_.lX;
+	tmp.lY = mouseState_.lY;
+	tmp.lZ = mouseState_.lZ;
+	return tmp;
+}
+
+bool Input::PushMouse(int buttonNumber)
+{
+	if (mouseState_.rgbButtons[buttonNumber])
+	{
+		return true;
+	}
+	return false;
 }
 
 bool Input::PushKey(BYTE keyNumber)

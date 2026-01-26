@@ -12,12 +12,12 @@ void ParticleEmitter::Update() {
 
 	if (frequency_ <= frequencyTime_) {
 		// パーティクル発生
-		ParticleManager::GetInstance()->Emit(name_, transform_.translate, count_);
+		ParticleManager::GetInstance()->Emit(name_, transform_.translate, params_, count_);
 
 		frequencyTime_ -= frequency_;
 	}
 }
 
 void ParticleEmitter::Emit() {
-	ParticleManager::GetInstance()->Emit(name_, transform_.translate, count_);
+	ParticleManager::GetInstance()->Emit(name_, transform_.translate, params_, count_);
 }

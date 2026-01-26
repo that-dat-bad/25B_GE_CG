@@ -10,22 +10,49 @@
 #include "../base/Math/MyMath.h"
 #include "DirectXCommon.h"
 #include "SrvManager.h"
+#include "BlendMode.h"
+#include <array>
 
 using namespace MyMath;
 
 // パーティクル1粒の情報（CPU側での計算用）
+// パーティクル1粒の情報（CPU側での計算用）
 struct Particle {
 	Transform transform;
 	Vector3 velocity;
+	Vector3 acceleration; // 加速度
 	Vector4 color;
 	float lifeTime;
 	float currentTime;
+};
+
+// パーティクル発生パラメータ
+struct ParticleParameters {
+	Vector3 minVelocity = { -1.0f, -1.0f, -1.0f };
+	Vector3 maxVelocity = { 1.0f, 1.0f, 1.0f };
+	Vector4 minColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+	Vector4 maxColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+	float minLifeTime = 1.0f;
+	float maxLifeTime = 3.0f;
+	Vector3 acceleration = { 0.0f, 0.0f, 0.0f }; // 重力など
 };
 
 // GPUに送るインスタンシングデータ (StructuredBuffer用)
 struct ParticleInstancingData {
 	Matrix4x4 WVP;
 	Vector4 color;
+};
+
+// AABB (Axis Aligned Bounding Box)
+struct AABB {
+	Vector3 min; // 最小点
+	Vector3 max; // 最大点
+};
+
+// 加速度場
+struct AccelerationField {
+	Vector3 acceleration; // 加速度
+	AABB area;            // 適用範囲
 };
 
 // パーティクルグループ
@@ -42,7 +69,10 @@ struct ParticleGroup {
 	Microsoft::WRL::ComPtr<ID3D12Resource> instancingResource;
 	UINT instanceCount; // 描画するインスタンス数
 	ParticleInstancingData* instancingDataPtr = nullptr; // 書き込み用ポインタ
+	BlendMode blendMode = BlendMode::kNormal;
 };
+
+#include <memory> 
 
 class ParticleManager
 {
@@ -59,14 +89,20 @@ public: // シングルトンパターン
 
 	// パーティクルの発生
 	void Emit(const std::string& name, const Vector3& position, uint32_t count);
+	void Emit(const std::string& name, const Vector3& position, const ParticleParameters& params, uint32_t count);
+
+	// ブレンドモード設定
+	void SetBlendMode(const std::string& name, BlendMode mode);
+
+	// 加速度場の追加
+	void AddAccelerationField(const std::string& name, const Vector3& acceleration, const AABB& area);
 
 private:
 	ParticleManager() = default;
-	~ParticleManager() = default;
 	ParticleManager(const ParticleManager&) = delete;
 	ParticleManager& operator=(const ParticleManager&) = delete;
 
-	static ParticleManager* instance_;
+	static std::unique_ptr<ParticleManager> instance_;
 
 	// メンバ変数
 	DirectXCommon* dxCommon_ = nullptr;
@@ -74,6 +110,9 @@ private:
 
 	// パーティクルグループコンテナ
 	std::unordered_map<std::string, ParticleGroup> particleGroups_;
+
+	// 加速度場コンテナ
+	std::unordered_map<std::string, AccelerationField> accelerationFields_;
 
 	// 共通リソース
 	// 頂点データ（板ポリゴン）
@@ -87,7 +126,7 @@ private:
 
 	// パイプライン関連
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState_;
+	std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, static_cast<size_t>(BlendMode::kCountOf)> graphicsPipelineStates_;
 
 	// ランダムエンジン
 	std::mt19937 randomEngine_;

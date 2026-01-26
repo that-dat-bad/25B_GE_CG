@@ -27,6 +27,8 @@ struct SoundData {
 	std::vector<BYTE> buffer;
 };
 
+#include <memory> 
+
 class AudioManager {
 public:
 	static AudioManager* GetInstance();
@@ -47,7 +49,7 @@ public:
 private:
 	IXAudio2* xAudio2_ = nullptr;
 	AudioManager() = default;
-	static AudioManager* instance;
+	static std::unique_ptr<AudioManager> instance;
 
 	IXAudio2MasteringVoice* masteringVoice_ = nullptr;
 };

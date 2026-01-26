@@ -27,7 +27,7 @@ public:
 	void DeleteCamera(const std::string& name);
 
 private:
-	static CameraManager* instance_;
+	static std::unique_ptr<CameraManager> instance_;
 	CameraManager() = default;
 
 	CameraManager(const CameraManager&) = delete;
