@@ -244,6 +244,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\Game\Scene\SceneManager.h" />
     <ClInclude Include="src\Game\Scene\StageScene.h" />
     <ClInclude Include="src\Game\Scene\TitleScene.h" />
+    <ClInclude Include="src\Game\Scene\Title\TitleLogo.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\engine\Debug\Dump.cpp" />
@@ -310,6 +311,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\Game\Scene\SceneManager.cpp" />
     <ClCompile Include="src\Game\Scene\StageScene.cpp" />
     <ClCompile Include="src\Game\Scene\TitleScene.cpp" />
+    <ClCompile Include="src\Game\Scene\Title\TitleLogo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="external\imgui\LICENSE.txt" />

@@ -1,13 +1,21 @@
 #pragma once
 #include "IScene.h"
+#include "KamataEngine.h"
 
-class ClearScene : public IScene {
+class ResultScene : public IScene {
 public:
-    ClearScene();
-    ~ClearScene();
-    void Initialize() override;
-    void Update() override;
-    void Draw() override;
-    void Finalize() override;
-};
+	~ResultScene() override;
+	void Initialize() override;
+	std::optional<SceneID> Update() override;
+	void Draw() override;
 
+	// 勝敗フラグ
+	static bool isWin;
+	static int finalScore;
+
+private:
+	KamataEngine::Camera camera_;
+	KamataEngine::WorldTransform worldTransform_;
+	KamataEngine::Model* model_ = nullptr;
+	KamataEngine::Input* input_ = nullptr;
+};

@@ -2,7 +2,7 @@
 #include"Input.h"
 #include <cstring>
 
-int IScene::sceneID = SCENE::TITLE;
+int IScene::currentScene = SCENE::TITLE;
 
 IScene::~IScene() = default;
 
@@ -14,7 +14,7 @@ bool IScene::IsKeyPressed(BYTE keyNumber) {
 	return Input::GetInstance()->PushKey(keyNumber);
 }
 
-int IScene::GetSceneID() {
-	return sceneID;
+int IScene::GetCurrentScene() {
+	return currentScene;
 }
 
