@@ -6,6 +6,7 @@
 #include<map>
 #include<fstream>
 #include<sstream>
+#include<algorithm>
 void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename)
 {
 
@@ -89,7 +90,20 @@ Model::MaterialData Model::LoadMaterialTemplate(const std::string& directoryPath
 		} else if (identifier == "map_Kd") {
 			std::string textureFileName;
 			s >> textureFileName;
-			materialData.textureFilePath = directoryPath + "/" + textureFileName;
+			
+			// バックスラッシュをスラッシュに変換
+			std::replace(textureFileName.begin(), textureFileName.end(), '\\', '/');
+			
+			// ファイル名のみを抽出（絶対パスが書き込まれている場合への対策）
+			size_t lastSlash = textureFileName.find_last_of('/');
+			std::string pureFileName = (lastSlash == std::string::npos) ? textureFileName : textureFileName.substr(lastSlash + 1);
+			
+			// モデルと同じディレクトリにあるものとしてパスを生成
+			if (directoryPath.empty()) {
+				materialData.textureFilePath = pureFileName;
+			} else {
+				materialData.textureFilePath = directoryPath + "/" + pureFileName;
+			}
 		}
 	}
 	return materialData;
