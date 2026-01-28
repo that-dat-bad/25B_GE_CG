@@ -1,4 +1,4 @@
-//--------------------------------------------------------------------------------------
+﻿//--------------------------------------------------------------------------------------
 // DDS.h
 //
 // This header defines constants and structures that are useful when parsing
@@ -288,3 +288,4 @@ namespace DirectX
     static_assert(sizeof(DDS_HEADER_DXT10) == 20, "DDS DX10 Extended Header size mismatch");
 
 } // namespace
+

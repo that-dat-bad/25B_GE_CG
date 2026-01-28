@@ -1,4 +1,4 @@
-#include "Dump.h"
+﻿#include "Dump.h"
 #include <Windows.h>
 #include <strsafe.h>
 #include <DbgHelp.h>
@@ -39,3 +39,4 @@ LONG WINAPI Dump::ExportDump(EXCEPTION_POINTERS* exception) {
 	CloseHandle(dumpFileHandle);
 	return EXCEPTION_EXECUTE_HANDLER;
 }
+

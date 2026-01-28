@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d12.h>
 #include <wrl/client.h>
 #include <string>
@@ -12,6 +12,10 @@ using namespace MyMath;
 class Object3dCommon;
 class Model;
 class Camera;
+
+#ifdef Object3d
+#undef Object3d
+#endif
 
 class Object3d
 {
@@ -28,15 +32,11 @@ public:
 		float intensity;
 	};
 
-public: // メンバ関数
-	// 初期化
+public: 
 	void Initialize(Object3dCommon* object3dCommon);
-	// 更新
 	void Update();
-	// 描画
 	void Draw();
 
-	// セッター
 	void SetScale(const Vector3& scale) { transform_.scale = scale; }
 	void SetRotate(const Vector3& rotate) { transform_.rotate = rotate; }
 	void SetTranslate(const Vector3& translate) { transform_.translate = translate; }
@@ -45,7 +45,6 @@ public: // メンバ関数
 	void SetCamera(Camera* camera) { camera_ = camera; }
 	void SetBlendMode(BlendMode mode) { blendMode_ = mode; }
 
-	// ゲッター
 	Vector3 GetScale() const { return transform_.scale; }
 	Vector3 GetRotate() const { return transform_.rotate; }
 	Vector3 GetTranslate() const { return transform_.translate; }
@@ -58,10 +57,8 @@ private:
 	Model* model_ = nullptr;
 	Camera* camera_ = nullptr;
 
-	// トランスフォーム
 	Transform transform_;
 
-	//--座標変換行列--//
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixResource_ = nullptr;
 	TransformationMatrix* transformationMatrixData_ = nullptr;
 

@@ -1,4 +1,4 @@
-#include "Explosion.h"
+﻿#include "Explosion.h"
 #include <cassert>
 
 #include "Object3dCommon.h"
@@ -13,7 +13,6 @@ void Explosion::Initialize(Model* model, const Vector3& position, Camera* camera
 	object3d_->SetTranslate(position);
 	object3d_->SetScale({ 1.0f, 1.0f, 1.0f });
 
-	// 爆発の寿命
 	timer_ = kLifeTime;
 }
 
@@ -30,7 +29,6 @@ void Explosion::Update() {
 	scale.z += growth;
 	object3d_->SetScale(scale);
 
-	// 行列更新
 	object3d_->Update();
 }
 

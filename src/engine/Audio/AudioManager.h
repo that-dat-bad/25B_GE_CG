@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <xaudio2.h>
 #include <cstdint>
 #include <vector>
@@ -21,7 +21,6 @@ struct FormatChunk {
 	WAVEFORMATEX fmt;
 };
 
-// 音声データ構造体 (std::vector<BYTE>版)
 struct SoundData {
 	WAVEFORMATEX wfex;
 	std::vector<BYTE> buffer;
@@ -32,18 +31,13 @@ struct SoundData {
 class AudioManager {
 public:
 	static AudioManager* GetInstance();
-	// 初期化
 	void Initialize();
-	// 終了処理
 	void Finalize();
 
-	// 音声読み込み (WAV/MP3/AAC対応)
 	SoundData SoundLoadFile(const char* filename);
 
-	// 音声データ解放
 	void SoundUnload(SoundData* soundData);
 
-	// 音声再生
 	void SoundPlayWave(const SoundData& soundData);
 
 private:

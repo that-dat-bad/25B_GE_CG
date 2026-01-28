@@ -1,8 +1,7 @@
-#pragma once
+﻿#pragma once
 #include "Input.h"
 #include <optional>
 
-// シーン識別子
 enum class SceneID {
 	kTitle,
 	kStage,
@@ -27,10 +26,10 @@ protected:
 public:
 
 	virtual void Initialize() = 0;
-	// シーン遷移リクエストがあればSceneIDを返す
 	virtual std::optional<SceneID> Update() = 0;
 	virtual void Draw() = 0;
 	virtual void Finalize() = 0;
 	virtual ~IScene() = default;
 
 };
+

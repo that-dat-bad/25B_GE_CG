@@ -1,9 +1,8 @@
-#pragma once
+﻿#pragma once
 class DirectXCommon;
 class ModelCommon
 {
 public:
-	//初期化
 	void Initialize(DirectXCommon* dxCommon);
 
 
@@ -11,4 +10,5 @@ public:
 private:
 	DirectXCommon* dxCommon_;
 };
+
 

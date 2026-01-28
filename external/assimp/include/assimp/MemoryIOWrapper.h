@@ -1,4 +1,4 @@
-/*
+﻿/*
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
@@ -237,3 +237,4 @@ private:
 } // end namespace Assimp
 
 #endif // AI_MEMORYIOSTREAM_H_INC
+

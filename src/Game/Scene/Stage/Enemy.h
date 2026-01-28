@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 #include "EnemyBullet.h"
 #include "EnemyMissile.h"
 #include "Object3d.h"
-#include "../base/Math/MyMath.h"
+#include "Math/MyMath.h"
 #include <memory>
 #include <list>
 #include <string>
@@ -43,7 +43,7 @@ private:
 	Model* missileModel_ = nullptr;
 
 	Player* player_ = nullptr;
-	Camera* camera_ = nullptr; // 追加: 弾生成時に渡すため保持
+	Camera* camera_ = nullptr; 
 	Vector3 velocity_;
 
 	std::list<EnemyBullet*> bullets_;
@@ -56,3 +56,4 @@ private:
 	EnemyType type_ = EnemyType::TypeA;
 	AttackPattern attackPattern_ = AttackPattern::None;
 };
+

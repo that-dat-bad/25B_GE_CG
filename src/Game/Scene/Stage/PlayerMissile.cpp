@@ -1,9 +1,11 @@
-#include "PlayerMissile.h"
+﻿#include "PlayerMissile.h"
 #include "Enemy.h"
 
 #include <cassert>
 #include <cmath>
+#include <cmath>
 #include "Object3dCommon.h"
+#include "Camera.h"
 
 void PlayerMissile::Initialize(Model* model, const Vector3& position, Enemy* target, Camera* camera) {
 	assert(model);

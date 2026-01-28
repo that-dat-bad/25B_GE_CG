@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "Object3d.h"
-#include "../base/Math/MyMath.h"
+#include "Math/MyMath.h"
 #include <memory>
 #include <vector>
 
@@ -19,3 +19,4 @@ private:
 	
 	std::vector<std::unique_ptr<Object3d>> object3ds_;
 };
+

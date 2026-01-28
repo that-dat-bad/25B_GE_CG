@@ -1,4 +1,4 @@
-//-------------------------------------------------------------------------------------
+﻿//-------------------------------------------------------------------------------------
 // DirectXTexDDS.cpp
 //
 // DirectX Texture Library - Microsoft DirectDraw Surface (DDS) file format reader/writer
@@ -2447,3 +2447,4 @@ HRESULT DirectX::SaveToDDSFile(
 
     return S_OK;
 }
+

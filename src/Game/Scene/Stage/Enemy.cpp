@@ -1,11 +1,10 @@
-#include "Enemy.h"
+﻿#include "Enemy.h"
 #include "Player.h"
 
 #include <cassert>
 #include <cmath>
 #include "Object3dCommon.h"
 
-// 円周率
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -32,18 +31,16 @@ void Enemy::Initialize(Model* model, const Vector3& position, const Vector3& vel
 
 	velocity_ = velocity;
 
-	// 1. タイプ設定 (HPと見た目)
 	if (typeStr == "B") {
 		type_ = EnemyType::TypeB;
-		hp_ = 20;                                    // 硬い
-		object3d_->SetScale({ 2.0f, 2.0f, 2.0f });   // デカい
+		hp_ = 20;                                    
+		object3d_->SetScale({ 2.0f, 2.0f, 2.0f });   
 	} else {
 		type_ = EnemyType::TypeA;
-		hp_ = 3; // 普通
+		hp_ = 3; 
 		object3d_->SetScale({ 1.0f, 1.0f, 1.0f });
 	}
 
-	// 2. 攻撃パターン設定
 	if (patternStr == "Homing") {
 		attackPattern_ = AttackPattern::Homing;
 	} else if (patternStr == "None") {
@@ -55,12 +52,10 @@ void Enemy::Initialize(Model* model, const Vector3& position, const Vector3& vel
 	stateFunction_ = &Enemy::UpdateApproach;
 	isDead_ = false;
 
-	// 開幕攻撃
 	Fire();
 }
 
 void Enemy::Update() {
-	// 弾更新
 	bullets_.remove_if([](EnemyBullet* bullet) {
 		if (bullet->IsDead()) {
 			delete bullet;
@@ -72,7 +67,6 @@ void Enemy::Update() {
 		bullet->Update();
 	}
 
-	// ミサイル更新
 	missiles_.remove_if([](EnemyMissile* missile) {
 		if (missile->IsDead()) {
 			delete missile;
@@ -100,7 +94,6 @@ void Enemy::Draw() {
 	for (EnemyBullet* bullet : bullets_) {
 		bullet->Draw();
 	}
-	// ミサイル描画
 	for (EnemyMissile* missile : missiles_) {
 		missile->Draw();
 	}
@@ -113,7 +106,6 @@ void Enemy::UpdateApproach() {
 	pos.z += velocity_.z;
 	object3d_->SetTranslate(pos);
 
-	// 姿勢制御
 	Vector3 rot = object3d_->GetRotate();
 	float targetRotY = std::atan2(velocity_.x, velocity_.z) + static_cast<float>(M_PI);
 	float targetRotZ = -velocity_.x * 2.0f;
@@ -138,7 +130,9 @@ void Enemy::UpdateLeave() {
 	object3d_->SetRotate(rot);
 	
 	Vector3 move = {0, 0, -0.4f};
-	Matrix4x4 matRot = MakeAffineMatrix({1, 1, 1}, rot, {0, 0, 0});
+	Vector3 scale = { 1.0f, 1.0f, 1.0f };
+	Vector3 translate = { 0.0f, 0.0f, 0.0f };
+	Matrix4x4 matRot = MakeAffineMatrix(scale, rot, translate);
 	move = TransformNormal(move, matRot);
 	
 	Vector3 pos = object3d_->GetTranslate();
@@ -155,15 +149,12 @@ void Enemy::Fire() {
 	Vector3 position = object3d_->GetTranslate();
 
 	if (attackPattern_ == AttackPattern::Normal) {
-		// 通常弾
 		Vector3 velocity = {0, 0, -0.5f};
 		EnemyBullet* newBullet = new EnemyBullet();
 		newBullet->Initialize(bulletModel_, position, velocity, camera_, false, nullptr);
 		bullets_.push_back(newBullet);
 	} else if (attackPattern_ == AttackPattern::Homing) {
-		// ミサイル発射
 		EnemyMissile* newMissile = new EnemyMissile();
-		// プレイヤーをターゲットにする
 		newMissile->Initialize(missileModel_, position, player_, camera_);
 		missiles_.push_back(newMissile);
 	}

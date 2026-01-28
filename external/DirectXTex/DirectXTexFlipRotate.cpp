@@ -1,4 +1,4 @@
-//-------------------------------------------------------------------------------------
+﻿//-------------------------------------------------------------------------------------
 // DirectXTexFlipRotate.cpp
 //
 // DirectX Texture Library - Image flip/rotate operations
@@ -409,3 +409,4 @@ HRESULT DirectX::FlipRotate(
 
     return S_OK;
 }
+

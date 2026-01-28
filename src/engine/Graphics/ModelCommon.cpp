@@ -1,4 +1,4 @@
-#include "ModelCommon.h"
+﻿#include "ModelCommon.h"
 #include "DirectXCommon.h"
 
 void ModelCommon::Initialize(DirectXCommon* dxCommon) {

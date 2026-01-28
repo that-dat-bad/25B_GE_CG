@@ -1,28 +1,25 @@
-#include "ClearScene.h"
+﻿#include "ClearScene.h"
 #include "ImguiManager.h"
+#include "Object3dCommon.h"
 
 using namespace MyMath;
 
-// 静的変数の定義
 bool ClearScene::isWin = false;
 int ClearScene::finalScore = 0;
 
 ClearScene::~ClearScene() { }
 
 void ClearScene::Initialize() {
-	camera_.Initialize();
+	// camera_.Initialize();
 	input_ = Input::GetInstance();
 
-	// 画面中央に配置
-	// 画面中央に配置
-	camera_.translation_.z = -10.0f;
+	camera_.SetTranslate({ 0.0f, 0.0f, -10.0f });
 }
 
 void ClearScene::Finalize() {
 }
 
 std::optional<SceneID> ClearScene::Update() {
-	// スペースキーでタイトルに戻る
 	if (input_->TriggerKey(DIK_SPACE)) {
 		return SceneID::kTitle;
 	}
@@ -31,13 +28,10 @@ std::optional<SceneID> ClearScene::Update() {
 
 void ClearScene::Draw() {
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
-	Model::PreDraw(dxCommon->GetCommandList());
-	// モデルがあれば描画
-	Model::PostDraw();
+	Object3dCommon::GetInstance()->SetupCommonState();
 
 #ifdef USE_IMGUI
 
-	// --- 結果表示 (ImGui) ---
 	ImGui::Begin("RESULT");
 
 	if (isWin) {

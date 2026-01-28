@@ -1,4 +1,4 @@
-//-------------------------------------------------------------------------------------
+﻿//-------------------------------------------------------------------------------------
 // DirectXTexImage.cpp
 //
 // DirectX Texture Library - Image container
@@ -838,3 +838,4 @@ bool ScratchImage::IsAlphaAllOpaque() const noexcept
 
     return true;
 }
+

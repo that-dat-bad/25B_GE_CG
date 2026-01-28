@@ -1,9 +1,10 @@
-#pragma once
+﻿#pragma once
 #include "Object3d.h"
-#include "../base/Math/MyMath.h"
+#include "Math/MyMath.h"
 #include <memory>
 
 class Enemy;
+class Camera;
 
 class PlayerMissile {
 public:
@@ -16,14 +17,14 @@ public:
 
 	Vector3 GetWorldPosition() const;
 
-	//攻撃力
 	int GetPower() const { return 10; }
 
 private:
 	std::unique_ptr<Object3d> object3d_ = nullptr;
-	Enemy* target_ = nullptr; // 追尾対象
+	Enemy* target_ = nullptr; 
 	Vector3 velocity_;
 
 	bool isDead_ = false;
 	int32_t deathTimer_ = 0;
 };
+

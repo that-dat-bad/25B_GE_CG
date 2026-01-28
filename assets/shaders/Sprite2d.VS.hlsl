@@ -1,4 +1,4 @@
-#include "Sprite2d.hlsli"
+﻿#include "Sprite2d.hlsli"
 
 struct VSInput
 {

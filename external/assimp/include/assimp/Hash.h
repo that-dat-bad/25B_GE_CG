@@ -1,4 +1,4 @@
-/*
+﻿/*
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
@@ -121,3 +121,4 @@ inline uint32_t SuperFastHash (const char * data, uint32_t len = 0, uint32_t has
 }
 
 #endif // !! AI_HASH_H_INCLUDED
+

@@ -1,4 +1,4 @@
-//-------------------------------------------------------------------------------------
+﻿//-------------------------------------------------------------------------------------
 // BC.cpp
 //
 // Block-compression (BC) functionality for BC1, BC2, BC3 (orginal DXTn formats)
@@ -1139,3 +1139,4 @@ void DirectX::D3DXEncodeBC3(uint8_t *pBC, const XMVECTOR *pColor, uint32_t flags
         pBC3->bitmap[2 + iSet * 3] = reinterpret_cast<uint8_t *>(&dw)[2];
     }
 }
+

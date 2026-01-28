@@ -1,4 +1,4 @@
-#include "WinApp.h"
+﻿#include "WinApp.h"
 #include "Windows.h"
 #ifdef USE_IMGUI
 #include "../../../external/imgui/imgui_impl_win32.h" 
@@ -11,7 +11,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 
 
-// ウィンドウプロシージャ
 LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 #ifdef USE_IMGUI
 	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
@@ -28,15 +27,12 @@ LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 		return 0;
 	}
 
-	// 標準のメッセージ処理を行う
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
 void WinApp::Initialize() {
-	//システムタイマーの分解能を上げる
 	timeBeginPeriod(1);
 
-	// COMの初期化
 	CoInitializeEx(0, COINIT_MULTITHREADED);
 
 

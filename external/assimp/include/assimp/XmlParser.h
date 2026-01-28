@@ -1,4 +1,4 @@
-/*
+﻿/*
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
@@ -578,3 +578,4 @@ private:
 } // namespace Assimp
 
 #endif // !! INCLUDED_AI_IRRXML_WRAPPER
+

@@ -1,4 +1,4 @@
-#include "Player.h"
+﻿#include "Player.h"
 #include "Enemy.h"
 
 #include <DirectXMath.h>
@@ -11,7 +11,6 @@
 #include "PlayerBullet.h"
 #include "PlayerMissile.h"
 
-// KamataEngine名前空間を使用しないため、MyMath::Vector3等はusing前提か省略
 
 Player::~Player() {
 	for (PlayerBullet* bullet : bullets_) {
@@ -43,12 +42,10 @@ void Player::Initialize(Model* model, Camera* camera) {
 }
 
 void Player::Update(bool isInputEnable) {
-	// 無敵タイマー
 	if (invincibleTimer_ > 0) {
 		invincibleTimer_--;
 	}
 
-	// 弾・ミサイル削除
 	bullets_.remove_if([](PlayerBullet* bullet) {
 		if (bullet->IsDead()) {
 			delete bullet;
@@ -64,7 +61,6 @@ void Player::Update(bool isInputEnable) {
 		return false;
 	});
 
-	// 更新処理
 	for (PlayerBullet* bullet : bullets_) {
 		bullet->Update();
 	}
@@ -72,7 +68,6 @@ void Player::Update(bool isInputEnable) {
 		missile->Update();
 	}
 
-	// --- 自機の移動処理 ---
 	Vector3 move = {0, 0, 0};
 	const float kCharacterSpeed = 0.2f;
 
@@ -84,33 +79,27 @@ void Player::Update(bool isInputEnable) {
 	const float kMaxTilt = 0.5f;
 	const float kMaxYaw = 0.3f;
 
-	// 操作許可時のみ入力を受け付ける
 	if (isInputEnable) {
-		// Aキー (左)
 		if (input_->PushKey(DIK_A)) {
 			move.x -= kCharacterSpeed;
 			targetRotZ = kMaxTilt;
 			targetRotY = static_cast<float>(M_PI) - kMaxYaw;
 		}
-		// Dキー (右)
 		else if (input_->PushKey(DIK_D)) {
 			move.x += kCharacterSpeed;
 			targetRotZ = -kMaxTilt;
 			targetRotY = static_cast<float>(M_PI) + kMaxYaw;
 		}
 
-		// Wキー (上)
 		if (input_->PushKey(DIK_W)) {
 			move.y += kCharacterSpeed;
 			targetRotX = kMaxTilt;
 		}
-		// Sキー (下)
 		else if (input_->PushKey(DIK_S)) {
 			move.y -= kCharacterSpeed;
 			targetRotX = -kMaxTilt;
 		}
 
-		// 攻撃
 		Attack();
 	}
 
@@ -119,7 +108,6 @@ void Player::Update(bool isInputEnable) {
 	pos.y += move.y;
 	pos.z += move.z;
 
-	// 移動制限
 	const float kMoveLimitX = 10.0f;
 	const float kMoveLimitY = 5.0f;
 	pos.x = (std::max)(pos.x, -kMoveLimitX);
@@ -129,7 +117,6 @@ void Player::Update(bool isInputEnable) {
 
 	object3d_->SetTranslate(pos);
 
-	// 姿勢制御
 	const float kTiltSpeed = 0.1f;
 	currentRot.z = LerpShort(currentRot.z, targetRotZ, kTiltSpeed);
 	currentRot.x = LerpShort(currentRot.x, targetRotX, kTiltSpeed);
@@ -154,8 +141,7 @@ void Player::Draw() {
 }
 
 void Player::Attack() {
-	// マウス押しっぱなし連射
-	if (input_->IsPressMouse(0)) {
+	if (input_->PushMouse(0)) {
 
 		static int frameCount = 0;
 		frameCount++;
@@ -164,25 +150,14 @@ void Player::Attack() {
 			const float kBulletSpeed = 1.0f;
 			Vector3 velocity(0, 0, -kBulletSpeed);
 			
-			// TransformNormal相当の計算 (回転のみ適用したい)
-			// 本来はWorldMatrixから回転だけ取り出して適用するが、ここでは簡易的に現在のY回転等を考慮する？
-			// ただ、元のコードは matWorld_ を使っていた。
-			// Object3dは行列を持っているはずだが公開されていない場合もある。
-			// ここでは弾は常に前(Zマイナス)に飛ぶとして、
-			// プレイヤーの姿勢(傾き)に合わせて弾も傾けるかは要検討。
-			// 元コード: TransformNormal(velocity, worldTransform_.matWorld_);
-			// これは「プレイヤーの向き」に飛ぶということ。
 			
-			// 簡易実装: プレイヤーの回転行列を再計算して掛けるか、あるいはそのままZ軸マイナスへ飛ばすか。
-			// ゲーム性的に「傾きに合わせて弾が斜めに飛ぶ」仕様なら再現が必要。
-			// Object3dCommon.h にある TransformNormal が使えるなら使う。
-			// 無ければ、自前で計算。
 			
-			Matrix4x4 matWorld = MakeAffineMatrix({1,1,1}, object3d_->GetRotate(), {0,0,0}); // 回転のみ
+			Vector3 scale = { 1.0f, 1.0f, 1.0f };
+			Vector3 translate = { 0.0f, 0.0f, 0.0f };
+			Matrix4x4 matWorld = MakeAffineMatrix(scale, object3d_->GetRotate(), translate); 
 			velocity = TransformNormal(velocity, matWorld);
 
 			PlayerBullet* newBullet = new PlayerBullet();
-			// Camera* を渡す必要がある
 			newBullet->Initialize(bulletModel_, position, velocity, camera_);
 			bullets_.push_back(newBullet);
 		}

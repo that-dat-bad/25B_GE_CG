@@ -1,4 +1,4 @@
-#include "DirectXCommon.h"
+﻿#include "DirectXCommon.h"
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #pragma comment(lib, "d3d12.lib")
@@ -26,35 +26,21 @@ DirectXCommon* DirectXCommon::GetInstance() {
 
 void DirectXCommon::Initialize(WinApp* winApp) {
 
-	//FPS固定初期化
 	InitializeFixFPS();
 
-	//NULLチェック
 	assert(winApp);
-	//メンバ変数にセット
 	winApp_ = winApp;
 
-	//デバイスの生成
 	CreateDevice();
-	//コマンド関連の生成
 	CreateCommand();
-	//スワップチェインの生成
 	CreateSwapChain();
-	//深度バッファの生成
 	CreateDepthStencilBuffer();
-	//デスクリプタヒープの生成
 	CreateDescriptorHeaps();
-	//レンダーターゲットビューの生成
 	CreateRenderTargetView();
-	//深度バッファの生成
 	CreateDepthStencilView();
-	//フェンスの生成
 	CreateFence();
-	//ビューポートの設定
 	SetViewport();
-	//シザー矩形の設定
 	SetScissorRect();
-	//DxcCompilerの初期化
 	InitializeDxcCompiler();
 
 }
@@ -67,7 +53,6 @@ void DirectXCommon::PreDraw()
 	hr = commandList_->Reset(commandAllocator_.Get(), nullptr);
 	assert(SUCCEEDED(hr));
 
-	// 描画処理
 	UINT backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
 	D3D12_RESOURCE_BARRIER barrier = {};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -118,7 +103,6 @@ void DirectXCommon::CreateDevice()
 {
 	HRESULT hr;
 
-	//デバッグレイヤー
 #ifdef _DEBUG
 	Microsoft::WRL::ComPtr<ID3D12Debug1> debugController = nullptr;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
@@ -128,12 +112,10 @@ void DirectXCommon::CreateDevice()
 	}
 #endif
 
-	// DXGIファクトリーの生成
 	dxgiFactory_ = nullptr;
 	hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory_));
 	assert(SUCCEEDED(hr));
 
-	// アダプタの選別
 	useAdapter_ = nullptr;
 	for (UINT i = 0; dxgiFactory_->EnumAdapterByGpuPreference(i,
 		DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&useAdapter_)) !=
@@ -149,7 +131,6 @@ void DirectXCommon::CreateDevice()
 	}
 	assert(useAdapter_ != nullptr);
 
-	// D3D12Deviceの生成
 	device_ = nullptr;
 	D3D_FEATURE_LEVEL featureLevels[] = {
 		D3D_FEATURE_LEVEL_12_2, D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_12_0
@@ -170,15 +151,12 @@ void DirectXCommon::CreateCommand()
 {
 	HRESULT hr;
 
-	// コマンドアロケータの生成
 	hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator_));
 	assert(SUCCEEDED(hr));
 
-	// コマンドリストの生成
 	hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator_.Get(), nullptr, IID_PPV_ARGS(&commandList_));
 	assert(SUCCEEDED(hr));
 
-	// コマンドキューの生成
 	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
 	hr = device_->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue_));
 	assert(SUCCEEDED(hr));
@@ -189,7 +167,6 @@ void DirectXCommon::CreateCommand()
 
 void DirectXCommon::CreateSwapChain()
 {
-	// スワップチェーンの生成の設定
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 	swapChainDesc.Width = winApp_->kClientWidth;
 	swapChainDesc.Height = winApp_->kClientHeight;
@@ -239,7 +216,6 @@ void DirectXCommon::CreateDepthStencilBuffer()
 void DirectXCommon::CreateDepthStencilView()
 {
 
-	// DSVディスクリプタヒープとリソースの生成
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
 	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
@@ -248,7 +224,6 @@ void DirectXCommon::CreateDepthStencilView()
 
 void DirectXCommon::CreateDescriptorHeaps()
 {
-	//デスクリプタサイズを取得
 	// RTV
 	rtvDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	//DSV
@@ -256,7 +231,6 @@ void DirectXCommon::CreateDescriptorHeaps()
 
 
 
-	//ディスクリプタヒープの生成
 	//RTV
 	rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, kRtvHeapDescriptorNum_, false);
 
@@ -284,7 +258,6 @@ void DirectXCommon::CreateRenderTargetView()
 void DirectXCommon::CreateFence()
 {
 	HRESULT hr;
-	// フェンスの生成
 	fence_ = nullptr;
 	hr = device_->CreateFence(fenceValue_, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence_));
 	assert(SUCCEEDED(hr));
@@ -310,7 +283,6 @@ void DirectXCommon::InitializeDxcCompiler()
 {
 	HRESULT hr;
 
-	// dxcCompilerの初期化
 	dxcUtils_ = nullptr;
 	dxcCompiler_ = nullptr;
 	hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils_));
@@ -329,22 +301,16 @@ void DirectXCommon::InitializeFixFPS()
 
 void DirectXCommon::UpdateFixFPS()
 {
-	//1/60秒ぴったり
 	const std::chrono::microseconds kMinTime(uint64_t(1000000.0f / 60.0f));
 
-	//1/60秒よりわずかに短い時間
 	const std::chrono::microseconds kMinCheckTime(uint64_t(1000000.0f / 65.0f));
 
-	//現在時間を取得
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 
-	//前回記録からの経過時間を取得する
 	std::chrono::microseconds elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - reference_);
 
-	//1//60(よりわずかに短い時間)経っていない場合
 	if (elapsed<kMinCheckTime)
 	{
-		//1/60経過するまで微小なスリープを繰り返す
 		while(std::chrono::steady_clock::now()-reference_<kMinTime)
 		{
 			std::this_thread::sleep_for(std::chrono::microseconds(1));
@@ -493,10 +459,8 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 		subresources[i].SlicePitch = (LONG_PTR)images[i].slicePitch;
 	}
 
-	// 必要なサイズを計算
 	UINT64 intermediateSize = GetRequiredIntermediateSize(texture, 0, UINT(subresources.size()));
 
-	// 中間リソースの作成
 	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = CreateBufferResource(intermediateSize);
 
 
@@ -505,10 +469,8 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 	hr = commandList_->Reset(commandAllocator_.Get(), nullptr);
 	assert(SUCCEEDED(hr));
 
-	// データ転送命令を積む
 	UpdateSubresources(commandList_.Get(), texture, intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
 
-	// バリアの設定（書き込み可能 -> 読み取り専用）
 	D3D12_RESOURCE_BARRIER barrier = {};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -526,7 +488,6 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 	ID3D12CommandList* commandLists[] = { commandList_.Get() };
 	commandQueue_->ExecuteCommandLists(1, commandLists);
 
-	// 実行完了を待つ (フェンス)
 	fenceValue_++;
 	commandQueue_->Signal(fence_.Get(), fenceValue_);
 
@@ -536,7 +497,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 	}
 
 
-	// 中間リソースを返す
 	return intermediateResource;
 }
+
 

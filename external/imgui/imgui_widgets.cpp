@@ -1,4 +1,4 @@
-// dear imgui, v1.89.4
+﻿// dear imgui, v1.89.4
 // (widgets code)
 
 /*
@@ -8553,3 +8553,4 @@ void ImGui::TabItemLabelAndCloseButton(ImDrawList* draw_list, const ImRect& bb, 
 
 
 #endif // #ifndef IMGUI_DISABLE
+

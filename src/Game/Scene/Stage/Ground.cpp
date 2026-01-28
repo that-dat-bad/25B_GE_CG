@@ -1,5 +1,5 @@
-#include "Ground.h"
-#include "mathStruct.h"
+﻿#include "Ground.h"
+#include "Math/MyMath.h"
 #include "Object3dCommon.h"
 
 void Ground::Initialize(Model* model, Camera* camera) {
@@ -16,9 +16,7 @@ void Ground::Initialize(Model* model, Camera* camera) {
 		object3ds_[i]->SetScale({ 1.0f, 1.0f, 1.0f });
 
 		Vector3 pos = object3ds_[i]->GetTranslate();
-		// 自機より少し下に配置
 		pos.y = -10.0f;
-		// 奥に向かってズラして並べる
 		pos.z = static_cast<float>(i) * kGroundDepth;
 		object3ds_[i]->SetTranslate(pos);
 
@@ -27,14 +25,12 @@ void Ground::Initialize(Model* model, Camera* camera) {
 }
 
 void Ground::Update() {
-	// スクロール速度
 	const float kScrollSpeed = 3.0f;
 
 	for (int i = 0; i < kGroundCount; i++) {
 		Vector3 pos = object3ds_[i]->GetTranslate();
 		pos.z -= kScrollSpeed;
 
-		// ループ処理
 		if (pos.z <= -kGroundDepth) {
 			pos.z += kGroundCount * kGroundDepth;
 		}

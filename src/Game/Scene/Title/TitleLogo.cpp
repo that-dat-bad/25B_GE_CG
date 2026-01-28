@@ -1,4 +1,4 @@
-#include "TitleLogo.h"
+﻿#include "TitleLogo.h"
 #include <cassert>
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -7,7 +7,6 @@
 using namespace MyMath;
 
 void TitleLogo::Initialize(Model* model, Camera* camera, const Vector3& position) {
-	// nullポインタチェック
 	assert(model);
 
 	object3d_ = std::make_unique<Object3d>();

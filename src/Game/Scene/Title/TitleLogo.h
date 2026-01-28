@@ -1,11 +1,10 @@
-#pragma once
+﻿#pragma once
 #include "Object3d.h"
 #include <memory>
 #include "math/MyMath.h"
 
 class TitleLogo {
 private:
-	// オブジェクト
 	std::unique_ptr<Object3d> object3d_ = nullptr;
 
 public:
@@ -14,3 +13,4 @@ public:
 	void Draw();
 	void SetPosition(const Vector3& position);
 };
+

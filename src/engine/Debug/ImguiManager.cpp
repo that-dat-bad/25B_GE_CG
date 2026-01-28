@@ -1,4 +1,4 @@
-#include "ImGuiManager.h"
+﻿#include "ImGuiManager.h"
 #include "../Graphics/SrvManager.h" 
 
 void ImGuiManager::Initialize([[maybe_unused]]WinApp* winApp, [[maybe_unused]] DirectXCommon* dxCommon, [[maybe_unused]] SrvManager* srvManager) {
@@ -9,26 +9,21 @@ void ImGuiManager::Initialize([[maybe_unused]]WinApp* winApp, [[maybe_unused]] D
 	dxCommon_ = dxCommon;
 	srvManager_ = srvManager;
 
-	// ImGuiのコンテキスト生成
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
 
-	// Win32初期化
 	ImGui_ImplWin32_Init(winApp->GetHwnd());
 
-	// --- SRVの確保 ---
-	// ImGui用のSRVインデックスを1つ確保する
 	uint32_t index = srvManager_->Allocate();
 
-	// DX12初期化
 	ImGui_ImplDX12_Init(
 		dxCommon_->GetDevice(),
 		DirectXCommon::kSwapChainBufferCount_,
 		dxCommon_->GetRTVFormat(),
-		srvManager_->descriptorHeap_.Get(), // SRVヒープ
-		srvManager_->GetCPUDescriptorHandle(index), // CPUハンドル
-		srvManager_->GetGPUDescriptorHandle(index)  // GPUハンドル
+		srvManager_->descriptorHeap_.Get(), 
+		srvManager_->GetCPUDescriptorHandle(index), 
+		srvManager_->GetGPUDescriptorHandle(index)  
 	);
 #endif // USE_IMGUI
 }
@@ -46,7 +41,6 @@ void ImGuiManager::End() {
 	ImGui::Render();
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 
-	// 実際の描画コマンド発行
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 #endif // USE_IMGUI
 }

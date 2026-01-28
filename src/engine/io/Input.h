@@ -1,10 +1,17 @@
-#pragma once
+﻿#pragma once
+#ifndef ENGINE_IO_INPUT_H
+#define ENGINE_IO_INPUT_H
+
 #include<Windows.h>
 #include <wrl/client.h>
 #include <dinput.h>
 #pragma comment(lib, "dinput8.lib")
 #pragma comment(lib, "dxguid.lib")
 #include <memory>
+
+#ifdef Input
+#undef Input
+#endif
 
 class Input
 {
@@ -24,6 +31,8 @@ public:
 		long lZ;
 	};
 	MouseMove GetMouseMove();
+	// bool IsPressMouse(int buttonNumber);
+	// bool IsTriggerMouse(int buttonNumber);
 	bool PushMouse(int buttonNumber);
 	~Input() = default;
 
@@ -39,5 +48,9 @@ private:
 	BYTE keys_[256] = {};
 	BYTE preKeys_[256] = {};
 	DIMOUSESTATE2 mouseState_ = {};
+	// DIMOUSESTATE2 preMouseState_ = {};
 };
+
+
+#endif // ENGINE_IO_INPUT_H
 

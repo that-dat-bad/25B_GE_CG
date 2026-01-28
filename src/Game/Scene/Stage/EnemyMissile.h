@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "Object3d.h"
-#include "../base/Math/MyMath.h"
+#include "Math/MyMath.h"
 #include <memory>
 
 class Player;
@@ -21,10 +21,10 @@ public:
 private:
 	std::unique_ptr<Object3d> object3d_ = nullptr;
 
-	// ★変更: ターゲット
 	Player* target_ = nullptr;
 	Vector3 velocity_;
 
 	bool isDead_ = false;
 	int32_t deathTimer_ = 0;
 };
+

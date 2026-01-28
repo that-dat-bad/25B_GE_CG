@@ -1,4 +1,4 @@
-#include "ParticleManager.h"
+﻿#include "ParticleManager.h"
 #include "TextureManager.h"
 #include "CameraManager.h"
 #include <cassert>
@@ -24,20 +24,16 @@ void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager
 	dxCommon_ = dxCommon;
 	srvManager_ = srvManager;
 
-	// ランダムエンジンの初期化
 	std::random_device seed_gen;
 	randomEngine_.seed(seed_gen());
 
-	// パイプライン生成
 	CreateRootSignature();
 	CreateGraphicsPipeline();
 
-	// 板ポリゴン（モデル）生成
 	CreateModel();
 }
 
 void ParticleManager::Update() {
-	// カメラ情報の取得
 	Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
 	Matrix4x4 viewMatrix = camera->GetViewMatrix();
 	Matrix4x4 projectionMatrix = camera->GetProjectionMatrix();
@@ -57,24 +53,19 @@ void ParticleManager::Update() {
 	billboardMatrix.m[2][2] = cameraWorldMatrix.m[2][2];
 
 
-	// 全てのパーティクルグループについて処理
 	for (auto& [name, group] : particleGroups_) {
 
-		// グループ内のパーティクルリストを走査
-		group.instanceCount = 0; // 描画カウントリセット
+		group.instanceCount = 0; 
 
 		for (auto it = group.particles.begin(); it != group.particles.end();) {
 
-			// 寿命チェック
 			if (it->currentTime >= it->lifeTime) {
 				it = group.particles.erase(it);
 				continue;
 			}
 
-			// フィールドの影響計算
 			Vector3 fieldAcceleration = { 0.0f, 0.0f, 0.0f };
 			for (const auto& [fieldName, field] : accelerationFields_) {
-				// AABB内判定
 				if (it->transform.translate.x >= field.area.min.x && it->transform.translate.x <= field.area.max.x &&
 					it->transform.translate.y >= field.area.min.y && it->transform.translate.y <= field.area.max.y &&
 					it->transform.translate.z >= field.area.min.z && it->transform.translate.z <= field.area.max.z) {
@@ -82,25 +73,19 @@ void ParticleManager::Update() {
 				}
 			}
 
-			// 移動処理 (速度を加算: パーティクルの個別加速度 + フィールド加速度)
 			it->velocity = Add(it->velocity, Add(it->acceleration, fieldAcceleration));
 			it->transform.translate = Add(it->transform.translate, it->velocity);
 
-			// 経過時間を加算
-			it->currentTime += 1.0f / 60.0f; // 60FPS想定
+			it->currentTime += 1.0f / 60.0f; 
 
-			// インスタンス数が最大を超えたらそれ以上処理しない（描画しない）
 			if (group.instanceCount < kMaxInstanceCount_) {
 
-				// ワールド行列の計算
 				Matrix4x4 scaleMatrix = MakeScaleMatrix(it->transform.scale);
 				Matrix4x4 translateMatrix = MakeTranslateMatrix(it->transform.translate);
 				Matrix4x4 worldMatrix = Multiply(scaleMatrix, Multiply(billboardMatrix, translateMatrix));
 
-				// WVP行列の計算
 				Matrix4x4 wvp = Multiply(worldMatrix, viewProjectionMatrix);
 
-				// インスタンシングデータへの書き込み
 				group.instancingDataPtr[group.instanceCount].WVP = wvp;
 				group.instancingDataPtr[group.instanceCount].color = it->color;
 
@@ -115,39 +100,30 @@ void ParticleManager::Update() {
 void ParticleManager::Draw() {
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 	srvManager_->PreDraw();
-	// ルートシグネチャの設定
 	commandList->SetGraphicsRootSignature(rootSignature_.Get());
 
-	// PSOの設定 (グループごとに変更するのでここでは設定しない、あるいはデフォルトを設定)
 	// commandList->SetPipelineState(graphicsPipelineState_.Get());
 
-	// プリミティブトポロジーの設定
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	// VBVの設定
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 
-	// 全てのパーティクルグループについて処理
-	BlendMode currentBlendMode = BlendMode::kCountOf; // 初期値として無効な値をセット
+	BlendMode currentBlendMode = BlendMode::kCountOf; 
 
 	for (auto& [name, group] : particleGroups_) {
 		if (group.instanceCount == 0) continue;
 
-		// ブレンドモードが切り替わったらPSO再設定
 		if (group.blendMode != currentBlendMode) {
 			commandList->SetPipelineState(graphicsPipelineStates_[static_cast<size_t>(group.blendMode)].Get());
 			currentBlendMode = group.blendMode;
 		}
 
-		// テクスチャのSRVを設定
 		D3D12_GPU_DESCRIPTOR_HANDLE textureHandle = srvManager_->GetGPUDescriptorHandle(group.textureSrvIndex);
 		commandList->SetGraphicsRootDescriptorTable(0, textureHandle);
 
-		// インスタンシングデータのSRVを設定
 		D3D12_GPU_DESCRIPTOR_HANDLE instancingHandle = srvManager_->GetGPUDescriptorHandle(group.instancingSrvIndex);
 		commandList->SetGraphicsRootDescriptorTable(1, instancingHandle);
 
-		// インスタンシング描画
 		commandList->DrawInstanced(6, group.instanceCount, 0, 0);
 	}
 }
@@ -167,38 +143,27 @@ void ParticleManager::AddAccelerationField(const std::string& name, const Vector
 
 
 void ParticleManager::Finalize() {
-	// リソースの解放など
 	particleGroups_.clear();
 	instance_.reset();
 }
 
 void ParticleManager::CreateParticleGroup(const std::string& name, const std::string& textureFilePath) {
-	// 登録済みの名前かチェック
 	assert(particleGroups_.contains(name) == false);
 
-	// 新たなグループを作成
 	ParticleGroup& group = particleGroups_[name];
 
-	// マテリアルデータ設定
 	group.textureFilePath = textureFilePath;
 
-	// テクスチャ読み込み
 	TextureManager::GetInstance()->LoadTexture(textureFilePath);
-	// SRVインデックス取得
 	group.textureSrvIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
 
-	// インスタンシング用リソースの生成 (StructuredBuffer)
-	// サイズ = データ1個分サイズ * 最大数
 	uint32_t sizeInBytes = sizeof(ParticleInstancingData) * kMaxInstanceCount_;
 	group.instancingResource = dxCommon_->CreateBufferResource(sizeInBytes);
 
-	// データを書き込むためのポインタを取得 (Mapしたままにする)
 	group.instancingResource->Map(0, nullptr, reinterpret_cast<void**>(&group.instancingDataPtr));
 
-	// インスタンシング用にSRVを確保
 	group.instancingSrvIndex = srvManager_->Allocate();
 
-	// StructuredBufferとしてSRV生成
 	srvManager_->CreateSRVforStructuredBuffer(
 		group.instancingSrvIndex,
 		group.instancingResource.Get(),
@@ -210,12 +175,11 @@ void ParticleManager::CreateParticleGroup(const std::string& name, const std::st
 }
 
 void ParticleManager::Emit(const std::string& name, const Vector3& position, uint32_t count) {
-	ParticleParameters params; // デフォルトパラメータ
+	ParticleParameters params; 
 	Emit(name, position, params, count);
 }
 
 void ParticleManager::Emit(const std::string& name, const Vector3& position, const ParticleParameters& params, uint32_t count) {
-	// 登録済みのグループかチェック
 	assert(particleGroups_.contains(name));
 
 	ParticleGroup& group = particleGroups_[name];
@@ -231,22 +195,17 @@ void ParticleManager::Emit(const std::string& name, const Vector3& position, con
 
 	std::uniform_real_distribution<float> distTime(params.minLifeTime, params.maxLifeTime);
 
-	// 位置のランダム分布（もし必要ならパラメータ化するが、一旦既存のまま固定範囲にするか、パラメータに入れるか。
-	// ここでは元のEmitに合わせて少し散らす処理は入れておくが、velocityメインで制御する）
-	std::uniform_real_distribution<float> distPos(-1.0f, 1.0f); // 散らし具合は固定で残すか、これもパラメータ化すべきだが
+	std::uniform_real_distribution<float> distPos(-1.0f, 1.0f); 
 
 	for (uint32_t i = 0; i < count; ++i) {
 		Particle particle{};
 		particle.transform.scale = { 1.0f, 1.0f, 1.0f };
 		particle.transform.rotate = { 0.0f, 0.0f, 0.0f };
 
-		// 位置に少しランダム要素を加える
 		Vector3 randomPos = { distPos(randomEngine_), distPos(randomEngine_), distPos(randomEngine_) };
 		particle.transform.translate = Add(position, randomPos);
 
-		// 速度設定
 		particle.velocity = { distVelX(randomEngine_), distVelY(randomEngine_), distVelZ(randomEngine_) };
-		// 既存コードにあった0.1倍はパラメータ側で制御すべきなので削除
 
 		particle.acceleration = params.acceleration;
 
@@ -284,12 +243,10 @@ void ParticleManager::CreateModel() {
 
 	vertexBuffer_ = dxCommon_->CreateBufferResource(sizeInBytes);
 
-	// VBV設定
 	vertexBufferView_.BufferLocation = vertexBuffer_->GetGPUVirtualAddress();
 	vertexBufferView_.SizeInBytes = sizeInBytes;
 	vertexBufferView_.StrideInBytes = sizeof(VertexData);
 
-	// データ転送
 	VertexData* data = nullptr;
 	vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&data));
 	std::memcpy(data, vertices, sizeInBytes);
@@ -315,19 +272,16 @@ void ParticleManager::CreateRootSignature() {
 
 	D3D12_ROOT_PARAMETER rootParameters[2] = {};
 
-	// テクスチャ用
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[0].DescriptorTable.pDescriptorRanges = descriptorRange;
 	rootParameters[0].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
 
-	// インスタンシングデータ用 (StructuredBuffer)
 	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 	rootParameters[1].DescriptorTable.pDescriptorRanges = descriptorRangeInstancing;
 	rootParameters[1].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeInstancing);
 
-	// サンプラー設定
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
 	staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -342,7 +296,6 @@ void ParticleManager::CreateRootSignature() {
 	descriptionRootSignature.pStaticSamplers = staticSamplers;
 	descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
 
-	// シリアライズと生成
 	Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob = nullptr;
 	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
 	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
@@ -356,7 +309,6 @@ void ParticleManager::CreateRootSignature() {
 
 
 void ParticleManager::CreateGraphicsPipeline() {
-	// シェーダーコンパイル
 	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = dxCommon_->CompileShader(L"./assets/shaders/Particle.VS.hlsl", L"vs_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = dxCommon_->CompileShader(L"./assets/shaders/Particle.PS.hlsl", L"ps_6_0");
 
@@ -371,18 +323,15 @@ void ParticleManager::CreateGraphicsPipeline() {
 	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
 	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
 
-	// PSO設定
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
 	graphicsPipelineStateDesc.pRootSignature = rootSignature_.Get();
 	graphicsPipelineStateDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
 	graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
 	graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
 
-	// ラスタライザステート
-	graphicsPipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // 両面描画
+	graphicsPipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; 
 	graphicsPipelineStateDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 
-	// デプスステンシル
 	graphicsPipelineStateDesc.DepthStencilState.DepthEnable = false;
 	graphicsPipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 	graphicsPipelineStateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
@@ -394,7 +343,6 @@ void ParticleManager::CreateGraphicsPipeline() {
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	// 全ブレンドモードのPSOを生成
 	for (size_t i = 0; i < static_cast<size_t>(BlendMode::kCountOf); ++i) {
 		BlendMode mode = static_cast<BlendMode>(i);
 		graphicsPipelineStateDesc.BlendState = GetBlendDesc(mode);

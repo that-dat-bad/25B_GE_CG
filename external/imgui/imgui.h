@@ -1,4 +1,4 @@
-// dear imgui, v1.89.4
+﻿// dear imgui, v1.89.4
 // (headers)
 
 // Help:
@@ -3122,3 +3122,4 @@ enum ImGuiModFlags_ { ImGuiModFlags_None = 0, ImGuiModFlags_Ctrl = ImGuiMod_Ctrl
 #endif
 
 #endif // #ifndef IMGUI_DISABLE
+

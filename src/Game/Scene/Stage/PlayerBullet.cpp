@@ -1,5 +1,6 @@
-#include "PlayerBullet.h"
+﻿#include "PlayerBullet.h"
 #include <cassert>
+#include "Camera.h"
 #include "Object3dCommon.h"
 
 void PlayerBullet::Initialize(Model* model, const Vector3& position, const Vector3& velocity, Camera* camera) {

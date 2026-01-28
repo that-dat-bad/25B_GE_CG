@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include<map>
 #include <string>
 #include <memory>
@@ -14,13 +14,11 @@ public:
 	void Finalize();
 
 	/// <summary>
-	/// モデルファイルの読み込み
 	/// </summary>
 	/// <param name="filePath"></param>
 	void LoadModel(const std::string& filePath);
 
 	/// <summary>
-	/// モデルの検索
 	/// </summary>
 	/// <param name="filePath"></param>
 	/// <returns></returns>
@@ -33,7 +31,7 @@ private:
 	ModelManager& operator=(const ModelManager&) = delete;
 	std::unique_ptr<ModelCommon> modelCommon_ = nullptr;
 
-	//モデルデータ
 	std::map<std::string, std::unique_ptr<Model>> models_;
 };
+
 

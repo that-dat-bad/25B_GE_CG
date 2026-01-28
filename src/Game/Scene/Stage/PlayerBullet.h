@@ -1,11 +1,10 @@
-#pragma once
+﻿#pragma once
 #include "Object3d.h"
-#include "../base/Math/MyMath.h"
+#include "Math/MyMath.h"
 #include <memory>
 
 class PlayerBullet {
 public:
-	// 初期化時、カメラも受け取る必要がある（Object3dにセットするため）
 	void Initialize(Model* model, const Vector3& position, const Vector3& velocity, Camera* camera);
 	void Update();
 	void Draw();
@@ -15,7 +14,6 @@ public:
 
 	Vector3 GetWorldPosition() const;
 
-	//攻撃力
 	int GetPower() const { return 1; }
 
 private:
@@ -26,3 +24,4 @@ private:
 	static const int32_t kLifeTime = 60 * 5;
 	int32_t deathTimer_ = kLifeTime;
 };
+

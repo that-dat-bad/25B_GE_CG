@@ -1,4 +1,4 @@
-//-------------------------------------------------------------------------------------
+﻿//-------------------------------------------------------------------------------------
 // DirectXTexMipMaps.cpp
 //
 // DirectX Texture Library - Mip-map generation
@@ -3527,3 +3527,4 @@ HRESULT DirectX::ScaleMipMapsAlphaForCoverage(
 
     return S_OK;
 }
+

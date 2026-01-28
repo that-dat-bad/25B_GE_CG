@@ -1,4 +1,4 @@
-//--------------------------------------------------------------------------------------
+﻿//--------------------------------------------------------------------------------------
 // File: BC6HEncode.hlsl
 //
 // The Compute Shader for BC6H Encoder
@@ -2561,3 +2561,4 @@ void block_package(inout uint4 block, int2x3 endPoint, uint mode_type) // for mo
         block.z |= ((endPoint[0].b >> 10) & 1) << 0;
     }
 }
+

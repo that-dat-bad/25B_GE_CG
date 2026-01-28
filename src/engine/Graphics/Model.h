@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d12.h>
 #include <wrl/client.h>
 #include <string>
@@ -25,7 +25,7 @@ public:
 		int32_t enableLighting;
 		float shininess;
 		float padding[2];
-		Matrix4x4 uvTransform; // UV変換行列
+		Matrix4x4 uvTransform; 
 	};
 	struct MaterialData
 	{
@@ -45,19 +45,14 @@ private:
 
 	ModelCommon* modelCommon_ = nullptr;
 
-	// モデルデータ
 	ModelData modelData_;
 
-	//--頂点データ--//
-	// バッファリソース
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexBuffer_ = nullptr;
-	// バッファリソース内のデータを指すポインタ
 	VertexData* vertexData_ = nullptr;
-	// バッファビュー
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
 
-	//--マテリアル--//
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
 	Material* materialData_ = nullptr;
 };
+
 

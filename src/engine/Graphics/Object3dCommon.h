@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d12.h>
 #include <wrl/client.h>
 #include <cstdint>
@@ -54,13 +54,10 @@ public:
 
 	void Initialize(DirectXCommon* dxCommon);
 
-	//共通描画設定
 	void SetupCommonState();
 
-	// ブレンドモード設定
 	void SetBlendMode(BlendMode mode);
 
-	// ライティング設定
 	void SetShadingModel(int32_t model) { lightingSettingsData->shadingModel = model; }
 	void SetSpecularModel(int32_t model) { lightingSettingsData->specularModel = model; }
 	void SetLightType(int32_t type) { lightingSettingsData->lightType = type; }
@@ -68,11 +65,8 @@ public:
 
 	DirectXCommon* GetDirectXCommon() { return dxCommon_; }
 
-	//アクセッサ
-	//セッター
 	void SetDefaultCamera(Camera* camera) { defaultCamera_ = camera; }
 
-	//ゲッター
 	Camera* GetDefaultCamera() const { return defaultCamera_; }
 	ID3D12Resource* GetDirectionalLightResource() { return directionalLightResource_.Get(); }
 	ID3D12Resource* GetPointLightResource() { return pointLightResource_.Get(); }
@@ -103,9 +97,8 @@ private:
 	PointLight* pointLightData = nullptr;
 	SpotLight* spotLightData = nullptr;
 	LightingSettings* lightingSettingsData = nullptr;
-	//ルートシグネチャの作成
 	void CreateRootSignature(DirectXCommon* dxCommon);
 
-	//グラフィックパイプラインの生成
 	void CreateGraphicsPipeline(DirectXCommon* dxCommon);
 };
+

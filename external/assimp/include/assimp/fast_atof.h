@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // Copyright (C) 2002-2007 Nikolaus Gebhardt
 // This file is part of the "Irrlicht Engine" and the "irrXML" project.
@@ -376,3 +376,4 @@ inline ai_real fast_atof( const char** inout) {
 } //! namespace Assimp
 
 #endif // FAST_A_TO_F_H_INCLUDED
+

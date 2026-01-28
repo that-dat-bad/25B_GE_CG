@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 #include "../../../external/DirectXTex/DirectXTex.h"
 #include <wrl/client.h>
@@ -16,21 +16,15 @@ class TextureManager
 public:
 	static TextureManager* GetInstance();
 
-	// 初期化
 	void Initialize(DirectXCommon* dxCommon,SrvManager* srvManager);
 
-	// 終了処理
 	void Finalize();
 
-	// テクスチャ読み込み
 	void LoadTexture(const std::string& filePath);
-	// 互換性のためにLoadを追加
 	void Load(const std::string& filePath) { LoadTexture(filePath); }
 
-	// SRVハンドル(GPU)を取得
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(uint32_t textureIndex);
 
-	// メタデータを取得
 	const DirectX::TexMetadata& GetMetaData(const std::string& filePath);
 
 	uint32_t GetTextureIndexByFilePath(const std::string& filePath);

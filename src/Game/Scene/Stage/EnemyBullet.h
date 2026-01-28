@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 #include "Object3d.h"
-#include "../base/Math/MyMath.h"
+#include "Math/MyMath.h"
 #include <memory>
 
-class Player; // 前方宣言
+class Player; 
 
 class EnemyBullet {
 public:
@@ -24,7 +24,7 @@ private:
 	int32_t deathTimer_ = 0;
 	static const int32_t kLifeTime = 60 * 5;
 
-	//追尾用
 	bool isHoming_ = false;
 	Player* target_ = nullptr;
 };
+

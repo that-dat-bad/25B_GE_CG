@@ -1,29 +1,31 @@
-#include "Reticle.h"
+﻿#include "Reticle.h"
 
 #include "TextureManager.h"
+#include "SpriteCommon.h"
 
 void Reticle::Initialize() {
 
-	textureHandle_ = TextureManager::Load("reticle.png");
+	TextureManager::GetInstance()->LoadTexture("reticle.png");
+	textureHandle_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("reticle.png");
 	
-	sprite_ = std::make_unique<Sprite>(
-	    textureHandle_, Vector2{0.0f, 0.0f}, Vector2{64.0f, 64.0f}, Vector4{0.0f, 1.0f, 0.0f, 1.0f}, Vector2{0.5f, 0.5f}, false, false 
-	);
-	sprite_->Initialize();
+	SpriteCommon* spriteCommon = SpriteCommon::GetInstance();
+	sprite_ = std::make_unique<Sprite>();
+	sprite_->Initialize(spriteCommon, "reticle.png");
+	sprite_->SetPosition({ 0.0f, 0.0f });
+	sprite_->SetSize({ 64.0f, 64.0f });
+	sprite_->SetColor({ 0.0f, 1.0f, 0.0f, 1.0f });
+	sprite_->SetAnchorPoint({ 0.5f, 0.5f });
 }
 
 void Reticle::Update(const Vector3& targetWorldPos, const Camera& camera) {
-	// 3D座標を2D画面座標に変換
-	// mathStruct.h にあるか、MyMath にあるか確認が必要だが、一旦維持。
-	// エラーが出るようなら別途修正する。
-	position_ = WorldToScreen(targetWorldPos, camera.matView, camera.matProjection, 1280.0f, 720.0f);
+	position_ = WorldToScreen(targetWorldPos, camera.GetViewMatrix(), camera.GetProjectionMatrix(), 1280.0f, 720.0f);
 
-	// スプライトに座標を適用
 	sprite_->SetPosition(position_);
 }
 
 void Reticle::Draw() {
 	if (sprite_) {
+		sprite_->Update();
 		sprite_->Draw();
 	}
 }

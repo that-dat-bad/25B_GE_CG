@@ -1,4 +1,4 @@
-//*********************************************************
+﻿//*********************************************************
 //
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License (MIT).
@@ -5832,3 +5832,4 @@ inline HRESULT CD3DX12FeatureSupport::QueryProtectedResourceSessionTypes(UINT No
 #endif // defined( __cplusplus )
 
 #endif //__D3DX12_H__
+

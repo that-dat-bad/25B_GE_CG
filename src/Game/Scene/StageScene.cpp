@@ -1,25 +1,32 @@
-#include "StageScene.h"
-#include "stage/Enemy.h"
-#include "stage/Explosion.h"
-#include "stage/Ground.h"
-#include "IScene.h"
+﻿#include "StageScene.h"
+#include "Stage/Enemy.h"
+#include "Stage/Explosion.h"
+#include "Stage/Ground.h"
 
-#include "stage/Player.h"
+
+#include "Stage/Player.h"
+#include "Stage/PlayerMissile.h"
+#include "Stage/PlayerBullet.h"
 #include "ClearScene.h"
-#include "Reticle.h"
+#include "Stage/Reticle.h"
 #include "json.hpp"
 #include "ImguiManager.h"
 #include "TextureManager.h"
+#include "Input.h"
+#include "DebugCamera.h"
+#include "Camera.h"
+#include "Object3d.h"
+#include "Math/MyMath.h"
+
+using namespace MyMath;
 
 #include <assert.h>
 #include <cmath>
 #include <fstream>
 
 using json = nlohmann::json;
-using namespace MyMath; // 追加
-// using namespace KamataEngine; // 削除済みだが残骸があるかも
+using namespace MyMath; 
 
-// 距離の二乗
 float LengthSquared(const Vector3& v1, const Vector3& v2) {
 	float dx = v1.x - v2.x;
 	float dy = v1.y - v2.y;
@@ -28,9 +35,7 @@ float LengthSquared(const Vector3& v1, const Vector3& v2) {
 }
 
 StageScene::~StageScene() {
-	// モデル解放 (ModelManager管理のためここでは解放しない)
 
-	// オブジェクト解放
 	delete player_;
 	delete ground_;
 	delete debugCamera_;
@@ -40,7 +45,6 @@ StageScene::~StageScene() {
 	delete lifeIconSprite_;
 	delete fadeSprite_;
 
-	// 演出スプライト解放
 	delete spriteWave_;
 	delete spriteReady_;
 	delete spriteStart_;
@@ -53,7 +57,6 @@ StageScene::~StageScene() {
 }
 
 void StageScene::Initialize() {
-	// --- モデル生成 (ModelManagerを使用) ---
 	ModelManager* modelManager = ModelManager::GetInstance();
 	
 	modelManager->LoadModel("player");
@@ -62,18 +65,7 @@ void StageScene::Initialize() {
 	modelManager->LoadModel("enemyBullet");
 	modelManager->LoadModel("enemyMissile");
 	modelManager->LoadModel("playerMissile");
-	// explosion は球体なので Model::Create のままかもしれないが、ModelManagerで"sphere"等で読み込むか、CreateFromOBJの代替を探す必要がある。
-	// 一旦既存コードを尊重しつつ、もしModel::Create()が静的メソッドとして存在し、それがModelManager管理外のオブジェクトを作るならdeleteが必要だが、
-	// ここではすべてModelManager管理下に置くのが安全。
-	// もし球体モデルファイルがない場合、primitive作成関数が必要。
-	// 仮に "explosion" というモデルがあるとする。なければエラーになるので注意。
-	// 爆発モデルについては、既存エンジンの仕様が Model::Create() でプロシージャル生成するものならそのままにする必要があるが、
-	// 「kamataengineから切り替え」指示のため、Model::Create()も使えない可能性が高い。
-	// 一旦 LoadModel("explosion") としておく。
-    // ※ ユーザー環境に "explosion.obj" がない場合はここでコケるので、運用で "sphere.obj" を読み込むなどに変更が必要かもしれない。
-	// とりあえず統一する。
 	
-	// modelManager->LoadModel("explosion"); // 球体がないかもしれないのでコメントアウトまたは仮実装
 
 	modelManager->LoadModel("ground");
 
@@ -84,20 +76,14 @@ void StageScene::Initialize() {
 	enemyMissileModel_ = modelManager->FindModel("enemyMissile");
 	playerMissileModel_ = modelManager->FindModel("playerMissile");
 	// explosionModel_ = modelManager->FindModel("explosion"); 
-	// ↓ 暫定対応: explosionModel だけは nullptr だとまずいので、もしCreateが使えないなら何らかの対処が必要
-	// ここでは「古いCreateFromOBJは使えない」という前提で、ModelManagerを使う形に統一した。
-	// ただしExplosionクラスの中身によってはモデルなしでも動作するか確認が必要。
 	
 	groundModel_ = modelManager->FindModel("ground");
 
-	// --- カメラ・基本設定 ---
-	// worldTransform_.Initialize(); // 削除
-	camera_.Initialize();
-	camera_.translation_ = { 0.0f, 2.5f, -15.0f };
+	// camera_.Initialize();
+	camera_.SetTranslate({ 0.0f, 2.5f, -15.0f });
 	input_ = Input::GetInstance();
-	debugCamera_ = new DebugCamera(1280, 720);
+	debugCamera_ = new DebugCamera();
 
-	// --- オブジェクト生成 ---
 	player_ = new Player();
 	player_->Initialize(playerModel_, &camera_);
 	player_->SetBulletModel(playerBulletModel_);
@@ -109,54 +95,86 @@ void StageScene::Initialize() {
 	reticle_ = new Reticle();
 	reticle_->Initialize();
 
-	// --- スプライト・テクスチャ ---
+	SpriteCommon* spriteCommon = SpriteCommon::GetInstance();
+
 	TextureManager::GetInstance()->LoadTexture("lockOn.png");
 	lockOnTex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("lockOn.png");
-	lockOnMark_ = new Sprite(lockOnTex_, { 0, 0 }, { 64, 64 }, { 1.0f, 0.0f, 0.0f, 1.0f }, { 0.5f, 0.5f }, false, false);
-	lockOnMark_->Initialize();
+	lockOnMark_ = new Sprite();
+	lockOnMark_->Initialize(spriteCommon, "lockOn.png");
+	lockOnMark_->SetPosition({ 0, 0 });
+	lockOnMark_->SetSize({ 64, 64 });
+	lockOnMark_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
+	lockOnMark_->SetAnchorPoint({ 0.5f, 0.5f });
+
+	reticle_ = new Reticle();
+	reticle_->Initialize();
 
 	TextureManager::GetInstance()->LoadTexture("white1x1.png");
 	uiTexHandle_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("white1x1.png");
-	hpBarSprite_ = new Sprite(uiTexHandle_, { 50, 650 }, { 200, 20 }, { 0.0f, 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f }, false, false);
-	hpBarSprite_->Initialize();
-	lifeIconSprite_ = new Sprite(uiTexHandle_, { 0, 0 }, { 20, 20 }, { 1.0f, 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f }, false, false);
-	lifeIconSprite_->Initialize();
+	hpBarSprite_ = new Sprite();
+	hpBarSprite_->Initialize(spriteCommon, "white1x1.png");
+	hpBarSprite_->SetPosition({ 50, 650 });
+	hpBarSprite_->SetSize({ 200, 20 });
+	hpBarSprite_->SetColor({ 0.0f, 1.0f, 0.0f, 1.0f });
+	hpBarSprite_->SetAnchorPoint({ 0.0f, 0.0f });
 
-	TextureManager::GetInstance()->LoadTexture("white1x1.png");
+	lifeIconSprite_ = new Sprite();
+	lifeIconSprite_->Initialize(spriteCommon, "white1x1.png");
+	lifeIconSprite_->SetPosition({ 0, 0 });
+	lifeIconSprite_->SetSize({ 20, 20 });
+	lifeIconSprite_->SetColor({ 1.0f, 1.0f, 0.0f, 1.0f });
+	lifeIconSprite_->SetAnchorPoint({ 0.0f, 0.0f });
+
 	fadeTextureHandle_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("white1x1.png");
-	fadeSprite_ = new Sprite(fadeTextureHandle_, { 0, 0 }, { 1280, 720 }, { 1, 1, 1, 1 }, { 0, 0 }, false, false);
-	fadeSprite_->Initialize();
-	fadeSprite_->SetTextureRect({ 0.0f, 0.0f }, { 1.0f, 1.0f });
+	fadeSprite_ = new Sprite();
+	fadeSprite_->Initialize(spriteCommon, "white1x1.png");
+	fadeSprite_->SetPosition({ 0, 0 });
+	fadeSprite_->SetSize({ 1280, 720 });
+	fadeSprite_->SetColor({ 1, 1, 1, 1 });
+	fadeSprite_->SetAnchorPoint({ 0, 0 });
+	fadeSprite_->SetTextureLeftTop({ 0.0f, 0.0f });
+	fadeSprite_->SetTextureSize({ 1.0f, 1.0f });
 
-	// 演出用テクスチャ
 	TextureManager::GetInstance()->LoadTexture("white1x1.png");
 	texWave_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("white1x1.png");
 	texReady_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("white1x1.png");
 	texStart_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("white1x1.png");
 	texClear_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("white1x1.png");
 
-	// 演出用スプライト生成
-	spriteWave_ = new Sprite(texWave_, { 640, 360 }, { 300, 60 }, { 1.0f, 1.0f, 0.0f, 1.0f }, { 0.5f, 0.5f }, false, false);
-	spriteWave_->Initialize();
+	spriteWave_ = new Sprite();
+	spriteWave_->Initialize(spriteCommon, "white1x1.png");
+	spriteWave_->SetPosition({ 640, 360 });
+	spriteWave_->SetSize({ 300, 60 });
+	spriteWave_->SetColor({ 1.0f, 1.0f, 0.0f, 1.0f });
+	spriteWave_->SetAnchorPoint({ 0.5f, 0.5f });
 
-	spriteReady_ = new Sprite(texReady_, { 640, 360 }, { 300, 60 }, { 1.0f, 0.5f, 0.0f, 1.0f }, { 0.5f, 0.5f }, false, false);
-	spriteReady_->Initialize();
+	spriteReady_ = new Sprite();
+	spriteReady_->Initialize(spriteCommon, "white1x1.png");
+	spriteReady_->SetPosition({ 640, 360 });
+	spriteReady_->SetSize({ 300, 60 });
+	spriteReady_->SetColor({ 1.0f, 0.5f, 0.0f, 1.0f });
+	spriteReady_->SetAnchorPoint({ 0.5f, 0.5f });
 
-	spriteStart_ = new Sprite(texStart_, { 640, 360 }, { 400, 80 }, { 1.0f, 0.0f, 0.0f, 1.0f }, { 0.5f, 0.5f }, false, false);
-	spriteStart_->Initialize();
+	spriteStart_ = new Sprite();
+	spriteStart_->Initialize(spriteCommon, "white1x1.png");
+	spriteStart_->SetPosition({ 640, 360 });
+	spriteStart_->SetSize({ 400, 80 });
+	spriteStart_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
+	spriteStart_->SetAnchorPoint({ 0.5f, 0.5f });
 
-	spriteClear_ = new Sprite(texClear_, { 640, 360 }, { 400, 80 }, { 0.0f, 1.0f, 1.0f, 1.0f }, { 0.5f, 0.5f }, false, false);
-	spriteClear_->Initialize();
+	spriteClear_ = new Sprite();
+	spriteClear_->Initialize(spriteCommon, "white1x1.png");
+	spriteClear_->SetPosition({ 640, 360 });
+	spriteClear_->SetSize({ 400, 80 });
+	spriteClear_->SetColor({ 0.0f, 1.0f, 1.0f, 1.0f });
+	spriteClear_->SetAnchorPoint({ 0.5f, 0.5f });
 
-	// --- 音声読み込み ---
-	soundLockOn_ = Audio::GetInstance()->LoadWave("missile_lock.wav");
-	soundMissile_ = Audio::GetInstance()->LoadWave("missile_search.wav");
-	soundExplosion_ = Audio::GetInstance()->LoadWave("explosion.mp3");
+	soundLockOn_ = AudioManager::GetInstance()->SoundLoadFile("./Resources/missile_lock.wav");
+	soundMissile_ = AudioManager::GetInstance()->SoundLoadFile("./Resources/missile_search.wav");
+	soundExplosion_ = AudioManager::GetInstance()->SoundLoadFile("./Resources/explosion.mp3");
 
-	// --- JSON読み込み ---
 	std::ifstream file("./Resources/enemy_data.json");
 	if (file.fail()) {
-		// JSONがない場合はアサートせずに無視、あるいはデフォルト動作にする
 		// assert(0 && "JSON file not found.");
 	} else {
 		json deserialized;
@@ -167,8 +185,12 @@ void StageScene::Initialize() {
 			EnemySpawnData data;
 			data.wave = enemyData.value("wave", 1);
 			data.spawnTime = enemyData["spawnTime"];
-			data.position = { enemyData["position"][0], enemyData["position"][1], enemyData["position"][2] };
-			data.velocity = { enemyData["velocity"][0], enemyData["velocity"][1], enemyData["velocity"][2] };
+			data.position.x = enemyData["position"][0];
+			data.position.y = enemyData["position"][1];
+			data.position.z = enemyData["position"][2];
+			data.velocity.x = enemyData["velocity"][0];
+			data.velocity.y = enemyData["velocity"][1];
+			data.velocity.z = enemyData["velocity"][2];
 			data.type = enemyData.value("type", "A");
 			data.attackPattern = enemyData.value("attackPattern", "Normal");
 			enemySpawnList_.push_back(data);
@@ -180,7 +202,6 @@ void StageScene::Initialize() {
 			});
 	}
 
-	// --- 変数初期化 ---
 	score_ = 0;
 	gameLimitTimer_ = 60 * 180;
 
@@ -209,7 +230,6 @@ std::optional<SceneID> StageScene::UpdateFadeIn() {
 }
 
 void StageScene::Finalize() {
-	// 必要なクリーンアップ処理があればここに記述
 }
 
 std::optional<SceneID> StageScene::UpdateFadeOut() {
@@ -221,10 +241,9 @@ std::optional<SceneID> StageScene::UpdateFadeOut() {
 std::optional<SceneID> StageScene::UpdateMain() {
 // ... same logic ...
 	gameLimitTimer_--;
-	ground_->Update(); // 地面は常に動かす
+	ground_->Update(); 
 
 	// ==========================================
-	// 1. 死亡・ゲームオーバー判定 (最優先)
 	// ==========================================
 	bool isGameOver = false;
 
@@ -239,37 +258,31 @@ std::optional<SceneID> StageScene::UpdateMain() {
 		ClearScene::finalScore = score_;
 		phase_ = ScenePhase::kFadeOut;
 		fadeTimer_ = 0;
-		return std::nullopt; // ここで終了
+		return std::nullopt; 
 	}
 
 	// ==========================================
-	// 2. ウェーブロジック
 	// ==========================================
 	switch (waveState_) {
 	case WaveState::Intro:
-		// "Wave X... Ready... Start!" の演出
 		waveTimer_++;
-		if (waveTimer_ > 180) { // 3秒経過でバトル開始
+		if (waveTimer_ > 180) { 
 			waveState_ = WaveState::Battle;
 			waveTimer_ = 0;
 		}
 		break;
 
 	case WaveState::Battle:
-		waveTimer_++; // スポーンタイマー進行
+		waveTimer_++; 
 
-		// 敵スポーン処理
 		{
 			auto it = enemySpawnList_.begin();
 			while (it != enemySpawnList_.end()) {
-				// 次のウェーブのデータならまだ出さない
 				if (it->wave != currentWave_)
 					break;
-				// 時間待ち
 				if (it->spawnTime > waveTimer_)
 					break;
 
-				// 生成
 				Enemy* newEnemy = new Enemy();
 				newEnemy->SetBulletModel(enemyBulletModel_);
 				newEnemy->SetMissileModel(enemyMissileModel_);
@@ -281,8 +294,6 @@ std::optional<SceneID> StageScene::UpdateMain() {
 			}
 		}
 
-		// ウェーブクリア判定
-		// フィールドに敵がおらず、かつ今のウェーブで出す予定の敵もいない
 		{
 			bool isSpawnFinished = true;
 			for (const auto& d : enemySpawnList_) {
@@ -293,7 +304,6 @@ std::optional<SceneID> StageScene::UpdateMain() {
 			}
 
 			if (enemies_.empty() && isSpawnFinished) {
-				// クリア演出へ
 				waveState_ = WaveState::Clear;
 				waveTimer_ = 0;
 			}
@@ -301,10 +311,8 @@ std::optional<SceneID> StageScene::UpdateMain() {
 		break;
 
 	case WaveState::Clear:
-		// "Wave Clear!" 表示などの待機
 		waveTimer_++;
-		if (waveTimer_ > 120) { // 2秒待機
-			// 次のウェーブがあるか確認
+		if (waveTimer_ > 120) { 
 			bool hasNextWave = false;
 			for (const auto& d : enemySpawnList_) {
 				if (d.wave > currentWave_) {
@@ -318,7 +326,6 @@ std::optional<SceneID> StageScene::UpdateMain() {
 				waveState_ = WaveState::Intro;
 				waveTimer_ = 0;
 			} else {
-				// 全ウェーブクリア（勝利）
 				ClearScene::isWin = true;
 				ClearScene::finalScore = score_;
 				phase_ = ScenePhase::kFadeOut;
@@ -329,13 +336,10 @@ std::optional<SceneID> StageScene::UpdateMain() {
 	}
 
 	// ==========================================
-	// 3. ゲーム更新処理
 	// ==========================================
 
-	// ★追加: 操作可能かどうかの判定 (戦闘中 かつ 生存)
 	bool isPlayerActive = (waveState_ == WaveState::Battle) && !player_->IsDead();
 
-	// Player更新にフラグを渡す
 	player_->Update(isPlayerActive);
 
 	enemies_.remove_if([](Enemy* e) {
@@ -358,12 +362,10 @@ std::optional<SceneID> StageScene::UpdateMain() {
 	for (Explosion* e : explosions_)
 		e->Update();
 
-	// --- 当たり判定 ---
 	const float kPlayerRadius = 1.0f;
 	const float kEnemyRadius = 4.0f;
 	const float kBulletRadius = 0.5f;
 
-	// 1. 自弾 vs 敵
 	for (PlayerBullet* pBullet : player_->GetBullets()) {
 		for (Enemy* enemy : enemies_) {
 			if (pBullet->IsDead() || enemy->IsDead())
@@ -373,7 +375,7 @@ std::optional<SceneID> StageScene::UpdateMain() {
 				enemy->OnCollision(pBullet->GetPower());
 				if (enemy->IsDead()) {
 					score_ += 100;
-					Audio::GetInstance()->PlayWave(soundExplosion_); // 爆発音
+					AudioManager::GetInstance()->SoundPlayWave(soundExplosion_); 
 					Explosion* newExp = new Explosion();
 					newExp->Initialize(explosionModel_, enemy->GetWorldPosition(), &camera_);
 					explosions_.push_back(newExp);
@@ -382,7 +384,6 @@ std::optional<SceneID> StageScene::UpdateMain() {
 		}
 	}
 
-	// 2. 敵弾 vs 自機
 	for (Enemy* enemy : enemies_) {
 		for (EnemyBullet* eBullet : enemy->GetBullets()) {
 			if (eBullet->IsDead())
@@ -408,7 +409,6 @@ std::optional<SceneID> StageScene::UpdateMain() {
 
 	}
 
-	// 3. ミサイル vs 敵
 	for (PlayerMissile* missile : player_->GetMissiles()) {
 		for (Enemy* enemy : enemies_) {
 			if (missile->IsDead() || enemy->IsDead())
@@ -418,7 +418,7 @@ std::optional<SceneID> StageScene::UpdateMain() {
 				enemy->OnCollision(missile->GetPower());
 				if (enemy->IsDead()) {
 					score_ += 500;
-					Audio::GetInstance()->PlayWave(soundExplosion_); // 爆発音
+					AudioManager::GetInstance()->SoundPlayWave(soundExplosion_); 
 					Explosion* newExp = new Explosion();
 					newExp->Initialize(explosionModel_, enemy->GetWorldPosition(), &camera_);
 					explosions_.push_back(newExp);
@@ -427,7 +427,6 @@ std::optional<SceneID> StageScene::UpdateMain() {
 		}
 	}
 
-	// 4. 体当たり
 	for (Enemy* enemy : enemies_) {
 		if (enemy->IsDead())
 			continue;
@@ -436,7 +435,7 @@ std::optional<SceneID> StageScene::UpdateMain() {
 			player_->OnCollision();
 
 			if (enemy->IsDead()) {
-				Audio::GetInstance()->PlayWave(soundExplosion_);
+				AudioManager::GetInstance()->SoundPlayWave(soundExplosion_);
 				Explosion* newExp = new Explosion();
 				newExp->Initialize(explosionModel_, enemy->GetWorldPosition(), &camera_);
 				explosions_.push_back(newExp);
@@ -444,42 +443,36 @@ std::optional<SceneID> StageScene::UpdateMain() {
 		}
 	}
 
-	// --- カメラ更新 ---
 	if (isDebugCameraActive_) {
-		debugCamera_->Update();
-
-		camera_.Update(); // Assuming Update recalculates View/Projection from internal state or needs arguments if changed
-		// Note: DebugCamera updates view/pros directly, so usually we copy them back to camera_.
-		// If Camera class doesn't support setting view/proj directly, we might need to set transform instead.
-		// However, based on existing code:
-		camera_.SetRotate(debugCamera_->GetCamera().GetRotate());
-		camera_.SetTranslate(debugCamera_->GetCamera().GetTranslate());
-		camera_.Update();
-		// camera_.matView = debugCamera_->GetCamera().matView; // Camera class has private members, use setters/Update
-		// camera_.matProjection = debugCamera_->GetCamera().matProjection; // Same here
-		// camera_.TransferMatrix(); // Removed
+		// debugCamera_->Update();
+		// camera_.SetRotate(debugCamera_->GetCamera().GetRotate());
+		// camera_.SetTranslate(debugCamera_->GetCamera().GetTranslate());
+		// camera_.Update();
 	} else {
 		Vector3 pPos = player_->GetWorldPosition();
 		Vector3 pRot = player_->GetRotation();
 		Vector3 tCamPos = { pPos.x, pPos.y + 4.0f, pPos.z - 20.0f };
-		camera_.translation_.x = LerpShort(camera_.translation_.x, tCamPos.x, 0.1f);
-		camera_.translation_.y = LerpShort(camera_.translation_.y, tCamPos.y, 0.1f);
-		camera_.translation_.z = LerpShort(camera_.translation_.z, tCamPos.z, 0.1f);
+		Vector3 camPos = camera_.GetTranslate();
+		camPos.x = LerpShort(camPos.x, tCamPos.x, 0.1f);
+		camPos.y = LerpShort(camPos.y, tCamPos.y, 0.1f);
+		camPos.z = LerpShort(camPos.z, tCamPos.z, 0.1f);
+		camera_.SetTranslate(camPos);
 
 		float tRoll = -pRot.z * 1.0f;
 		float tPitch = -pRot.x * 0.5f;
-		camera_.rotation_.z = LerpShort(camera_.rotation_.z, tRoll, 0.1f);
-		camera_.rotation_.x = LerpShort(camera_.rotation_.x, tPitch, 0.1f);
+		Vector3 camRot = camera_.GetRotate();
+		camRot.z = LerpShort(camRot.z, tRoll, 0.1f);
+		camRot.x = LerpShort(camRot.x, tPitch, 0.1f);
+		camera_.SetRotate(camRot);
 
 
 		camera_.Update();
 	}
 
-	// --- ロックオンシステム ---
 	Vector3 pPos = player_->GetWorldPosition();
 	Vector3 pRot = player_->GetRotation();
 	Matrix4x4 matPlayer = MakeAffineMatrix({ 1, 1, 1 }, pRot, pPos);
-	Vector3 targetPos = Transform({ 0, 0, -50.0f }, matPlayer);
+	Vector3 targetPos = TransformCoord({ 0, 0, -50.0f }, matPlayer);
 	reticle_->Update(targetPos, camera_);
 
 	lockedEnemy_ = nullptr;
@@ -489,9 +482,9 @@ std::optional<SceneID> StageScene::UpdateMain() {
 		if (e->IsDead())
 			continue;
 		Vector3 ePos = e->GetWorldPosition();
-		if (ePos.z < camera_.translation_.z)
+		if (ePos.z < camera_.GetTranslate().z)
 			continue;
-		Vector2 eScr = WorldToScreen(ePos, camera_.matView, camera_.matProjection, 1280, 720);
+		Vector2 eScr = WorldToScreen(ePos, camera_.GetViewMatrix(), camera_.GetProjectionMatrix(), 1280, 720);
 		float dst = sqrtf(powf(eScr.x - rPos.x, 2) + powf(eScr.y - rPos.y, 2));
 		if (dst < minDst) {
 			minDst = dst;
@@ -499,27 +492,24 @@ std::optional<SceneID> StageScene::UpdateMain() {
 		}
 	}
 
-	// ロックオン音
 	if (lockedEnemy_) {
 		if (!isLockSoundPlayed_) {
-			Audio::GetInstance()->PlayWave(soundLockOn_);
+			AudioManager::GetInstance()->SoundPlayWave(soundLockOn_);
 			isLockSoundPlayed_ = true;
 		}
 	} else {
 		isLockSoundPlayed_ = false;
 	}
 
-	// ★変更: ミサイル発射も操作可能なときだけ
 	if (isPlayerActive) {
-		if (input_->IsTriggerMouse(1)) {
+		if (input_->PushMouse(1)) {
 			if (lockedEnemy_) {
 				player_->FireMissile(lockedEnemy_);
-				Audio::GetInstance()->PlayWave(soundMissile_);
+				AudioManager::GetInstance()->SoundPlayWave(soundMissile_);
 			}
 		}
 	}
 
-	// UI更新
 	float hpRatio = (float)player_->GetHP() / (float)player_->GetMaxHP();
 	if (hpRatio < 0.0f)
 		hpRatio = 0.0f;
@@ -532,56 +522,68 @@ void StageScene::Draw() {
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
 	if (phase_ != ScenePhase::kFadeIn) {
-		Model::PreDraw(dxCommon->GetCommandList());
-		if(ground_) ground_->Draw(); // 引数を削除。もしGround.h未修正なら要確認だが一貫性重視。
+		Object3dCommon::GetInstance()->SetupCommonState();
+		if(ground_) ground_->Draw(); 
 		player_->Draw();
 		for (Enemy* e : enemies_)
 			if (!e->IsDead())
 				e->Draw();
 		for (Explosion* e : explosions_)
 			e->Draw();
-		Model::PostDraw();
 	}
 
-	Sprite::PreDraw(dxCommon->GetCommandList(), Sprite::BlendMode::kNormal);
+	SpriteCommon::GetInstance()->SetupCommonState();
 	if (lockedEnemy_ && !lockedEnemy_->IsDead()) {
 		Vector3 ePos = lockedEnemy_->GetWorldPosition();
-		Vector2 sPos = WorldToScreen(ePos, camera_.matView, camera_.matProjection, 1280, 720);
+		Vector2 sPos = WorldToScreen(ePos, camera_.GetViewMatrix(), camera_.GetProjectionMatrix(), 1280, 720);
 		lockOnMark_->SetPosition(sPos);
+		lockOnMark_->Update();
 		lockOnMark_->Draw();
 	}
 	if (reticle_)
 		reticle_->Draw();
 
-	if (hpBarSprite_)
+	if (hpBarSprite_) {
+		hpBarSprite_->Update();
 		hpBarSprite_->Draw();
+	}
 	int lives = player_->GetLives();
 	for (int i = 0; i < lives; i++) {
 		lifeIconSprite_->SetPosition({ 50.0f + i * 25.0f, 620.0f });
+		lifeIconSprite_->Update();
 		lifeIconSprite_->Draw();
 	}
 
-	// 演出スプライトの描画
 	if (waveState_ == WaveState::Intro) {
 		if (waveTimer_ < 60) {
 			// WAVE
-			if (spriteWave_)
+			if (spriteWave_) {
+				spriteWave_->Update();
 				spriteWave_->Draw();
+			}
 		} else if (waveTimer_ < 120) {
 			// WAVE... READY...
-			if (spriteWave_)
+			if (spriteWave_) {
+				spriteWave_->Update();
 				spriteWave_->Draw();
-			if (spriteReady_)
+			}
+			if (spriteReady_) {
+				spriteReady_->Update();
 				spriteReady_->Draw();
+			}
 		} else {
 			// START!!!
-			if (spriteStart_)
+			if (spriteStart_) {
+				spriteStart_->Update();
 				spriteStart_->Draw();
+			}
 		}
 	} else if (waveState_ == WaveState::Clear) {
 		// CLEAR!!
-		if (spriteClear_)
+		if (spriteClear_) {
+			spriteClear_->Update();
 			spriteClear_->Draw();
+		}
 	}
 
 #ifdef USE_IMGUI
@@ -601,7 +603,7 @@ void StageScene::Draw() {
 		alpha = (float)fadeTimer_ / kFadeDuration_;
 	if (alpha > 0.0f && fadeSprite_) {
 		fadeSprite_->SetColor({ 1, 1, 1, alpha });
+		fadeSprite_->Update();
 		fadeSprite_->Draw();
 	}
-	Sprite::PostDraw();
 }

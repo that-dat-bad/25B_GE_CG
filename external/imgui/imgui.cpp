@@ -1,4 +1,4 @@
-// dear imgui, v1.89.4
+﻿// dear imgui, v1.89.4
 // (main code and documentation)
 
 // Help:
@@ -14625,3 +14625,4 @@ void ImGui::UpdateDebugToolStackQueries() {}
 //-----------------------------------------------------------------------------
 
 #endif // #ifndef IMGUI_DISABLE
+

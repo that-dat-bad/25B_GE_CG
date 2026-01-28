@@ -1,4 +1,4 @@
-#include "TextureManager.h"
+﻿#include "TextureManager.h"
 #include "DirectXCommon.h"
 #include <cassert>
 #include <filesystem> 
@@ -63,28 +63,21 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	}
 
 
-	// --- テクスチャデータを追加 ---
-	// 追加した要素の参照を取得する
 	TextureData& textureData = textureDatas_[filePath];
 
 
-	// ---  テクスチャデータ書き込み ---
 	textureData.filePath = filePath;
 	textureData.metadata = mipImages.GetMetadata();
 	textureData.resource = dxCommon_->CreateTextureResource(dxCommon_->GetDevice(), textureData.metadata);
 
-	// ---テクスチャデータ転送 ---
 	textureData.intermediateResource = dxCommon_->UploadTextureData(textureData.resource.Get(), mipImages);
 
 
-	// ---  デスクリプタハンドルの計算 ---
 	textureData.srvIndex = srvManager_->Allocate();
 
-	//ハンドルを取得して保存
 	textureData.srvHandleCPU = srvManager_->GetCPUDescriptorHandle(textureData.srvIndex);
 	textureData.srvHandleGPU = srvManager_->GetGPUDescriptorHandle(textureData.srvIndex);
 
-	//SRV生成
 	srvManager_->CreateSRVforTexture2D(
 		textureData.srvIndex,
 		textureData.resource.Get(),
@@ -127,3 +120,4 @@ const DirectX::TexMetadata& TextureManager::GetMetaData(uint32_t textureIndex) {
 	static DirectX::TexMetadata dummy{};
 	return dummy;
 }
+

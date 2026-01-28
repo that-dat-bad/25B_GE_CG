@@ -1,54 +1,43 @@
-#include "Sprite.h"
+﻿#include "Sprite.h"
 #include "SpriteCommon.h"
 #include "DirectXCommon.h"
 #include "../base/Math/MyMath.h"
 #include "TextureManager.h"
 #include "../../../external/DirectXTex/DirectXTex.h"
 
-// 引数の dxCommon を削除 (spriteCommonから取得できるため)
 void Sprite::Initialize(SpriteCommon* spriteCommon, std::string textureFilePath)
 {
 	spriteCommon_ = spriteCommon;
-	// SpriteCommonからDirectXCommonを取得
 	DirectXCommon* dxCommon = spriteCommon_->GetDirectXCommon();
 	assert(dxCommon != nullptr && "dxCommon is NULL! SpriteCommon::Initialize was not called.");
 	assert(dxCommon->GetDevice() != nullptr && "D3D12Device is NULL!");
-	//vertexResource(vertexBuffer)を作る
 	vertexBuffer_ = dxCommon->CreateBufferResource(sizeof(VertexData) * 4);
-	//IndexResource(indexBuffer)を作る
 	indexBuffer_ = dxCommon->CreateBufferResource(sizeof(uint32_t) * 6);
 
-	//VertexBufferViewの作成
 	vertexBufferView.BufferLocation = vertexBuffer_->GetGPUVirtualAddress();
 	vertexBufferView.SizeInBytes = sizeof(VertexData) * 4;
 	vertexBufferView.StrideInBytes = sizeof(VertexData);
 
-	//IndexBufferViewの作成
 	indexBufferView.BufferLocation = indexBuffer_->GetGPUVirtualAddress();
 	indexBufferView.SizeInBytes = sizeof(uint32_t) * 6;
 	indexBufferView.Format = DXGI_FORMAT_R32_UINT;
 
-	//VertexResourceにデータを書き込む
 	vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
 
-	//IndexResourceにデータを書き込む
 	uint32_t* indexDataLocal = nullptr;
 	indexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&indexDataLocal));
 	indexDataLocal[0] = 0; indexDataLocal[1] = 1; indexDataLocal[2] = 2;
 	indexDataLocal[3] = 1; indexDataLocal[4] = 3; indexDataLocal[5] = 2;
 	indexBuffer_->Unmap(0, nullptr);
 
-	//マテリアルリソースの作成
 	materialResource_ = dxCommon->CreateBufferResource(sizeof(Material));
 	materialResource_->Map(0, nullptr, reinterpret_cast<void**>(&materialData_));
 	materialData_->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	materialData_->WVP = Identity4x4();
 
-	// テクスチャのロード処理
 	if (textureFilePath.empty()) {
-		// パスが空の場合は一旦仮のインデックスまたは0にしておく
 		textureIndex_ = 0;
-		size_ = { 100.0f, 100.0f }; // 仮サイズ
+		size_ = { 100.0f, 100.0f }; 
 	}
 	else {
 		textureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
@@ -65,10 +54,8 @@ void Sprite::Update()
 	float top = 0.0f - anchorPoint_.y;
 	float bottom = 1.0f - anchorPoint_.y;
 
-	// テクスチャ情報の取得
 	const DirectX::TexMetadata& metaData = TextureManager::GetInstance()->GetMetaData(textureIndex_);
 
-	// テクスチャサイズが0除算にならないようガード（念のため）
 	float texWidth = static_cast<float>(metaData.width);
 	float texHeight = static_cast<float>(metaData.height);
 	if (texWidth == 0) texWidth = 1.0f;
@@ -79,18 +66,16 @@ void Sprite::Update()
 	float texTop = textureLeftTop_.y / texHeight;
 	float texBottom = (textureLeftTop_.y + textureSize_.y) / texHeight;
 
-	//左右反転
 	if (isFlipX_) { left = -left; right = -right; }
-	//上下反転
 	if (isFlipY_) { top = -top; bottom = -bottom; }
 
-	vertexData_[0].position = { left, bottom, 0.0f, 1.0f }; // 左下
+	vertexData_[0].position = { left, bottom, 0.0f, 1.0f }; 
 	vertexData_[0].texcoord = { texLeft,texBottom };
-	vertexData_[1].position = { left, top, 0.0f, 1.0f };   // 左上
+	vertexData_[1].position = { left, top, 0.0f, 1.0f };   
 	vertexData_[1].texcoord = { texLeft, texTop };
-	vertexData_[2].position = { right, bottom, 0.0f, 1.0f };// 右下
+	vertexData_[2].position = { right, bottom, 0.0f, 1.0f };
 	vertexData_[2].texcoord = { texRight, texBottom };
-	vertexData_[3].position = { right, top, 0.0f, 1.0f };  // 右上
+	vertexData_[3].position = { right, top, 0.0f, 1.0f };  
 	vertexData_[3].texcoord = { texRight, texTop };
 
 	Vector3 finalScale = {
@@ -109,22 +94,16 @@ void Sprite::Update()
 
 void Sprite::Draw()
 {
-	// SpriteCommonから dxCommon を取得
 	DirectXCommon* dxCommon = spriteCommon_->GetDirectXCommon();
 	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
 	
 	spriteCommon_->SetBlendMode(blendMode_);
 
-	// 1. 頂点バッファの設定
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
-	// 2. インデックスバッファの設定
 	commandList->IASetIndexBuffer(&indexBufferView);
-	// 3. マテリアル(定数バッファ)の設定
 	commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
-	// 4. テクスチャの設定 (内部の textureIndex_ を使用)
 	commandList->SetGraphicsRootDescriptorTable(1, TextureManager::GetInstance()->GetSrvHandleGPU(textureIndex_));
 
-	// 5. 描画コマンド
 	commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 }
 
@@ -136,10 +115,8 @@ void Sprite::ChangeTexture(std::string textureFilePath)
 
 void Sprite::AdjustTextureSize()
 {
-	//テクスチャメタデータを取得
 	const DirectX::TexMetadata& metadata = TextureManager::GetInstance()->GetMetaData(textureIndex_);
 	textureSize_.x = static_cast<float>(metadata.width);
 	textureSize_.y = static_cast<float>(metadata.height);
-	//画像サイズをテクスチャサイズに合わせる
 	size_ = textureSize_;
 }

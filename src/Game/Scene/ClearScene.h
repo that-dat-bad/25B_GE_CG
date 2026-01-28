@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "IScene.h"
 #include "Camera.h"
 #include "Input.h"
@@ -12,7 +12,6 @@ public:
 	void Draw() override;
 	void Finalize() override;
 
-	// 勝敗フラグ
 	static bool isWin;
 	static int finalScore;
 

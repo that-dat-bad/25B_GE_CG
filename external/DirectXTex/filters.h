@@ -1,4 +1,4 @@
-//-------------------------------------------------------------------------------------
+﻿//-------------------------------------------------------------------------------------
 // filters.h
 //
 // Utility header with helpers for implementing image filters
@@ -420,3 +420,4 @@ namespace DirectX
 
     } // namespace Filters
 } // namespace DirectX
+
