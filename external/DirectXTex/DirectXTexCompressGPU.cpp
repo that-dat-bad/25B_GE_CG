@@ -1,4 +1,4 @@
-//-------------------------------------------------------------------------------------
+﻿//-------------------------------------------------------------------------------------
 // DirectXTexCompressGPU.cpp
 //
 // DirectX Texture Library - DirectCompute-based texture compression
@@ -425,3 +425,4 @@ HRESULT DirectX::Compress(
 
     return S_OK;
 }
+

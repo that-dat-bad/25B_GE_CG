@@ -1,4 +1,4 @@
-// dear imgui, v1.89.4
+﻿// dear imgui, v1.89.4
 // (drawing and font code)
 
 /*
@@ -4172,3 +4172,4 @@ static const char* GetDefaultCompressedFontDataTTFBase85()
 }
 
 #endif // #ifndef IMGUI_DISABLE
+

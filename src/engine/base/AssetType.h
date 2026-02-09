@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 #include <wrl.h>
@@ -9,7 +9,6 @@ struct ID3D12Resource;
 struct D3D12_CPU_DESCRIPTOR_HANDLE;
 struct D3D12_GPU_DESCRIPTOR_HANDLE;
 
-// 読み込んだテクスチャアセット
 struct TextureAsset {
 	std::string name;
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource;

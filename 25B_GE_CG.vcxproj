@@ -80,13 +80,13 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;$(SolutionDir)external\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;$(SolutionDir)external\;$(SolutionDir)external\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalOptions>/ignore:4049 /ignore:4098 /ignore:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/ignore:4049 /ignore:4098 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalLibraryDirectories>$(SolutionDir)external\assimp\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -106,12 +106,11 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;$(SolutionDir)external\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;$(SolutionDir)external\;$(SolutionDir)external\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalLibraryDirectories>$(SolutionDir)external\assimp\lib\Release</AdditionalLibraryDirectories>
       <AdditionalDependencies>assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -126,7 +125,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>USE_IMGUI;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -134,12 +133,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;$(SolutionDir)external\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\engine\Audio\;$(SolutionDir)src\engine\base\;$(SolutionDir)src\engine\Debug\;$(SolutionDir)src\engine\Graphics\;$(SolutionDir)src\engine\io\;$(SolutionDir)src\Game\;$(SolutionDir)src\Game\Scene\;$(SolutionDir)external\;$(SolutionDir)external\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration />
       <AdditionalLibraryDirectories>$(SolutionDir)external\assimp\lib\Debug</AdditionalLibraryDirectories>
       <AdditionalDependencies>assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -245,7 +243,18 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\Game\Scene\Iscene.h" />
     <ClInclude Include="src\Game\Scene\SceneManager.h" />
     <ClInclude Include="src\Game\Scene\StageScene.h" />
+    <ClInclude Include="src\Game\Scene\Stage\Enemy.h" />
+    <ClInclude Include="src\Game\Scene\Stage\EnemyBullet.h" />
+    <ClInclude Include="src\Game\Scene\Stage\EnemyMissile.h" />
+    <ClInclude Include="src\Game\Scene\Stage\Explosion.h" />
+    <ClInclude Include="src\Game\Scene\Stage\Ground.h" />
+    <ClInclude Include="src\Game\Scene\Stage\Player.h" />
+    <ClInclude Include="src\Game\Scene\Stage\PlayerBullet.h" />
+    <ClInclude Include="src\Game\Scene\Stage\PlayerMissile.h" />
+    <ClInclude Include="src\Game\Scene\Stage\Reticle.h" />
     <ClInclude Include="src\Game\Scene\TitleScene.h" />
+    <ClInclude Include="src\Game\Scene\Title\TitleGuide.h" />
+    <ClInclude Include="src\Game\Scene\Title\TitleLogo.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\engine\Debug\Dump.cpp" />
@@ -289,6 +298,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Development|x64'">stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="src\engine\base\Math\Matrix4x4.cpp" />
+    <ClCompile Include="src\engine\base\Math\MyMath.cpp" />
     <ClCompile Include="src\engine\base\Math\Vector3.cpp" />
     <ClCompile Include="src\engine\base\WinApp.cpp" />
     <ClCompile Include="src\engine\Graphics\DebugCamera.cpp" />
@@ -311,7 +321,18 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\Game\Scene\IScene.cpp" />
     <ClCompile Include="src\Game\Scene\SceneManager.cpp" />
     <ClCompile Include="src\Game\Scene\StageScene.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\Enemy.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\EnemyBullet.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\EnemyMissile.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\Explosion.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\Ground.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\Player.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\PlayerBullet.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\PlayerMissile.cpp" />
+    <ClCompile Include="src\Game\Scene\Stage\Reticle.cpp" />
     <ClCompile Include="src\Game\Scene\TitleScene.cpp" />
+    <ClCompile Include="src\Game\Scene\Title\TitleGuide.cpp" />
+    <ClCompile Include="src\Game\Scene\Title\TitleLogo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="external\imgui\LICENSE.txt" />

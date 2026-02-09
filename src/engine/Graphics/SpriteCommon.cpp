@@ -1,4 +1,4 @@
-#include "SpriteCommon.h"
+﻿#include "SpriteCommon.h"
 #include "DirectXCommon.h"
 #include"../base/logger.h"
 #include <cassert>
@@ -26,7 +26,6 @@ void SpriteCommon::SetupCommonState()
 #endif // _DEBUG
 
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
-	// デフォルトでNormalモードを設定
 	SetBlendMode(BlendMode::kNormal);
 	commandList->SetGraphicsRootSignature(rootSignature_.Get());
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -56,7 +55,6 @@ void SpriteCommon::CreateRootSignature(DirectXCommon* dxCommon)
 	rootParameters[1].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-	//サンプラー設定
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
 	staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -118,7 +116,6 @@ void SpriteCommon::CreateGraphicsPipeline(DirectXCommon* dxCommon)
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	// 全ブレンドモードのPSOを生成
 	for (size_t i = 0; i < static_cast<size_t>(BlendMode::kCountOf); ++i) {
 		BlendMode mode = static_cast<BlendMode>(i);
 		graphicsPipelineStateDesc.BlendState = GetBlendDesc(mode);
@@ -133,4 +130,5 @@ void SpriteCommon::SetBlendMode(BlendMode mode)
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 	commandList->SetPipelineState(graphicsPipelineStates_[static_cast<size_t>(mode)].Get());
 }
+
 

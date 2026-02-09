@@ -1,4 +1,4 @@
-#include "Particle.hlsli"
+﻿#include "Particle.hlsli"
 
 struct VSInput
 {
@@ -10,16 +10,12 @@ VSOutput main(VSInput input, uint instanceId : SV_InstanceID)
 {
     VSOutput output;
 
-    // StructuredBufferから、現在のインスタンスに対応するデータを取得
     ParticleForGPU particle = gParticleData[instanceId];
 
-    // 座標変換 (パーティクルごとのWVP行列を使用)
     output.svpos = mul(input.position, particle.WVP);
     
-    // UV座標はそのまま
     output.texcoord = input.texcoord;
     
-    // 色情報をピクセルシェーダーへ渡す
     output.color = particle.color;
 
     return output;

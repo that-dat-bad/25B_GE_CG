@@ -1,4 +1,4 @@
-//-------------------------------------------------------------------------------------
+﻿//-------------------------------------------------------------------------------------
 // DirectXTexPMAlpha.cpp
 //
 // DirectX Texture Library - Premultiplied alpha operations
@@ -342,3 +342,4 @@ HRESULT DirectX::PremultiplyAlpha(
 
     return S_OK;
 }
+

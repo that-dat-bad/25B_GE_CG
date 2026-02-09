@@ -1,4 +1,4 @@
-/*
+﻿/*
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
@@ -77,3 +77,4 @@ ASSIMP_API void aiAssertViolation(const char* failedExpression, const char* file
 } // end of namespace Assimp
 
 #endif // INCLUDED_AI_ASSERTHANDLER_H
+

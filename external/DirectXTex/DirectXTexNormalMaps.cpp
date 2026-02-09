@@ -1,4 +1,4 @@
-//-------------------------------------------------------------------------------------
+﻿//-------------------------------------------------------------------------------------
 // DirectXTexNormalMaps.cpp
 //
 // DirectX Texture Library - Normal map operations
@@ -391,3 +391,4 @@ HRESULT DirectX::ComputeNormalMap(
 
     return S_OK;
 }
+

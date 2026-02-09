@@ -1,14 +1,13 @@
-#include "SceneManager.h"
+﻿#include "SceneManager.h"
 #include "TitleScene.h"
 #include "StageScene.h"
 #include "ClearScene.h"
 #include "IScene.h"
 
 SceneManager::SceneManager() {
-	// 初期シーン生成
-	currentScene = std::make_unique<StageScene>();
-	currentScene->Initialize();
-	currentSceneID = SCENE::STAGE;
+	currentSceneID_ = SceneID::kTitle;
+	currentScene_ = std::make_unique<TitleScene>();
+	currentScene_->Initialize();
 }
 
 SceneManager::~SceneManager() {
@@ -16,40 +15,40 @@ SceneManager::~SceneManager() {
 
 void SceneManager::Update() {
 
-	// 現在のシーンの更新
-	if (currentScene != nullptr) {
-		currentScene->Update();
+	if (currentScene_ == nullptr) {
+		return;
 	}
 
-	// シーン切り替え判定（static変数が変更されたかチェック）
-	int nextSceneID = currentScene->GetSceneID();
-	if (nextSceneID != currentSceneID) {
+	std::optional<SceneID> nextSceneID = currentScene_->Update();
 
-		switch (nextSceneID) {
-		case SCENE::TITLE:
-			currentScene = std::make_unique<TitleScene>();
-			break;
-		case SCENE::STAGE:
-			currentScene = std::make_unique<StageScene>();
-			break;
-		case SCENE::CLEAR:
-			currentScene = std::make_unique<ClearScene>();
-			break;
-		default:
-			currentScene = nullptr;
-			break;
+	if (nextSceneID.has_value()) {
+		SceneID next = nextSceneID.value();
+		
+		if (next != currentSceneID_) {
+			currentScene_->Finalize();
+
+			switch (next) {
+			case SceneID::kTitle:
+				currentScene_ = std::make_unique<TitleScene>();
+				break;
+			case SceneID::kStage:
+				currentScene_ = std::make_unique<StageScene>();
+				break;
+			case SceneID::kClear:
+				currentScene_ = std::make_unique<ClearScene>();
+				break;
+			}
+
+			if (currentScene_) {
+				currentScene_->Initialize();
+			}
+			currentSceneID_ = next;
 		}
-
-		if (currentScene != nullptr) {
-			currentScene->Initialize();
-		}
-
-		currentSceneID = nextSceneID;
 	}
 }
 
 void SceneManager::Draw() {
-	if (currentScene != nullptr) {
-		currentScene->Draw();
+	if (currentScene_ != nullptr) {
+		currentScene_->Draw();
 	}
 }

@@ -1,0 +1,19 @@
+﻿#pragma once
+#include "Object3d.h"
+#include <memory>
+#include "math/MyMath.h"
+
+class TitleGuide {
+private:
+	std::unique_ptr<Object3d> object3d_ = nullptr;
+
+	float blinkParameter_ = 0.0f;
+
+	const float kBlinkSpeed_ = 0.1f;
+
+public:
+	void Initialize(Model* model, Camera* camera, const Vector3& position);
+	void Update();
+	void Draw();
+	void SetPosition(const Vector3& position); 
+};

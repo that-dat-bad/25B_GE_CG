@@ -1,4 +1,4 @@
-//-------------------------------------------------------------------------------------
+﻿//-------------------------------------------------------------------------------------
 // DirectXTexTGA.cpp
 //
 // DirectX Texture Library - Targa Truevision (TGA) file format reader/writer
@@ -2522,3 +2522,4 @@ HRESULT DirectX::SaveToTGAFile(
 
     return S_OK;
 }
+

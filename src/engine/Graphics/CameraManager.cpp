@@ -1,4 +1,4 @@
-#include "CameraManager.h"
+﻿#include "CameraManager.h"
 #include <cassert>
 
 std::unique_ptr<CameraManager> CameraManager::instance_ = nullptr;
@@ -11,7 +11,6 @@ CameraManager* CameraManager::GetInstance() {
 }
 
 void CameraManager::Initialize() {
-	// デフォルトカメラを作っておく（"default" という名前で）
 	CreateCamera("default");
 	SetActiveCamera("default");
 }
@@ -21,20 +20,17 @@ void CameraManager::Finalize() {
 }
 
 void CameraManager::CreateCamera(const std::string& name) {
-	// 既に同じ名前があったら何もしない（あるいは上書き）
 	if (cameras_.contains(name)) {
 		return;
 	}
 
-	// 新しいカメラを作成してMapに登録
 	std::unique_ptr<Camera> newCamera = std::make_unique<Camera>();
 	cameras_.insert(std::make_pair(name, std::move(newCamera)));
 }
 
 void CameraManager::SetActiveCamera(const std::string& name) {
-	// 指定した名前のカメラが存在するかチェック
 	if (cameras_.contains(name)) {
-		activeCamera_ = cameras_[name].get(); // 生ポインタを取得
+		activeCamera_ = cameras_[name].get(); 
 	}
 }
 
@@ -46,11 +42,10 @@ void CameraManager::Update() {
 
 void CameraManager::DeleteCamera(const std::string& name) {
 	if (cameras_.contains(name)) {
-		// アクティブカメラが削除対象ならアクティブカメラをクリア
 		if (activeCamera_ == cameras_[name].get()) {
 			activeCamera_ = nullptr;
 		}
-		// カメラを削除
 		cameras_.erase(name);
 	}
 }
+

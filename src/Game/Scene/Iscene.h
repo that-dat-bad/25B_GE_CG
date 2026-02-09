@@ -1,26 +1,35 @@
-#pragma once
-#include"Input.h"
+﻿#pragma once
+#include "Input.h"
+#include <optional>
 
-enum SCENE {
-	TITLE,
-	STAGE,
-	CLEAR,
+enum class SceneID {
+	kTitle,
+	kStage,
+	kClear
 };
 
 class IScene {
-protected:
-	static int sceneID;
+public:
 
+	enum ScenePhase {
+		kFadeIn,
+		kMain,
+		kFadeOut,
+	};
+
+protected:
+
+	ScenePhase phase_ = ScenePhase::kFadeIn;
+	int fadeTimer_ = 30;
+	const int kFadeDuration_ = 30;
 
 public:
+
 	virtual void Initialize() = 0;
-	virtual void Update() = 0;
+	virtual std::optional<SceneID> Update() = 0;
 	virtual void Draw() = 0;
 	virtual void Finalize() = 0;
-	virtual ~IScene();
+	virtual ~IScene() = default;
 
-	static bool IsKeyTriggered(BYTE keyNumber);
-	static bool IsKeyPressed(BYTE keyNumber);
-
-	int GetSceneID();
 };
+

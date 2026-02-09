@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
@@ -18,19 +18,15 @@ class DirectXCommon
 public:
 	static DirectXCommon* GetInstance();
 
-	static const uint32_t kRtvHeapDescriptorNum_ = 2; // ダブルバッファ用
-	static const uint32_t kDsvHeapDescriptorNum_ = 1; // 深度バッファ用
+	static const uint32_t kRtvHeapDescriptorNum_ = 2; 
+	static const uint32_t kDsvHeapDescriptorNum_ = 1; 
 	static const uint32_t kSwapChainBufferCount_ = 2;
-	//static const uint32_t kMaxSRVCount_;//最大SRV数(最大テクスチャ枚数)
 
 
-	// 初期化
 	void Initialize(WinApp* winApp);
 
-	//描画前処理
 	void PreDraw();
 
-	//描画後処理
 	void PostDraw();
 
 	Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(const std::wstring& filePath, const wchar_t* profile);
@@ -38,7 +34,6 @@ public:
 
 
 
-	//--ゲッター--
 	ID3D12Device* GetDevice() { return device_.Get(); }
 	ID3D12GraphicsCommandList* GetCommandList() { return commandList_.Get(); }
 	ID3D12CommandQueue* GetCommandQueue() { return commandQueue_.Get(); }
@@ -63,7 +58,6 @@ public:
 	D3D12_RECT GetScissorRect() { return scissorRect_; }
 
 
-	//セッター
 	void IncrementFenceValue() { fenceValue_++; }
 
 
@@ -93,7 +87,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_ = nullptr;
 
-	// デスクリプタヒープ
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtvDescriptorHeap_;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsvDescriptorHeap_;
 
@@ -101,7 +94,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> depthStencilResource_;
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence_;
 
-	// デスクリプタサイズ
 	uint32_t rtvDescriptorSize_;
 	//uint32_t srvDescriptorSize_;
 	uint32_t dsvDescriptorSize_;
@@ -124,47 +116,33 @@ private:
 	D3D12_VIEWPORT viewport_{};
 
 
-	//記録時間(FPS固定用	)
 	std::chrono::steady_clock::time_point reference_;
 
 	WinApp* winApp_ = nullptr;
 
-	//デバイスの初期化
 	void CreateDevice();
 
-	//コマンド関連の初期化
 	void CreateCommand();
 
-	//スワップチェーンの初期化
 	void CreateSwapChain();
 
-	//深度バッファの生成
 	void CreateDepthStencilBuffer();
 
-	//深度ステンシルビューの生成
 	void CreateDepthStencilView();
 
-	//各種デスクリプタヒープの生成
 	void CreateDescriptorHeaps();
 
-	//レンダーターゲットビューの初期化
 	void CreateRenderTargetView();
 
-	//フェンスの作成
 	void CreateFence();
 
-	//ビューポート矩形の初期化
 	void SetViewport();
 
-	//シザー矩形の初期化
 	void SetScissorRect();
 
-	//DXCコンパイラの初期化
 	void InitializeDxcCompiler();
 
-	//FPS固定初期化
 	void InitializeFixFPS();
 
-	//FPS固定更新
 	void UpdateFixFPS();
 };

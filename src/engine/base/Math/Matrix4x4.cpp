@@ -1,4 +1,4 @@
-#include"Matrix4x4.h"
+﻿#include"Matrix4x4.h"
 #include<cmath>
 
 namespace MyMath {
@@ -82,7 +82,6 @@ namespace MyMath {
 	{
 		Matrix4x4 buf;
 
-		//行列式
 		float det =
 			m.m[0][0] * (m.m[1][1] * (m.m[2][2] * m.m[3][3] - m.m[2][3] * m.m[3][2]) -
 				m.m[1][2] * (m.m[2][1] * m.m[3][3] - m.m[2][3] * m.m[3][1]) +
@@ -98,10 +97,8 @@ namespace MyMath {
 				m.m[1][2] * (m.m[2][0] * m.m[3][1] - m.m[2][1] * m.m[3][0]));
 
 
-		// 行列式の逆数
 		float invDet = 1.0f / det;
 
-		// 各要素を計算し、行列式で割る
 		buf.m[0][0] = invDet * (m.m[1][1] * (m.m[2][2] * m.m[3][3] - m.m[2][3] * m.m[3][2]) -
 			m.m[1][2] * (m.m[2][1] * m.m[3][3] - m.m[2][3] * m.m[3][1]) +
 			m.m[1][3] * (m.m[2][1] * m.m[3][2] - m.m[2][2] * m.m[3][1]));
@@ -259,13 +256,11 @@ namespace MyMath {
 	}
 
 	Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate) {
-		//拡大縮小行列
 		Matrix4x4 scaleMatrix = Identity4x4();
 		scaleMatrix.m[0][0] = scale.x;
 		scaleMatrix.m[1][1] = scale.y;
 		scaleMatrix.m[2][2] = scale.z;
 
-		// 回転行列の生成
 		Matrix4x4 rotateX = Identity4x4();
 		Matrix4x4 rotateY = Identity4x4();
 		Matrix4x4 rotateZ = Identity4x4();
@@ -274,31 +269,25 @@ namespace MyMath {
 		float cosY = cos(rotate.y), sinY = sin(rotate.y);
 		float cosZ = cos(rotate.z), sinZ = sin(rotate.z);
 
-		// X軸
 		rotateX.m[1][1] = cosX;
 		rotateX.m[1][2] = sinX;
 		rotateX.m[2][1] = -sinX;
 		rotateX.m[2][2] = cosX;
 
-		// Y軸
 		rotateY.m[0][0] = cosY;
 		rotateY.m[0][2] = -sinY;
 		rotateY.m[2][0] = sinY;
 		rotateY.m[2][2] = cosY;
 
-		// Z軸
 		rotateZ.m[0][0] = cosZ;
 		rotateZ.m[0][1] = sinZ;
 		rotateZ.m[1][0] = -sinZ;
 		rotateZ.m[1][1] = cosZ;
 
-		// 回転合成
 		Matrix4x4 rotationMatrix = Multiply(Multiply(rotateX, rotateY), rotateZ);
 
-		// スケールと回転を合成
 		Matrix4x4 scaleRotateMatrix = Multiply(scaleMatrix, rotationMatrix);
 
-		// 平行移動行列
 		scaleRotateMatrix.m[3][0] = translate.x;
 		scaleRotateMatrix.m[3][1] = translate.y;
 		scaleRotateMatrix.m[3][2] = translate.z;

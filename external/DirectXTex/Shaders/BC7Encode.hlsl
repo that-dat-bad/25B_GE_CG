@@ -1,4 +1,4 @@
-//--------------------------------------------------------------------------------------
+﻿//--------------------------------------------------------------------------------------
 // File: BC7Encode.hlsl
 //
 // The Compute Shader for BC7 Encoder
@@ -1930,3 +1930,4 @@ void block_package7(out uint4 block, uint partition, uint threadBase)
         block.w |= get_color_index(i) << (i * 2);
     }
 }
+

@@ -1,4 +1,4 @@
-//-------------------------------------------------------------------------------------
+﻿//-------------------------------------------------------------------------------------
 // BCDirectCompute.cpp
 //
 // Direct3D 11 Compute Shader BC Compressor
@@ -642,3 +642,4 @@ HRESULT GPUCompressBC::Compress(const Image& srcImage, const Image& destImage)
 
     return hr;
 }
+

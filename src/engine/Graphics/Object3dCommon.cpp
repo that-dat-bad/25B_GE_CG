@@ -1,4 +1,4 @@
-#include "Object3dCommon.h"
+﻿#include "Object3dCommon.h"
 #include "DirectXCommon.h"
 #include "../base/logger.h"
 using namespace logger;
@@ -16,12 +16,11 @@ Object3dCommon* Object3dCommon::GetInstance() {
 void Object3dCommon::Initialize(DirectXCommon* dxCommon)
 {
 	dxCommon_ = dxCommon;
-	// ライト設定 (b1, b2レジスタ用)
 	directionalLightResource_ = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(DirectionalLight));
 	directionalLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
 	directionalLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
-	directionalLightData->intensity = 1.0f;
+	directionalLightData->intensity = 1.5f;
 
 	pointLightResource_ = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(PointLight));
 	pointLightResource_->Map(0, nullptr, reinterpret_cast<void**>(&pointLightData));
@@ -51,6 +50,7 @@ void Object3dCommon::Initialize(DirectXCommon* dxCommon)
 	lightingSettingsData->shadingModel = 0; // Lambert
 	lightingSettingsData->specularModel = 0; // None
 	lightingSettingsData->lightType = 0; // Directional
+	lightingSettingsData->ambientColor = { 0.8f, 0.8f, 0.8f }; // Brightened from 0.3
 	CreateRootSignature(dxCommon_);
 	CreateGraphicsPipeline(dxCommon_);
 }
@@ -62,7 +62,6 @@ void Object3dCommon::SetupCommonState()
 #endif // _DEBUG
 
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
-	// デフォルトでNormalモードを設定
 	SetBlendMode(BlendMode::kNormal);
 	commandList->SetGraphicsRootSignature(rootSignature_.Get());
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -166,7 +165,6 @@ void Object3dCommon::CreateGraphicsPipeline(DirectXCommon* dxCommon)
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	// 全ブレンドモードのPSOを生成
 	for (size_t i = 0; i < static_cast<size_t>(BlendMode::kCountOf); ++i) {
 		BlendMode mode = static_cast<BlendMode>(i);
 		graphicsPipelineStateDesc.BlendState = GetBlendDesc(mode);

@@ -1,4 +1,4 @@
-#include "SrvManager.h"
+﻿#include "SrvManager.h"
 #include<cassert>
 #include"DirectXCommon.h"
 const uint32_t SrvManager::kMaxSRVCount_ = 512;
@@ -6,13 +6,11 @@ const uint32_t SrvManager::kMaxSRVCount_ = 512;
 void SrvManager::Initialize(DirectXCommon* dxCommon) {
 	dxCommon_ = dxCommon;
 
-	//デスクリプタヒープの生成
 	descriptorHeap_ = dxCommon->CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kMaxSRVCount_, true);
 	descriptorSize_ = dxCommon->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 }
 
 void SrvManager::PreDraw() {
-	//描画用のDescriotorHeapの設定
 	ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap_.Get() };
 	dxCommon_->GetCommandList()->SetDescriptorHeaps(1, descriptorHeaps);
 }
@@ -23,14 +21,10 @@ void SrvManager::SetGraphicsRootDescriptorTable(UINT RootParameterIndex, uint32_
 
 
 uint32_t SrvManager::Allocate() {
-	//上限に達していないかチェックしてassert
 	assert(useIndex_ < kMaxSRVCount_);
 
-	//returnする番号をいったん記録しておく
 	int index = useIndex_;
-	//次のために番号を1進める
 	useIndex_++;
-	//上で記録した番号をreturn
 	return index;
 }
 
@@ -78,3 +72,4 @@ void SrvManager::CreateSRVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource*
 
 	dxCommon_->GetDevice()->CreateShaderResourceView(pResource, &srvDesc, GetCPUDescriptorHandle(srvIndex));
 }
+

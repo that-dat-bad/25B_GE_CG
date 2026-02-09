@@ -1,9 +1,8 @@
-#include <Windows.h>
+﻿#include <Windows.h>
 #include "StringUtility.h"
 #include <stringapiset.h>
 #include<string>
 
-//string<->wstring変換
 
 namespace StringUtility {
 	std::wstring ConvertString(const std::string& str) {

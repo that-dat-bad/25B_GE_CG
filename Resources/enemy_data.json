@@ -1,0 +1,246 @@
+{
+  "enemies": [
+    {
+      "wave": 1,
+      "spawnTime": 30,
+      "type": "A",
+      "attackPattern": "Normal",
+      "position": [ -5.0, 5.0, 80.0 ],
+      "velocity": [ 0.1, 0.0, -0.3 ]
+    },
+    {
+      "wave": 1,
+      "spawnTime": 60,
+      "type": "B",
+      "attackPattern": "Homing",
+      "position": [ 3.0, 10.0, 90.0 ],
+      "velocity": [ -0.1, 0.02, -0.4 ]
+    },
+    {
+      "wave": 1,
+      "spawnTime": 90,
+      "type": "A",
+      "attackPattern": "None",
+      "position": [ 0.0, 2.0, 60.0 ],
+      "velocity": [ 0.0, -0.03, -0.25 ]
+    },
+    {
+      "wave": 1,
+      "spawnTime": 120,
+      "type": "B",
+      "attackPattern": "Normal",
+      "position": [ -7.0, 12.0, 100.0 ],
+      "velocity": [ 0.2, 0.0, -0.5 ]
+    },
+    {
+      "wave": 1,
+      "spawnTime": 150,
+      "type": "A",
+      "attackPattern": "Homing",
+      "position": [ 6.0, 8.0, 70.0 ],
+      "velocity": [ -0.15, 0.04, -0.35 ]
+    },
+    {
+      "wave": 1,
+      "spawnTime": 180,
+      "type": "A",
+      "attackPattern": "Normal",
+      "position": [ -2.0, 14.0, 85.0 ],
+      "velocity": [ 0.05, -0.01, -0.2 ]
+    },
+    {
+      "wave": 1,
+      "spawnTime": 210,
+      "type": "B",
+      "attackPattern": "None",
+      "position": [ 4.0, 4.0, 95.0 ],
+      "velocity": [ -0.05, 0.05, -0.45 ]
+    },
+    {
+      "wave": 1,
+      "spawnTime": 240,
+      "type": "A",
+      "attackPattern": "Normal",
+      "position": [ -6.0, 1.0, 55.0 ],
+      "velocity": [ 0.18, -0.04, -0.3 ]
+    },
+    {
+      "wave": 1,
+      "spawnTime": 270,
+      "type": "B",
+      "attackPattern": "Homing",
+      "position": [ 2.0, 11.0, 75.0 ],
+      "velocity": [ -0.1, 0.01, -0.28 ]
+    },
+    {
+      "wave": 1,
+      "spawnTime": 300,
+      "type": "A",
+      "attackPattern": "Normal",
+      "position": [ 0.0, 6.0, 65.0 ],
+      "velocity": [ 0.0, 0.0, -0.33 ]
+    },
+
+    {
+      "wave": 2,
+      "spawnTime": 30,
+      "type": "B",
+      "attackPattern": "Homing",
+      "position": [ 7.0, 15.0, 100.0 ],
+      "velocity": [ -0.2, -0.05, -0.5 ]
+    },
+    {
+      "wave": 2,
+      "spawnTime": 60,
+      "type": "A",
+      "attackPattern": "Normal",
+      "position": [ -4.0, 3.0, 85.0 ],
+      "velocity": [ 0.15, 0.02, -0.4 ]
+    },
+    {
+      "wave": 2,
+      "spawnTime": 90,
+      "type": "B",
+      "attackPattern": "Normal",
+      "position": [ 5.0, 9.0, 70.0 ],
+      "velocity": [ -0.12, 0.0, -0.3 ]
+    },
+    {
+      "wave": 2,
+      "spawnTime": 120,
+      "type": "A",
+      "attackPattern": "None",
+      "position": [ -1.0, 13.0, 60.0 ],
+      "velocity": [ 0.05, -0.05, -0.25 ]
+    },
+    {
+      "wave": 2,
+      "spawnTime": 150,
+      "type": "B",
+      "attackPattern": "Homing",
+      "position": [ 3.0, 1.0, 95.0 ],
+      "velocity": [ -0.08, 0.03, -0.45 ]
+    },
+    {
+      "wave": 2,
+      "spawnTime": 180,
+      "type": "A",
+      "attackPattern": "Normal",
+      "position": [ -5.0, 7.0, 80.0 ],
+      "velocity": [ 0.1, -0.02, -0.35 ]
+    },
+    {
+      "wave": 2,
+      "spawnTime": 210,
+      "type": "B",
+      "attackPattern": "None",
+      "position": [ 6.0, 14.0, 90.0 ],
+      "velocity": [ -0.18, 0.04, -0.5 ]
+    },
+    {
+      "wave": 2,
+      "spawnTime": 240,
+      "type": "A",
+      "attackPattern": "Homing",
+      "position": [ 0.0, 5.0, 50.0 ],
+      "velocity": [ 0.0, 0.0, -0.2 ]
+    },
+    {
+      "wave": 2,
+      "spawnTime": 270,
+      "type": "B",
+      "attackPattern": "Normal",
+      "position": [ -3.0, 10.0, 75.0 ],
+      "velocity": [ 0.09, -0.01, -0.28 ]
+    },
+    {
+      "wave": 2,
+      "spawnTime": 300,
+      "type": "A",
+      "attackPattern": "Homing",
+      "position": [ 2.0, 12.0, 65.0 ],
+      "velocity": [ -0.05, 0.01, -0.22 ]
+    },
+
+    {
+      "wave": 3,
+      "spawnTime": 30,
+      "type": "A",
+      "attackPattern": "Homing",
+      "position": [ 0.0, 8.0, 90.0 ],
+      "velocity": [ 0.0, 0.0, -0.4 ]
+    },
+    {
+      "wave": 3,
+      "spawnTime": 60,
+      "type": "B",
+      "attackPattern": "Normal",
+      "position": [ -6.0, 14.0, 100.0 ],
+      "velocity": [ 0.15, -0.04, -0.48 ]
+    },
+    {
+      "wave": 3,
+      "spawnTime": 90,
+      "type": "A",
+      "attackPattern": "Normal",
+      "position": [ 6.0, 2.0, 85.0 ],
+      "velocity": [ -0.15, 0.03, -0.42 ]
+    },
+    {
+      "wave": 3,
+      "spawnTime": 120,
+      "type": "B",
+      "attackPattern": "Homing",
+      "position": [ -2.0, 10.0, 70.0 ],
+      "velocity": [ 0.08, 0.0, -0.35 ]
+    },
+    {
+      "wave": 3,
+      "spawnTime": 150,
+      "type": "A",
+      "attackPattern": "None",
+      "position": [ 4.0, 6.0, 60.0 ],
+      "velocity": [ -0.1, -0.02, -0.25 ]
+    },
+    {
+      "wave": 3,
+      "spawnTime": 180,
+      "type": "B",
+      "attackPattern": "Normal",
+      "position": [ -4.0, 12.0, 95.0 ],
+      "velocity": [ 0.12, 0.05, -0.5 ]
+    },
+    {
+      "wave": 3,
+      "spawnTime": 210,
+      "type": "A",
+      "attackPattern": "Homing",
+      "position": [ 3.0, 4.0, 80.0 ],
+      "velocity": [ -0.05, 0.01, -0.3 ]
+    },
+    {
+      "wave": 3,
+      "spawnTime": 240,
+      "type": "B",
+      "attackPattern": "Normal",
+      "position": [ -7.0, 15.0, 100.0 ],
+      "velocity": [ 0.2, -0.05, -0.45 ]
+    },
+    {
+      "wave": 3,
+      "spawnTime": 270,
+      "type": "A",
+      "attackPattern": "None",
+      "position": [ 5.0, 1.0, 55.0 ],
+      "velocity": [ -0.18, 0.04, -0.28 ]
+    },
+    {
+      "wave": 3,
+      "spawnTime": 300,
+      "type": "B",
+      "attackPattern": "Homing",
+      "position": [ 0.0, 9.0, 75.0 ],
+      "velocity": [ 0.0, 0.0, -0.38 ]
+    }
+  ]
+}

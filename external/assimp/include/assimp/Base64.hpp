@@ -1,4 +1,4 @@
-/*
+﻿/*
 ---------------------------------------------------------------------------
 Open Asset Import Library (assimp)
 ---------------------------------------------------------------------------
@@ -90,3 +90,4 @@ ASSIMP_API std::vector<uint8_t> Decode(const std::string &in);
 } // namespace Assimp
 
 #endif // AI_BASE64_HPP_INC
+

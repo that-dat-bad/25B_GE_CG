@@ -1,4 +1,4 @@
-//-------------------------------------------------------------------------------------
+﻿//-------------------------------------------------------------------------------------
 // BC.h
 //
 // Block-compression (BC) functionality
@@ -337,3 +337,4 @@ namespace DirectX
     void D3DXEncodeBC7(_Out_writes_(16) uint8_t *pBC, _In_reads_(NUM_PIXELS_PER_BLOCK) const XMVECTOR *pColor, _In_ uint32_t flags) noexcept;
 
 } // namespace
+

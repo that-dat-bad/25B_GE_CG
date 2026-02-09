@@ -1,8 +1,9 @@
-#pragma once
+﻿#pragma once
 #include <xaudio2.h>
 #include <cstdint>
 #include <vector>
 #include <wrl.h>
+#include <list>
 
 #pragma comment(lib, "xaudio2.lib")
 
@@ -21,7 +22,6 @@ struct FormatChunk {
 	WAVEFORMATEX fmt;
 };
 
-// 音声データ構造体 (std::vector<BYTE>版)
 struct SoundData {
 	WAVEFORMATEX wfex;
 	std::vector<BYTE> buffer;
@@ -32,19 +32,16 @@ struct SoundData {
 class AudioManager {
 public:
 	static AudioManager* GetInstance();
-	// 初期化
 	void Initialize();
-	// 終了処理
 	void Finalize();
 
-	// 音声読み込み (WAV/MP3/AAC対応)
 	SoundData SoundLoadFile(const char* filename);
 
-	// 音声データ解放
 	void SoundUnload(SoundData* soundData);
 
-	// 音声再生
-	void SoundPlayWave(const SoundData& soundData);
+	IXAudio2SourceVoice* SoundPlayWave(const SoundData& soundData);
+	void StopWave(IXAudio2SourceVoice* voice);
+	void StopAllWave(); // Stop and destroy all active voices
 
 private:
 	IXAudio2* xAudio2_ = nullptr;
@@ -52,4 +49,7 @@ private:
 	static std::unique_ptr<AudioManager> instance;
 
 	IXAudio2MasteringVoice* masteringVoice_ = nullptr;
+	
+	// Track active voices
+	std::list<IXAudio2SourceVoice*> activeVoices_;
 };

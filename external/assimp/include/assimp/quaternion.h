@@ -1,4 +1,4 @@
-/*
+﻿/*
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
@@ -141,3 +141,4 @@ struct aiQuaternion {
 #endif
 
 #endif // AI_QUATERNION_H_INC
+

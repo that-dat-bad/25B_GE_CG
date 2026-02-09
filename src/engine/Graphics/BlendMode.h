@@ -1,14 +1,14 @@
-#pragma once
+﻿#pragma once
 #include <d3d12.h>
 #include <cassert>
 
 enum class BlendMode {
-	kNormal,	//!< 通常
-	kAdd,		//!< 加算
-	kSubtract,	//!< 減算
-	kMultiply,	//!< 乗算
-	kScreen,	//!< スクリーン
-	kCountOf	//!< 利用可能なブレンドモードの数
+	kNormal,	
+	kAdd,		
+	kSubtract,	
+	kMultiply,	
+	kScreen,	
+	kCountOf	
 };
 
 inline D3D12_BLEND_DESC GetBlendDesc(BlendMode mode) {
@@ -63,7 +63,6 @@ inline D3D12_BLEND_DESC GetBlendDesc(BlendMode mode) {
 		break;
 
 	default:
-		// デフォルトはNormalと同じにしておく、あるいはassert入れる
 		blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
 		blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
 		blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
@@ -75,3 +74,4 @@ inline D3D12_BLEND_DESC GetBlendDesc(BlendMode mode) {
 
 	return blendDesc;
 }
+

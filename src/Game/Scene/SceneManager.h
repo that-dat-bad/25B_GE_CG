@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 #include "IScene.h"
 #include <memory> 
 
 class SceneManager {
 private:
-	std::unique_ptr<IScene> currentScene = nullptr;
-	int currentSceneID; // 現在管理しているシーンIDを保持
+	std::unique_ptr<IScene> currentScene_ = nullptr;
+	SceneID currentSceneID_ = SceneID::kTitle;
 
 public:
 	SceneManager();

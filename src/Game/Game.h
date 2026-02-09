@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <memory>
 #include <vector>
 #include <string>
@@ -27,7 +27,6 @@ public:
 	void Update();
 	void Draw();
 	void Run();
-	// ゲーム終了フラグのチェック
 	bool IsEndRequest() const { return endRequest_; }
 
 private:
@@ -38,18 +37,14 @@ private:
 
 	std::unique_ptr<SpriteCommon> spriteCommon = nullptr;
 
-	// ゲームオブジェクト
 	SoundData alarmSound;
 
-	// ライト・設定用リソース
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource;
 	DirectionalLight* directionalLightData = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> lightingSettingsResource;
 	LightingSettings* lightingSettingsData = nullptr;
 
-	// ゲーム終了フラグ
 	bool endRequest_ = false;
 
-	//シーン管理
 	std::unique_ptr<SceneManager> sceneManager = nullptr;
 };
