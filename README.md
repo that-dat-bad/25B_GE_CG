@@ -1,57 +1,33 @@
-# CG課題レポート
+| Debug | Development | Release | File Check |
+| :---: | :---: | :---: | :---: |
+| [![DebugBuild](https://github.com/that-dat-bad/25B_GE_CG/actions/workflows/DebugBuild.yml/badge.svg)](https://github.com/that-dat-bad/25B_GE_CG/actions/workflows/DebugBuild.yml) | [![DevelopmentBuild](https://github.com/that-dat-bad/25B_GE_CG/actions/workflows/DevelopmentBuild.yml/badge.svg)](https://github.com/that-dat-bad/25B_GE_CG/actions/workflows/DevelopmentBuild.yml) | [![ReleaseBuild](https://github.com/that-dat-bad/25B_GE_CG/actions/workflows/ReleaseBuild.yml/badge.svg)](https://github.com/that-dat-bad/25B_GE_CG/actions/workflows/ReleaseBuild.yml) | [![CheckUnwantedFiles Status](https://github.com/that-dat-bad/25B_GE_CG/actions/workflows/CheckUnwantedFiles.yml/badge.svg?branch=master)](https://github.com/that-dat-bad/25B_GE_CG/actions/workflows/CheckUnwantedFiles.yml) |
 
-## 概要
-DirectX 12を用いた簡易ゲームエンジンの制作課題です。
-必須課題である「球のPhong Shading」に加え、複数の加点仕様を実装しました。
+# 25B_GE_CG
 
-## 実装項目
+DirectX 12 をベースに構築された、学習・開発用の自作C++ゲームエンジンです。
+3Dモデルの描画、スプライト処理、パーティクルシステム、およびシーン管理システムを実装しています。
 
-### 必須内容
-- [x] 球をPhong Shadingで描画 (61点)
+##  主な機能 (Features)
 
-### 加点仕様1
-- [x] Blinn-Phong反射モデルの実装 (1点)
-- [x] PointLightの実装 (1点)
-- [x] SpotLightの実装 (1点)
-- [ ] AreaLight[RectLight]の実装 (5点)
-- [ ] PointLightを複数同時に炊く (1点)
-- [ ] SpotLightを複数同時に炊く (1点)
-- [ ] AreaLightを複数同時に炊く (1点)
-- [x] 非均一スケール対応 (1点)
-- [x] assimpによるplane.obj読み込み (1点)
-- [x] assimpによるplane.gltf読み込み (1点)
-- [ ] ドキュメントの出来 (3点)
+- **Graphics**: DirectX 12 描画パイプライン
+  - 3Dモデル描画 (.obj / .blend / .mtl)
+  - 2Dスプライト描画
+  - パーティクルシステム
+- **System**:
+  - `IScene` インターフェースによるシーン遷移管理 (Title, Game, Clear etc.)
+  - `Input` クラスによる入力管理
+- **Debug / Tools**:
+  - **Dear ImGui** によるGUIデバッグ機能
+  - `D3DResourceLeakChecker` によるリソースリークの自動検知
+- **CI/CD**:
+  - GitHub Actions によるビルド自動化 (Debug/Release/Development)
 
-### 加点仕様2
-- [ ] Animation Node
-- [ ] Animation NodeMisc
-- [ ] Mesh Primitives
-- [ ] Mesh PrimitiveVertexColor
-- [ ] Texture Sampler
-- [ ] Material AlphaBlend
-- [ ] Animation Skin
+##  動作環境 (Requirements)
 
-## 操作説明
+- **OS**: Windows 10 / 11 (64bit)
+- **IDE**: Visual Studio 2022
+- **SDK**: Windows SDK (Latest)
+- **Platform**: x64
 
-### カメラ操作
-* **WASDキー**: カメラの水平移動
-* **Q / Eキー**: カメラの垂直移動
-* **矢印キー / マウス右ドラッグ**: カメラの回転
-* **Rキー**: カメラリセット
 
-### ImGuiによる設定
-画面上の「Lighting Settings」ウィンドウで以下の操作が可能です。
-
-1. **Light Type**:
-   * **Enable Directional/Point/Spot Light**: 各ライトの有効・無効を切り替えられます。
-   * それぞれのライトについて、位置、色、強度、減衰パラメータなどをリアルタイムに調整可能です。
-
-2. **Shading & Specular**:
-   * **Shading Model**: Lambert / Half-Lambert の切り替え
-   * **Specular Model**: None / Phong / Blinn-Phong の切り替え
-
-3. **Model Selection**:
-   * **Sphere**: デフォルトの球体モデル
-   * **Plane**: glTF形式の平面モデル (階層構造対応)
-   * **PlaneOBJ**: OBJ形式の平面モデル
-
+   git clone [https://github.com/that-dat-bad/25B_GE_CG.git](https://github.com/that-dat-bad/25B_GE_CG.git)
