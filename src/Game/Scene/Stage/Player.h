@@ -21,8 +21,8 @@ public:
 	void SetBulletModel(Model* model) { bulletModel_ = model; };
 	void SetMissileModel(Model* model) { missileModel_ = model; }
 
-	const std::list<PlayerBullet*>& GetBullets() const { return bullets_; }
-	const std::list<PlayerMissile*>& GetMissiles() const { return missiles_; }
+	const std::list<std::unique_ptr<PlayerBullet>>& GetBullets() const { return bullets_; }
+	const std::list<std::unique_ptr<PlayerMissile>>& GetMissiles() const { return missiles_; }
 
 	Vector3 GetWorldPosition() const;
 	Vector3 GetRotation() const;
@@ -46,8 +46,8 @@ private:
 
 	Camera* camera_ = nullptr;
 	Input* input_ = nullptr;
-	std::list<PlayerBullet*> bullets_;
-	std::list<PlayerMissile*> missiles_;
+	std::list<std::unique_ptr<PlayerBullet>> bullets_;
+	std::list<std::unique_ptr<PlayerMissile>> missiles_;
 
 	static const int kMaxHP_ = 10;
 	int hp_ = kMaxHP_;

@@ -41,35 +41,7 @@ StageScene::~StageScene() {
 	AudioManager::GetInstance()->StopAllWave();
 	voiceLockSound_ = nullptr;
 	voiceMissileSound_ = nullptr;
-
-	delete player_;
-	delete ground_;
-	delete debugCamera_;
-	delete reticle_;
-	delete lockOnMark_;
-	delete hpBarSprite_;
-	delete lifeIconSprite_;
-	delete fadeSprite_;
-
-	delete spriteWave_;
-	delete spriteReady_;
-	delete spriteStart_;
-	delete spriteClear_;
-	
-	delete minimapBg_;
-	delete minimapPlayer_;
-
-	// ポーズメニュースプライト削除
-	delete pauseOverlay_;
-	delete pauseMenuBg_;
-	for (int i = 0; i < 3; ++i) {
-		delete pauseMenuItems_[i];
-	}
-
-	for (Enemy* e : enemies_)
-		delete e;
-	for (Explosion* e : explosions_)
-		delete e;
+	// unique_ptr により自動解放
 }
 
 void StageScene::Initialize() {
@@ -112,17 +84,17 @@ void StageScene::Initialize() {
 	ParticleManager::GetInstance()->CreateParticleGroup("MissileExhaust", "tex1.png");
 	ParticleManager::GetInstance()->SetBlendMode("MissileExhaust", BlendMode::kAdd);
 	input_ = Input::GetInstance();
-	debugCamera_ = new DebugCamera();
+	debugCamera_ = std::make_unique<DebugCamera>();
 
-	player_ = new Player();
+	player_ = std::make_unique<Player>();
 	player_->Initialize(playerModel_, &camera_);
 	player_->SetBulletModel(playerBulletModel_);
 	player_->SetMissileModel(playerMissileModel_);
 
-	ground_ = new Ground();
+	ground_ = std::make_unique<Ground>();
 	ground_->Initialize(groundModel_, &camera_);
 
-	reticle_ = new Reticle();
+	reticle_ = std::make_unique<Reticle>();
 	reticle_->Initialize();
 
 	SpriteCommon* spriteCommon = SpriteCommon::GetInstance();
@@ -130,26 +102,26 @@ void StageScene::Initialize() {
 
 	TextureManager::GetInstance()->LoadTexture("lockOn.png");
 	lockOnTex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("lockOn.png");
-	lockOnMark_ = new Sprite();
+	lockOnMark_ = std::make_unique<Sprite>();
 	lockOnMark_->Initialize(spriteCommon, "lockOn.png");
 	lockOnMark_->SetPosition({ 0, 0 });
 	lockOnMark_->SetSize({ 64, 64 });
 	lockOnMark_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f });
 	lockOnMark_->SetAnchorPoint({ 0.5f, 0.5f });
 
-	reticle_ = new Reticle();
+	reticle_ = std::make_unique<Reticle>();
 	reticle_->Initialize();
 
 	TextureManager::GetInstance()->LoadTexture("white1x1.png");
 	uiTexHandle_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("white1x1.png");
-	hpBarSprite_ = new Sprite();
+	hpBarSprite_ = std::make_unique<Sprite>();
 	hpBarSprite_->Initialize(spriteCommon, "white1x1.png");
 	hpBarSprite_->SetPosition({ 50, 650 });
 	hpBarSprite_->SetSize({ 200, 20 });
 	hpBarSprite_->SetColor({ 0.0f, 1.0f, 0.0f, 1.0f });
 	hpBarSprite_->SetAnchorPoint({ 0.0f, 0.0f });
 
-	lifeIconSprite_ = new Sprite();
+	lifeIconSprite_ = std::make_unique<Sprite>();
 	lifeIconSprite_->Initialize(spriteCommon, "white1x1.png");
 	lifeIconSprite_->SetPosition({ 0, 0 });
 	lifeIconSprite_->SetSize({ 20, 20 });
@@ -157,7 +129,7 @@ void StageScene::Initialize() {
 	lifeIconSprite_->SetAnchorPoint({ 0.0f, 0.0f });
 
 	fadeTextureHandle_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("white1x1.png");
-	fadeSprite_ = new Sprite();
+	fadeSprite_ = std::make_unique<Sprite>();
 	fadeSprite_->Initialize(spriteCommon, "white1x1.png");
 	fadeSprite_->SetPosition({ 0, 0 });
 	fadeSprite_->SetSize({ 1280, 720 });
@@ -173,28 +145,28 @@ void StageScene::Initialize() {
 	texStart_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("text_start.png");
 	texClear_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("text_clear.png");
 
-	spriteWave_ = new Sprite();
+	spriteWave_ = std::make_unique<Sprite>();
 	spriteWave_->Initialize(spriteCommon, "white1x1.png");
 	spriteWave_->SetPosition({ 640, 360 });
 	spriteWave_->SetSize({ 300, 60 });
 	spriteWave_->SetColor({ 1.0f, 1.0f, 0.0f, 1.0f });
 	spriteWave_->SetAnchorPoint({ 0.5f, 0.5f });
 
-	spriteReady_ = new Sprite();
+	spriteReady_ = std::make_unique<Sprite>();
 	spriteReady_->Initialize(spriteCommon, "text_ready.png");
 	spriteReady_->SetPosition({ 640, 360 });
 	spriteReady_->SetSize({ 512, 128 });
 	spriteReady_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
 	spriteReady_->SetAnchorPoint({ 0.5f, 0.5f });
 
-	spriteStart_ = new Sprite();
+	spriteStart_ = std::make_unique<Sprite>();
 	spriteStart_->Initialize(spriteCommon, "text_start.png");
 	spriteStart_->SetPosition({ 640, 360 });
 	spriteStart_->SetSize({ 512, 128 });
 	spriteStart_->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
 	spriteStart_->SetAnchorPoint({ 0.5f, 0.5f });
 
-	spriteClear_ = new Sprite();
+	spriteClear_ = std::make_unique<Sprite>();
 	spriteClear_->Initialize(spriteCommon, "text_clear.png");
 	spriteClear_->SetPosition({ 640, 360 });
 	spriteClear_->SetSize({ 512, 128 });
@@ -247,7 +219,7 @@ void StageScene::Initialize() {
 	requestRestart_ = false;
 
 	// ポーズオーバーレイ（半透明の暗い背景）
-	pauseOverlay_ = new Sprite();
+	pauseOverlay_ = std::make_unique<Sprite>();
 	pauseOverlay_->Initialize(spriteCommon, "white1x1.png");
 	pauseOverlay_->SetPosition({ 0, 0 });
 	pauseOverlay_->SetSize({ 1280, 720 });
@@ -255,7 +227,7 @@ void StageScene::Initialize() {
 	pauseOverlay_->SetAnchorPoint({ 0.0f, 0.0f });
 
 	// ポーズメニュー背景
-	pauseMenuBg_ = new Sprite();
+	pauseMenuBg_ = std::make_unique<Sprite>();
 	pauseMenuBg_->Initialize(spriteCommon, "white1x1.png");
 	pauseMenuBg_->SetPosition({ 640, 360 });
 	pauseMenuBg_->SetSize({ 400, 300 });
@@ -265,7 +237,7 @@ void StageScene::Initialize() {
 	// メニュー項目（Resume, Restart, Back to Title）
 	const char* menuLabels[3] = { "RESUME", "RESTART", "TITLE" };
 	for (int i = 0; i < 3; ++i) {
-		pauseMenuItems_[i] = new Sprite();
+		pauseMenuItems_[i] = std::make_unique<Sprite>();
 		pauseMenuItems_[i]->Initialize(spriteCommon, "white1x1.png");
 		pauseMenuItems_[i]->SetPosition({ 640.0f, 280.0f + i * 70.0f });
 		pauseMenuItems_[i]->SetSize({ 300, 50 });
@@ -274,12 +246,12 @@ void StageScene::Initialize() {
 	}
 
 	// Minimap Sprites
-	minimapBg_ = new Sprite();
+	minimapBg_ = std::make_unique<Sprite>();
 	minimapBg_->Initialize(spriteCommon, "white1x1.png");
 	minimapBg_->SetColor({ 0.0f, 0.0f, 0.0f, 0.5f }); // Semi-transparent black
 	minimapBg_->SetAnchorPoint({ 0.0f, 0.0f });
 
-	minimapPlayer_ = new Sprite();
+	minimapPlayer_ = std::make_unique<Sprite>();
 	minimapPlayer_->Initialize(spriteCommon, "white1x1.png");
 	minimapPlayer_->SetSize({ 8.0f, 8.0f });
 	minimapPlayer_->SetColor({ 0.0f, 1.0f, 1.0f, 1.0f }); // Cyan
@@ -383,12 +355,12 @@ std::optional<SceneID> StageScene::UpdateMain() {
 				if (it->spawnTime > waveTimer_)
 					break;
 
-				Enemy* newEnemy = new Enemy();
+				auto newEnemy = std::make_unique<Enemy>();
 				newEnemy->SetBulletModel(enemyBulletModel_);
 				newEnemy->SetMissileModel(enemyMissileModel_);
-				newEnemy->SetPlayer(player_);
+				newEnemy->SetPlayer(player_.get());
 				newEnemy->Initialize(enemyModel_, it->position, it->velocity, it->type, it->attackPattern, &camera_);
-				enemies_.push_back(newEnemy);
+				enemies_.push_back(std::move(newEnemy));
 
 				it = enemySpawnList_.erase(it);
 			}
@@ -442,38 +414,36 @@ std::optional<SceneID> StageScene::UpdateMain() {
 
 	player_->Update(isPlayerActive);
 
-	enemies_.remove_if([this](Enemy* e) {
+	enemies_.remove_if([this](const std::unique_ptr<Enemy>& e) {
 		if (e->IsDead()) {
 			// 敵を削除する前に、この敵をターゲットにしているミサイルのターゲットをクリア
-			player_->ClearMissileTargetsFor(e);
+			player_->ClearMissileTargetsFor(e.get());
 			// ロックオン中の敵が削除される場合、ロックオンを解除
-			if (lockedEnemy_ == e) {
+			if (lockedEnemy_ == e.get()) {
 				lockedEnemy_ = nullptr;
 			}
-			delete e;
 			return true;
 		}
 		return false;
 		});
-	for (Enemy* e : enemies_)
+	for (const auto& e : enemies_)
 		e->Update();
 
-	explosions_.remove_if([](Explosion* e) {
+	explosions_.remove_if([](const std::unique_ptr<Explosion>& e) {
 		if (e->IsDead()) {
-			delete e;
 			return true;
 		}
 		return false;
 		});
-	for (Explosion* e : explosions_)
+	for (const auto& e : explosions_)
 		e->Update();
 
 	const float kPlayerRadius = 1.0f;
 	const float kEnemyRadius = 4.0f;
 	const float kBulletRadius = 0.5f;
 
-	for (PlayerBullet* pBullet : player_->GetBullets()) {
-		for (Enemy* enemy : enemies_) {
+	for (const auto& pBullet : player_->GetBullets()) {
+		for (const auto& enemy : enemies_) {
 			if (pBullet->IsDead() || enemy->IsDead())
 				continue;
 			if (LengthSquared(pBullet->GetWorldPosition(), enemy->GetWorldPosition()) < pow(kBulletRadius + kEnemyRadius, 2)) {
@@ -483,16 +453,16 @@ std::optional<SceneID> StageScene::UpdateMain() {
 					score_ += 100;
 					AudioManager::GetInstance()->SoundPlayWave(soundExplosion_);
 					camera_.Shake(0.2f, 10);  // 敵撃破時に軽いシェイク
-					Explosion* newExp = new Explosion();
+					auto newExp = std::make_unique<Explosion>();
 					newExp->Initialize(explosionModel_, enemy->GetWorldPosition(), &camera_);
-					explosions_.push_back(newExp);
+					explosions_.push_back(std::move(newExp));
 				}
 			}
 		}
 	}
 
-	for (Enemy* enemy : enemies_) {
-		for (EnemyBullet* eBullet : enemy->GetBullets()) {
+	for (const auto& enemy : enemies_) {
+		for (const auto& eBullet : enemy->GetBullets()) {
 			if (eBullet->IsDead())
 				continue;
 			if (LengthSquared(eBullet->GetWorldPosition(), player_->GetWorldPosition()) < pow(kBulletRadius + kPlayerRadius, 2)) {
@@ -500,7 +470,7 @@ std::optional<SceneID> StageScene::UpdateMain() {
 				player_->OnCollision();
 			}
 		}
-		for (EnemyMissile* eMissile : enemy->GetMissiles()) {
+		for (const auto& eMissile : enemy->GetMissiles()) {
 			if (eMissile->IsDead())
 				continue;
 			if (LengthSquared(eMissile->GetWorldPosition(), player_->GetWorldPosition()) < pow(kBulletRadius + kPlayerRadius, 2)) {
@@ -508,16 +478,16 @@ std::optional<SceneID> StageScene::UpdateMain() {
 				player_->OnCollision();
 
 
-				Explosion* newExp = new Explosion();
+				auto newExp = std::make_unique<Explosion>();
 				newExp->Initialize(explosionModel_, eMissile->GetWorldPosition(), &camera_);
-				explosions_.push_back(newExp);
+				explosions_.push_back(std::move(newExp));
 			}
 		}
 
 	}
 
-	for (PlayerMissile* missile : player_->GetMissiles()) {
-		for (Enemy* enemy : enemies_) {
+	for (const auto& missile : player_->GetMissiles()) {
+		for (const auto& enemy : enemies_) {
 			if (missile->IsDead() || enemy->IsDead())
 				continue;
 			if (LengthSquared(missile->GetWorldPosition(), enemy->GetWorldPosition()) < pow(kBulletRadius + kEnemyRadius, 2)) {
@@ -527,15 +497,15 @@ std::optional<SceneID> StageScene::UpdateMain() {
 					score_ += 500;
 					AudioManager::GetInstance()->SoundPlayWave(soundExplosion_);
 					camera_.Shake(0.4f, 15);  // ミサイル撃破は強め
-					Explosion* newExp = new Explosion();
+					auto newExp = std::make_unique<Explosion>();
 					newExp->Initialize(explosionModel_, enemy->GetWorldPosition(), &camera_);
-					explosions_.push_back(newExp);
+					explosions_.push_back(std::move(newExp));
 				}
 			}
 		}
 	}
 
-	for (Enemy* enemy : enemies_) {
+	for (const auto& enemy : enemies_) {
 		if (enemy->IsDead())
 			continue;
 		if (LengthSquared(enemy->GetWorldPosition(), player_->GetWorldPosition()) < pow(kEnemyRadius + kPlayerRadius, 2)) {
@@ -545,9 +515,9 @@ std::optional<SceneID> StageScene::UpdateMain() {
 			if (enemy->IsDead()) {
 				AudioManager::GetInstance()->SoundPlayWave(soundExplosion_);
 				camera_.Shake(0.5f, 20);  // 衝突は最も強いシェイク
-				Explosion* newExp = new Explosion();
+				auto newExp = std::make_unique<Explosion>();
 				newExp->Initialize(explosionModel_, enemy->GetWorldPosition(), &camera_);
-				explosions_.push_back(newExp);
+				explosions_.push_back(std::move(newExp));
 			}
 		}
 	}
@@ -587,7 +557,7 @@ std::optional<SceneID> StageScene::UpdateMain() {
 	lockedEnemy_ = nullptr;
 	float minDst = 100.0f;
 	Vector2 rPos = reticle_->GetPosition();
-	for (Enemy* e : enemies_) {
+	for (const auto& e : enemies_) {
 		if (e->IsDead())
 			continue;
 		Vector3 ePos = e->GetWorldPosition();
@@ -597,7 +567,7 @@ std::optional<SceneID> StageScene::UpdateMain() {
 		float dst = sqrtf(powf(eScr.x - rPos.x, 2) + powf(eScr.y - rPos.y, 2));
 		if (dst < minDst) {
 			minDst = dst;
-			lockedEnemy_ = e;
+			lockedEnemy_ = e.get();
 		}
 	}
 
@@ -630,8 +600,8 @@ std::optional<SceneID> StageScene::UpdateMain() {
 	// Check tracking missile status
 	if (voiceMissileSound_ && trackingMissile_) {
 		bool isAlive = false;
-		for (const auto* m : player_->GetMissiles()) {
-			if (m == trackingMissile_) {
+		for (const auto& m : player_->GetMissiles()) {
+			if (m.get() == trackingMissile_) {
 				isAlive = true;
 				break;
 			}
@@ -726,10 +696,10 @@ void StageScene::Draw() {
 		if (skydome_) skydome_->Draw();
 		if(ground_) ground_->Draw(); 
 		player_->Draw();
-		for (Enemy* e : enemies_)
+		for (const auto& e : enemies_)
 			if (!e->IsDead())
 				e->Draw();
-		for (Explosion* e : explosions_)
+		for (const auto& e : explosions_)
 			e->Draw();
 		ParticleManager::GetInstance()->Draw();
 	}
@@ -766,7 +736,7 @@ void StageScene::Draw() {
 	float halfW = mapSize.x * 0.5f - 4.0f; // Margin
 	float halfH = mapSize.y * 0.5f - 4.0f;
 
-	for (Enemy* e : enemies_) {
+	for (const auto& e : enemies_) {
 		if (e->IsDead()) continue;
 		Vector3 ePos = e->GetWorldPosition();
 		// Project to map

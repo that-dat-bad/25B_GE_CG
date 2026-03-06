@@ -14,6 +14,7 @@
 #include "EnemyDeathParticle.h"
 
 #include <list>
+#include <memory>
 #include <vector>
 #include <numbers>
 
@@ -65,10 +66,10 @@ public:
 	void SetPlayer(Player* player) { player_ = player; }
 
 	// 攻撃のポインタのゲッター
-	Beam* GetBeam() { return beam_; }
-	std::list<Needle*> GetNeedles() { return needles_; }
-	std::list<Punch*> GetPunches() { return punches_; }
-	std::list<Thunder*> GetThunders() { return thunders_; }
+	Beam* GetBeam() { return beam_.get(); }
+	const std::list<std::unique_ptr<Needle>>& GetNeedles() { return needles_; }
+	const std::list<std::unique_ptr<Punch>>& GetPunches() { return punches_; }
+	const std::list<std::unique_ptr<Thunder>>& GetThunders() { return thunders_; }
 
 	void SetThunderEnabled(bool enabled) { canUseThunder_ = enabled; }
 
@@ -107,7 +108,7 @@ private:
 
 private:
 	// --- TDEngine用オブジェクト ---
-	Object3d* object3d_ = nullptr;
+	std::unique_ptr<Object3d> object3d_;
 
 	// モデルの向き
 	Direction direction_ = Direction::kLeft;
@@ -164,7 +165,7 @@ private:
 	float attackAfterTimer_ = 10.0f;
 
 	// ランダム
-	Rand* rand_ = nullptr;
+	std::unique_ptr<Rand> rand_;
 	int randomValue = 0;
 
 	// 行動履歴
@@ -190,9 +191,9 @@ private:
 	// --- 攻撃オブジェクト ---
 	// ※Modelポインタは各クラス内部でロードさせるため削除
 
-	Beam* beam_ = nullptr;
+	std::unique_ptr<Beam> beam_;
 
-	std::list<Needle*> needles_;
+	std::list<std::unique_ptr<Needle>> needles_;
 	static const int kNeedleCount = 4;
 	std::vector<MyMath::Vector3> needleRotates_ = {
 		{0.0f, 0.0f, 0.0f},
@@ -201,20 +202,20 @@ private:
 		{0.0f, 0.0f, std::numbers::pi_v<float> / 1.3f}
 	};
 
-	std::list<Thunder*> thunders_;
+	std::list<std::unique_ptr<Thunder>> thunders_;
 	static const int kThunderCount = 4;
 	std::vector<MyMath::Vector3> thunderPositions_ = {
 		{-28.0f, 20.0f, 0.0f}, {-13.0f, 20.0f, 0.0f},
 		{3.0f,   20.0f, 0.0f}, {16.0f,  20.0f, 0.0f}
 	};
 
-	std::list<Punch*> punches_;
+	std::list<std::unique_ptr<Punch>> punches_;
 	static const int kPunchCount = 2;
 	std::vector<MyMath::Vector3> punchPositions_ = {
 		{-10.0f, 0.0f, 0.0f}, {-20.0f, 0.0f, 0.0f}
 	};
 
-	std::list<DeathEx*> deathExs_;
+	std::list<std::unique_ptr<DeathEx>> deathExs_;
 	static const int kDeathExCount = 3;
 	std::vector<MyMath::Vector3> deathExRotates_ = {
 		{0.0f, 0.0f, 0.0f},
@@ -222,7 +223,7 @@ private:
 		{0.0f, 0.0f, std::numbers::pi_v<float> / 2.2f}
 	};
 
-	std::list<EnemyDeathParticle*> deathParticles_;
+	std::list<std::unique_ptr<EnemyDeathParticle>> deathParticles_;
 	static const int kDeathParticleCount = 5;
 
 	// 演出パラメータ

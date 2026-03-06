@@ -4,13 +4,13 @@
 using namespace MyMath;
 
 Punch::~Punch() {
-	if (object3d_) delete object3d_;
+	// unique_ptr により自動解放
 }
 
 void Punch::Initialize(const Vector3& position, int punched) {
 	std::string path = "./Resources/punch/punch.obj";
 	Model::LoadFromOBJ(path);
-	object3d_ = Object3d::Create();
+	object3d_.reset(Object3d::Create());
 	object3d_->SetModel(path);
 	object3d_->SetTranslate(position);
 	object3d_->SetScale({ 1.0f, 1.0f, 1.0f });

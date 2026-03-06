@@ -19,15 +19,7 @@ using namespace MyMath;
 // デストラクタ
 // ---------------------------------------------------------
 Enemy::~Enemy() {
-	if (object3d_) delete object3d_;
-	if (rand_) delete rand_;
-	if (beam_) delete beam_;
-
-	for (auto p : needles_) delete p;
-	for (auto p : thunders_) delete p;
-	for (auto p : punches_) delete p;
-	for (auto p : deathExs_) delete p;
-	for (auto p : deathParticles_) delete p;
+	// unique_ptr により自動解放
 }
 
 // ---------------------------------------------------------
@@ -39,7 +31,7 @@ void Enemy::Initialize(const Vector3& position) {
 	ModelManager::GetInstance()->LoadModel(modelPath);
 
 	// Object3d生成
-	object3d_ = Object3d::Create();
+	object3d_.reset(Object3d::Create());
 	object3d_->SetModel(modelPath);
 	object3d_->SetTranslate(position);
 	object3d_->SetScale(originalScale_);
@@ -49,7 +41,7 @@ void Enemy::Initialize(const Vector3& position) {
 	object3d_->SetColor(color_);
 
 	// ランダム生成器
-	rand_ = new Rand();
+	rand_ = std::make_unique<Rand>();
 	rand_->Initialize();
 	rand_->RandomInitialize();
 	randomValue = static_cast<int>(rand_->GetRandom());
@@ -146,13 +138,13 @@ void Enemy::Draw() {
 
 	// 各攻撃オブジェクト描画
 	if (beam_) beam_->Draw();
-	for (auto p : needles_) if (p) p->Draw();
-	for (auto p : thunders_) if (p) p->Draw();
-	for (auto p : punches_) if (p) p->Draw();
+	for (const auto& p : needles_) if (p) p->Draw();
+	for (const auto& p : thunders_) if (p) p->Draw();
+	for (const auto& p : punches_) if (p) p->Draw();
 
 	// エフェクト描画
-	for (auto p : deathExs_) if (p) p->Draw();
-	for (auto p : deathParticles_) if (p) p->Draw();
+	for (const auto& p : deathExs_) if (p) p->Draw();
+	for (const auto& p : deathParticles_) if (p) p->Draw();
 }
 
 // ---------------------------------------------------------
@@ -361,7 +353,7 @@ void Enemy::BehaviorBeamUpdate() {
 			attackParameter_ = 0;
 
 			// Beam生成
-			beam_ = new Beam();
+			beam_ = std::make_unique<Beam>();
 			beam_->Initialize(pos);
 		}
 		break;
@@ -374,7 +366,7 @@ void Enemy::BehaviorBeamUpdate() {
 			attackParameter_ = 0;
 			t = 0.0f;
 			initPos_ = { 0.0f, 0.0f, 0.0f };
-			delete beam_;
+			beam_.reset();
 			beam_ = nullptr;
 		}
 		break;
@@ -498,22 +490,22 @@ void Enemy::BehaviorNeedleUpdate() {
 			attackPhase_ = AttackPhase::kAttack;
 			attackParameter_ = 0;
 			for (int32_t i = 0; i < kNeedleCount; ++i) {
-				Needle* needle = new Needle();
+				auto needle = std::make_unique<Needle>();
 				needle->Initialize(pos, needleRotates_[i]);
-				needles_.push_back(needle);
+				needles_.push_back(std::move(needle));
 			}
 		}
 		break;
 
 	case AttackPhase::kAttack:
-		for (Needle* needle : needles_) needle->Update();
+		for (const auto& needle : needles_) needle->Update();
 
 		if (attackParameter_ >= attackRushTimer_) {
 			attackPhase_ = AttackPhase::kLingering;
 			attackParameter_ = 0;
 			t = 0.0f;
 			initPos_ = { 0.0f, 0.0f, 0.0f };
-			for (Needle* needle : needles_) delete needle;
+			for (auto& needle : needles_) needle.reset();
 			needles_.clear();
 		}
 		break;
@@ -573,20 +565,20 @@ void Enemy::BehaviorThunderUpdate() {
 			attackParameter_ = 0;
 			t = 0.0f;
 			initPos_ = { 0.0f, 0.0f, 0.0f };
-			for (Thunder* thunder : thunders_) delete thunder;
+			for (auto& thunder : thunders_) thunder.reset();
 			thunders_.clear();
 		}
 
 		if (attackParameter_ % 50 == 1) {
 			size_t idx = attackParameter_ / 50;
 			if (idx < thunderPositions_.size()) {
-				Thunder* thunder = new Thunder();
+				auto thunder = std::make_unique<Thunder>();
 				thunder->Initialize(thunderPositions_[idx]);
-				thunders_.push_back(thunder);
+				thunders_.push_back(std::move(thunder));
 			}
 		}
 
-		for (Thunder* thunder : thunders_) thunder->Update();
+		for (const auto& thunder : thunders_) thunder->Update();
 		break;
 
 	case AttackPhase::kLingering:
@@ -635,12 +627,12 @@ void Enemy::BehaviorPunchUpdate() {
 			t = 0.0f;
 
 			for (int32_t i = 0; i < kPunchCount; ++i) {
-				Punch* punch = new Punch();
+				auto punch = std::make_unique<Punch>();
 				punchPositions_[i] = pos;
 				punchPositions_[i].x -= 5.0f * i;
 				punchPositions_[i].y += 1.0f - (2.0f * i);
 				punch->Initialize(punchPositions_[i], i);
-				punches_.push_back(punch);
+				punches_.push_back(std::move(punch));
 			}
 		}
 		break;
@@ -655,14 +647,14 @@ void Enemy::BehaviorPunchUpdate() {
 			object3d_->SetTranslate(pos);
 		}
 
-		for (Punch* punch : punches_) punch->Update();
+		for (const auto& punch : punches_) punch->Update();
 
 		if (attackParameter_ >= attackRushTimer_) {
 			attackPhase_ = AttackPhase::kLingering;
 			attackParameter_ = 0;
 			t = 0.0f;
 			initPos_ = { 0.0f, 0.0f, 0.0f };
-			for (Punch* punch : punches_) delete punch;
+			for (auto& punch : punches_) punch.reset();
 			punches_.clear();
 		}
 		break;
@@ -769,35 +761,35 @@ void Enemy::BehaviorDeathUpdate() {
 		if (attackParameter_ % 25 == 1) {
 			size_t idx = attackParameter_ / 25;
 			if (idx < deathExRotates_.size()) {
-				DeathEx* deathEx = new DeathEx();
+				auto deathEx = std::make_unique<DeathEx>();
 				deathEx->Initialize(pos, deathExRotates_[idx]);
-				deathExs_.push_back(deathEx);
+				deathExs_.push_back(std::move(deathEx));
 			}
 		}
 
-		for (DeathEx* deathEx : deathExs_) deathEx->Update();
+		for (const auto& deathEx : deathExs_) deathEx->Update();
 
 		if (attackParameter_ >= attackRushTimer_) {
 			attackPhase_ = AttackPhase::kLingering;
 			attackParameter_ = 0;
 			t = 0.0f;
-			for (DeathEx* deathEx : deathExs_) delete deathEx;
+			for (auto& deathEx : deathExs_) deathEx.reset();
 			deathExs_.clear();
 		}
 		break;
 
 	case AttackPhase::kLingering:
 		if (attackParameter_ % 15 == 1) {
-			EnemyDeathParticle* deathParticle = new EnemyDeathParticle();
+			auto deathParticle = std::make_unique<EnemyDeathParticle>();
 			Vector3 pPos = pos;
 			pPos.x += static_cast<float>(rand_->GetRandom()) - 4.0f;
 			pPos.y -= static_cast<float>(rand_->GetRandom()) - 4.0f;
 			pPos.z -= 5.0f;
 			deathParticle->Initialize(pPos);
-			deathParticles_.push_back(deathParticle);
+			deathParticles_.push_back(std::move(deathParticle));
 		}
 
-		for (EnemyDeathParticle* deathParticle : deathParticles_) deathParticle->Update();
+		for (const auto& deathParticle : deathParticles_) deathParticle->Update();
 
 		if (color_.w > targetAlpha_) {
 			t += 0.001f;

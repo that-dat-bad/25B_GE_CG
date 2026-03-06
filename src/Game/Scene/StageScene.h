@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "IScene.h"
 #include <list>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -85,32 +86,32 @@ private:
 	std::unique_ptr<Object3d> skydome_;
 
 	Camera camera_;
-	Player* player_ = nullptr;
-	Ground* ground_ = nullptr;
+	std::unique_ptr<Player> player_;
+	std::unique_ptr<Ground> ground_;
 	Input* input_ = nullptr;
-	DebugCamera* debugCamera_ = nullptr;
+	std::unique_ptr<DebugCamera> debugCamera_;
 	bool isDebugCameraActive_ = false;
 
-	std::list<Enemy*> enemies_;
+	std::list<std::unique_ptr<Enemy>> enemies_;
 	std::list<EnemySpawnData> enemySpawnList_;
-	std::list<Explosion*> explosions_;
+	std::list<std::unique_ptr<Explosion>> explosions_;
 
-	Reticle* reticle_ = nullptr;
+	std::unique_ptr<Reticle> reticle_;
 	Enemy* lockedEnemy_ = nullptr;
-	Sprite* lockOnMark_ = nullptr;
+	std::unique_ptr<Sprite> lockOnMark_;
 
-	Sprite* hpBarSprite_ = nullptr;
-	Sprite* lifeIconSprite_ = nullptr;
-	Sprite* fadeSprite_ = nullptr;
+	std::unique_ptr<Sprite> hpBarSprite_;
+	std::unique_ptr<Sprite> lifeIconSprite_;
+	std::unique_ptr<Sprite> fadeSprite_;
 
-	Sprite* spriteWave_ = nullptr;
-	Sprite* spriteReady_ = nullptr;
-	Sprite* spriteStart_ = nullptr;
-	Sprite* spriteClear_ = nullptr;
+	std::unique_ptr<Sprite> spriteWave_;
+	std::unique_ptr<Sprite> spriteReady_;
+	std::unique_ptr<Sprite> spriteStart_;
+	std::unique_ptr<Sprite> spriteClear_;
 	
 	// Minimap
-	Sprite* minimapBg_ = nullptr;
-	Sprite* minimapPlayer_ = nullptr;
+	std::unique_ptr<Sprite> minimapBg_;
+	std::unique_ptr<Sprite> minimapPlayer_;
 
 	int score_ = 0;
 	int32_t gameLimitTimer_ = 0; 
@@ -124,7 +125,7 @@ private:
 	PauseMenuItem pauseMenuSelection_ = PauseMenuItem::Resume;
 	bool requestRestart_ = false;
 
-	Sprite* pauseOverlay_ = nullptr;
-	Sprite* pauseMenuBg_ = nullptr;
-	Sprite* pauseMenuItems_[3] = { nullptr, nullptr, nullptr };
+	std::unique_ptr<Sprite> pauseOverlay_;
+	std::unique_ptr<Sprite> pauseMenuBg_;
+	std::unique_ptr<Sprite> pauseMenuItems_[3];
 };

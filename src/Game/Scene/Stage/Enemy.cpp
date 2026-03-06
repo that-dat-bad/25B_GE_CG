@@ -13,13 +13,7 @@
 
 
 Enemy::~Enemy() {
-	delete minimapSprite_; // Delete sprite
-	for (EnemyBullet* bullet : bullets_) {
-		delete bullet;
-	}
-	for (EnemyMissile* missile : missiles_) {
-		delete missile;
-	}
+	// unique_ptr により自動解放
 }
 
 void Enemy::Initialize(Model* model, const Vector3& position, const Vector3& velocity, const std::string& typeStr, const std::string& patternStr, Camera* camera) {
@@ -35,7 +29,7 @@ void Enemy::Initialize(Model* model, const Vector3& position, const Vector3& vel
 	velocity_ = velocity;
 
 	// Minimap Sprite Init
-	minimapSprite_ = new Sprite();
+	minimapSprite_ = std::make_unique<Sprite>();
 	minimapSprite_->Initialize(SpriteCommon::GetInstance(), "white1x1.png");
 	minimapSprite_->SetSize({ 8.0f, 8.0f });
 	minimapSprite_->SetColor({ 1.0f, 0.0f, 0.0f, 1.0f }); // Red
@@ -74,25 +68,23 @@ void Enemy::DrawMinimap(const Vector2& position) {
 }
 
 void Enemy::Update() {
-	bullets_.remove_if([](EnemyBullet* bullet) {
+	bullets_.remove_if([](const std::unique_ptr<EnemyBullet>& bullet) {
 		if (bullet->IsDead()) {
-			delete bullet;
 			return true;
 		}
 		return false;
 	});
-	for (EnemyBullet* bullet : bullets_) {
+	for (const auto& bullet : bullets_) {
 		bullet->Update();
 	}
 
-	missiles_.remove_if([](EnemyMissile* missile) {
+	missiles_.remove_if([](const std::unique_ptr<EnemyMissile>& missile) {
 		if (missile->IsDead()) {
-			delete missile;
 			return true;
 		}
 		return false;
 	});
-	for (EnemyMissile* missile : missiles_) {
+	for (const auto& missile : missiles_) {
 		missile->Update();
 	}
 
@@ -109,10 +101,10 @@ void Enemy::Update() {
 void Enemy::Draw() {
 	if(object3d_) object3d_->Draw();
 	
-	for (EnemyBullet* bullet : bullets_) {
+	for (const auto& bullet : bullets_) {
 		bullet->Draw();
 	}
-	for (EnemyMissile* missile : missiles_) {
+	for (const auto& missile : missiles_) {
 		missile->Draw();
 	}
 }
@@ -168,13 +160,13 @@ void Enemy::Fire() {
 
 	if (attackPattern_ == AttackPattern::Normal) {
 		Vector3 velocity = {0, 0, -0.5f};
-		EnemyBullet* newBullet = new EnemyBullet();
+		auto newBullet = std::make_unique<EnemyBullet>();
 		newBullet->Initialize(bulletModel_, position, velocity, camera_, false, nullptr);
-		bullets_.push_back(newBullet);
+		bullets_.push_back(std::move(newBullet));
 	} else if (attackPattern_ == AttackPattern::Homing) {
-		EnemyMissile* newMissile = new EnemyMissile();
+		auto newMissile = std::make_unique<EnemyMissile>();
 		newMissile->Initialize(missileModel_, position, player_, camera_);
-		missiles_.push_back(newMissile);
+		missiles_.push_back(std::move(newMissile));
 	}
 }
 

@@ -14,12 +14,7 @@
 
 
 Player::~Player() {
-	for (PlayerBullet* bullet : bullets_) {
-		delete bullet;
-	}
-	for (PlayerMissile* missile : missiles_) {
-		delete missile;
-	}
+	// unique_ptr により自動解放
 }
 
 void Player::Initialize(Model* model, Camera* camera) {
@@ -52,25 +47,23 @@ void Player::Update(bool isInputEnable) {
 		missileCooldown_--;
 	}
 
-	bullets_.remove_if([](PlayerBullet* bullet) {
+	bullets_.remove_if([](const std::unique_ptr<PlayerBullet>& bullet) {
 		if (bullet->IsDead()) {
-			delete bullet;
 			return true;
 		}
 		return false;
 	});
-	missiles_.remove_if([](PlayerMissile* missile) {
+	missiles_.remove_if([](const std::unique_ptr<PlayerMissile>& missile) {
 		if (missile->IsDead()) {
-			delete missile;
 			return true;
 		}
 		return false;
 	});
 
-	for (PlayerBullet* bullet : bullets_) {
+	for (const auto& bullet : bullets_) {
 		bullet->Update();
 	}
-	for (PlayerMissile* missile : missiles_) {
+	for (const auto& missile : missiles_) {
 		missile->Update();
 	}
 
@@ -138,10 +131,10 @@ void Player::Draw() {
 		if(object3d_) object3d_->Draw();
 	}
 
-	for (PlayerBullet* bullet : bullets_) {
+	for (const auto& bullet : bullets_) {
 		bullet->Draw();
 	}
-	for (PlayerMissile* missile : missiles_) {
+	for (const auto& missile : missiles_) {
 		missile->Draw();
 	}
 }
@@ -162,9 +155,9 @@ void Player::Attack() {
 			Matrix4x4 matWorld = MakeAffineMatrix(scale, object3d_->GetRotate(), translate); 
 			velocity = TransformNormal(velocity, matWorld);
 
-			PlayerBullet* newBullet = new PlayerBullet();
+			auto newBullet = std::make_unique<PlayerBullet>();
 			newBullet->Initialize(bulletModel_, position, velocity, camera_);
-			bullets_.push_back(newBullet);
+			bullets_.push_back(std::move(newBullet));
 		}
 	}
 }
@@ -179,10 +172,11 @@ PlayerMissile* Player::FireMissile(Enemy* target) {
 
 	Vector3 position = object3d_->GetTranslate();
 	position.y -= 1.0f;
-	PlayerMissile* newMissile = new PlayerMissile();
+	auto newMissile = std::make_unique<PlayerMissile>();
 	newMissile->Initialize(missileModel_, position, target, camera_);
-	missiles_.push_back(newMissile);
-	return newMissile;
+	PlayerMissile* result = newMissile.get();
+	missiles_.push_back(std::move(newMissile));
+	return result;
 }
 
 void Player::OnCollision() {
@@ -223,7 +217,7 @@ Vector3 Player::GetRotation() const {
 }
 
 void Player::ClearMissileTargetsFor(Enemy* enemy) {
-	for (PlayerMissile* missile : missiles_) {
+	for (const auto& missile : missiles_) {
 		missile->ClearTargetIfMatches(enemy);
 	}
 }

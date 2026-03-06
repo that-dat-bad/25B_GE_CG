@@ -193,31 +193,31 @@ void GameScene::CheckAllCollisions() {
 	}
 
 	// 6. プレイヤーと針 (OBB判定)
-	for (auto* needle : enemy_->GetNeedles()) {
+	for (const auto& needle : enemy_->GetNeedles()) {
 		if (!needle) continue;
 		OBB obbNeedle = needle->GetOBB();
 		if (Collision::IsCollisionOBB(aabbPlayer, obbNeedle)) {
-			player_->OnCollision(needle);
+			player_->OnCollision(needle.get());
 		}
 	}
 
 	// 7. プレイヤーとパンチ
-	for (auto* punch : enemy_->GetPunches()) {
+	for (const auto& punch : enemy_->GetPunches()) {
 		if (!punch) continue;
 		AABB aabbPunch = punch->GetAABB();
 		if (Collision::IsCollision(aabbPlayer, aabbPunch)) {
-			player_->OnCollision(punch);
+			player_->OnCollision(punch.get());
 		}
 	}
 
 	// 8. プレイヤーと雷
-	for (auto* thunder : enemy_->GetThunders()) {
+	for (const auto& thunder : enemy_->GetThunders()) {
 		if (!thunder) continue;
 		if (thunder->IsCollisionDisabled()) continue;
 
 		AABB aabbThunder = thunder->GetAABB();
 		if (Collision::IsCollision(aabbPlayer, aabbThunder)) {
-			player_->OnCollision(thunder);
+			player_->OnCollision(thunder.get());
 		}
 	}
 }

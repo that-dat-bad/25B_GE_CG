@@ -12,11 +12,7 @@ bool ClearScene::isWin = false;
 int ClearScene::finalScore = 0;
 
 ClearScene::~ClearScene() {
-	delete winSprite_;
-	delete loseSprite_;
-	for (int i = 0; i < 10; i++) {
-		delete numberSprites_[i];
-	}
+	// unique_ptr により自動解放
 }
 
 void ClearScene::Initialize() {
@@ -37,13 +33,13 @@ void ClearScene::Initialize() {
 	texManager->LoadTexture("youwin.png");
 	texManager->LoadTexture("youlose.png");
 
-	winSprite_ = new Sprite();
+	winSprite_ = std::make_unique<Sprite>();
 	winSprite_->Initialize(spriteCommon, "youwin.png");
 	winSprite_->SetPosition({ 640.0f, 200.0f });
 	winSprite_->SetSize({ 600.0f, 150.0f }); // Adjust size as needed
 	winSprite_->SetAnchorPoint({ 0.5f, 0.5f });
 
-	loseSprite_ = new Sprite();
+	loseSprite_ = std::make_unique<Sprite>();
 	loseSprite_->Initialize(spriteCommon, "youlose.png");
 	loseSprite_->SetPosition({ 640.0f, 200.0f });
 	loseSprite_->SetSize({ 600.0f, 150.0f }); // Adjust size as needed
@@ -55,7 +51,7 @@ void ClearScene::Initialize() {
 		std::string name = std::to_string(i) + ".png";
 		texManager->LoadTexture(name);
 		
-		numberSprites_[i] = new Sprite();
+		numberSprites_[i] = std::make_unique<Sprite>();
 		numberSprites_[i]->Initialize(spriteCommon, name);
 		numberSprites_[i]->SetSize({ 32.0f, 64.0f }); // Adjust digit size
 		numberSprites_[i]->SetAnchorPoint({ 0.0f, 0.0f });

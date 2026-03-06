@@ -19,7 +19,7 @@ void Player::Initialize(const Vector3& position) {
 	std::string path = "./Resources/Player/Player.obj";
 	Model::LoadFromOBJ(path);
 	// Object3d生成
-	object3d_ = Object3d::Create();
+	object3d_.reset(Object3d::Create());
 	object3d_->SetModel(path);
 
 	// 初期座標設定
@@ -31,7 +31,7 @@ void Player::Initialize(const Vector3& position) {
 	state_ = State::kAlive;
 
 	// Rand初期化
-	rand_ = new Rand();
+	rand_ = std::make_unique<Rand>();
 	rand_->Initialize();
 	rand_->RandomInitialize();
 }
@@ -174,17 +174,17 @@ void Player::UpdateAlive() {
 			respawnTimer_ = kRespawnTimeSelf;
 
 			// パーティクル生成 (TDEngine対応版のコンストラクタを使う想定)
-			deathParticle_ = new EnemyDeathParticle();
+			deathParticle_ = std::make_unique<EnemyDeathParticle>();
 			deathParticle_->Initialize(object3d_->GetTranslate());
 
 			for (int32_t i = 0; i < kFireParticleCount; ++i) {
-				FireworkParticle* firework = new FireworkParticle();
+				auto firework = std::make_unique<FireworkParticle>();
 				Vector3 pos = object3d_->GetTranslate();
 				pos.x += static_cast<float>(rand_->GetRandom()) - 2.0f;
 				pos.y -= static_cast<float>(rand_->GetRandom()) - 2.0f;
 				pos.z -= 5.0f;
 				firework->Initialize(pos);
-				fireworkParticles_.push_back(firework);
+				fireworkParticles_.push_back(std::move(firework));
 			}
 		}
 	}
@@ -231,7 +231,7 @@ void Player::UpdateRespawn() {
 		frameCount_ = kFrameCount;
 		invincibleTimer_ = kInvincibleTime;
 
-		for (auto& p : fireworkParticles_) delete p;
+		for (auto& p : fireworkParticles_) p.reset();
 		fireworkParticles_.clear();
 	}
 }
@@ -304,8 +304,8 @@ void Player::OnCollision(const Enemy* enemy) {
 	state_ = State::kDead;
 
 	// パーティクル生成 (簡易化)
-	if (deathParticle_) delete deathParticle_;
-	deathParticle_ = new EnemyDeathParticle();
+	if (deathParticle_) deathParticle_.reset();
+	deathParticle_ = std::make_unique<EnemyDeathParticle>();
 	deathParticle_->Initialize(object3d_->GetTranslate());
 }
 

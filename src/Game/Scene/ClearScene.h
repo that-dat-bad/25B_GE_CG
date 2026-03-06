@@ -3,6 +3,7 @@
 #include "Camera.h"
 #include "Input.h"
 #include "math/MyMath.h"
+#include <memory>
 
 class Sprite;
 
@@ -21,7 +22,7 @@ private:
 	Camera camera_;
 	Input* input_ = nullptr;
 	
-	Sprite* winSprite_ = nullptr;
-	Sprite* loseSprite_ = nullptr;
-	Sprite* numberSprites_[10] = { nullptr };
+	std::unique_ptr<Sprite> winSprite_;
+	std::unique_ptr<Sprite> loseSprite_;
+	std::unique_ptr<Sprite> numberSprites_[10];
 };

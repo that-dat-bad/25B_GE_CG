@@ -26,8 +26,8 @@ public:
 	void SetBulletModel(Model* model) { bulletModel_ = model; }
 	void SetMissileModel(Model* model) { missileModel_ = model; }
 
-	const std::list<EnemyBullet*>& GetBullets() const { return bullets_; }
-	const std::list<EnemyMissile*>& GetMissiles() const { return missiles_; }
+	const std::list<std::unique_ptr<EnemyBullet>>& GetBullets() const { return bullets_; }
+	const std::list<std::unique_ptr<EnemyMissile>>& GetMissiles() const { return missiles_; }
 
 	Vector3 GetWorldPosition() const;
 
@@ -44,14 +44,14 @@ private:
 	std::unique_ptr<Object3d> object3d_ = nullptr;
 	Model* bulletModel_ = nullptr;
 	Model* missileModel_ = nullptr;
-	Sprite* minimapSprite_ = nullptr;
+	std::unique_ptr<Sprite> minimapSprite_;
 
 	Player* player_ = nullptr;
 	Camera* camera_ = nullptr; 
 	Vector3 velocity_;
 
-	std::list<EnemyBullet*> bullets_;
-	std::list<EnemyMissile*> missiles_;
+	std::list<std::unique_ptr<EnemyBullet>> bullets_;
+	std::list<std::unique_ptr<EnemyMissile>> missiles_;
 
 	void (Enemy::*stateFunction_)() = nullptr;
 

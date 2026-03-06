@@ -13,8 +13,7 @@
 using namespace MyMath;
 
 TitleScene::~TitleScene() {
-	delete debugCamera_;
-	delete logo_;
+	// unique_ptr により自動解放
 }
 
 void TitleScene::Finalize() {
@@ -25,7 +24,7 @@ void TitleScene::Initialize() {
 
 	input_ = Input::GetInstance();
 
-	debugCamera_ = new DebugCamera();
+	debugCamera_ = std::make_unique<DebugCamera>();
 
 	phase_ = ScenePhase::kFadeIn;
 	fadeTimer_ = kFadeDuration_;
@@ -37,7 +36,7 @@ void TitleScene::Initialize() {
 
 	ModelManager::GetInstance()->LoadModel("title");
 
-	logo_ = new TitleLogo();
+	logo_ = std::make_unique<TitleLogo>();
 	Model* logoModel = ModelManager::GetInstance()->FindModel("title");
 	logo_->Initialize(logoModel, &camera_, logoPosition_);
 	logo_->SetPosition(logoPosition_);

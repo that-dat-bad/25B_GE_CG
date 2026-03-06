@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "IScene.h"
+#include <memory>
 #include <optional>
 #include "math/MyMath.h"
 #include "Object3d.h"
@@ -22,7 +23,7 @@ private:
 	uint32_t fadeTextureHandle_ = 0;
 
 	Camera camera_;
-	DebugCamera* debugCamera_ = nullptr;
+	std::unique_ptr<DebugCamera> debugCamera_;
 	bool isDebugCameraActive_ = false;
 
 	Input* input_ = nullptr;
@@ -31,7 +32,7 @@ private:
 	std::optional<SceneID> UpdateMain();
 	std::optional<SceneID> UpdateFadeOut();
 
-	TitleLogo* logo_ = nullptr;
+	std::unique_ptr<TitleLogo> logo_;
 	MyMath::Vector3 logoPosition_ = { 0.0f, 0.0f, -45.0f };
 
 	Model* skydomeModelResource_ = nullptr;
