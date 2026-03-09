@@ -25,7 +25,7 @@ struct TransformationMatrix
     matrix WorldInverseTranspose;
 };
 
-ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
+ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b1);
 
 // ---------- パススルー（通常描画用） ----------
 // 入力された三角形をそのまま出力する

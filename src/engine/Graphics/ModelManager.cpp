@@ -1,6 +1,7 @@
 #include "ModelManager.h"
 #include "ModelCommon.h"
 #include "DirectXCommon.h"
+#include <filesystem>
 
 std::unique_ptr<ModelManager> ModelManager::instance_ = nullptr;
 
@@ -35,8 +36,14 @@ void ModelManager::LoadModel(const std::string& filePath)
 	
 	//モデルの生成とファイル読み込み、初期化
 	std::unique_ptr<Model> model = std::make_unique<Model>();
-	//model->Initialize(modelCommon_, "assets", filePath);
-	std::string fullPath = "assets/" + filePath;
+
+	// パスがそのまま存在すればそのまま使い、なければ assets/ を付加
+	std::string fullPath;
+	if (std::filesystem::exists(filePath)) {
+		fullPath = filePath;
+	} else {
+		fullPath = "assets/" + filePath;
+	}
 	model->Initialize(modelCommon_.get(), "", fullPath);
 
 	//モデルをmapコンテナに格納する

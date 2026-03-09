@@ -23,7 +23,7 @@ struct TransformationMatrix
     matrix WorldInverseTranspose; // WorldInverseTranspose for non-uniform scaling
 };
 
-ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
+ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b1);
 
 VertexOutput main(VertexInput input)
 {

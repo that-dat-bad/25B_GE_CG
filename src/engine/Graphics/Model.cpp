@@ -126,31 +126,42 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 		filePath = directoryPath + "/" + filename;
 	}
 
-	const aiScene* scene = importer.ReadFile(filePath.c_str(), aiProcess_FlipWindingOrder | aiProcess_FlipUVs);
+	const aiScene* scene = importer.ReadFile(filePath.c_str(),
+		aiProcess_FlipWindingOrder | aiProcess_FlipUVs | aiProcess_Triangulate | aiProcess_GenNormals);
 	assert(scene && scene->HasMeshes()); // 読み込み失敗時はassert
 
 	// Mesh Analysis
 	for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
 		aiMesh* mesh = scene->mMeshes[meshIndex];
-		assert(mesh->HasNormals());
-		assert(mesh->HasTextureCoords(0));
+		bool hasNormals = mesh->HasNormals();
+		bool hasTexCoords = mesh->HasTextureCoords(0);
 
 		// Face Analysis
 		for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
 			aiFace& face = mesh->mFaces[faceIndex];
-			assert(face.mNumIndices == 3);
+			if (face.mNumIndices != 3) { continue; } // 三角形以外はスキップ
 
 			// Vertex Analysis
 			for (uint32_t element = 0; element < face.mNumIndices; ++element) {
 				uint32_t vertexIndex = face.mIndices[element];
 				aiVector3D& position = mesh->mVertices[vertexIndex];
-				aiVector3D& normal = mesh->mNormals[vertexIndex];
-				aiVector3D& texcoord = mesh->mTextureCoords[0][vertexIndex];
 
 				VertexData vertex;
 				vertex.position = { position.x, position.y, position.z, 1.0f };
-				vertex.normal = { normal.x, normal.y, normal.z };
-				vertex.texcoord = { texcoord.x, texcoord.y };
+
+				if (hasNormals) {
+					aiVector3D& normal = mesh->mNormals[vertexIndex];
+					vertex.normal = { normal.x, normal.y, normal.z };
+				} else {
+					vertex.normal = { 0.0f, 1.0f, 0.0f };
+				}
+
+				if (hasTexCoords) {
+					aiVector3D& texcoord = mesh->mTextureCoords[0][vertexIndex];
+					vertex.texcoord = { texcoord.x, texcoord.y };
+				} else {
+					vertex.texcoord = { 0.0f, 0.0f };
+				}
 
 				// RH -> LH
 				vertex.position.x *= -1.0f;
