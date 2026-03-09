@@ -6,9 +6,9 @@
 
 SceneManager::SceneManager() {
 	// 初期シーン生成
-	currentScene = std::make_unique<StageScene>();
+	currentScene = std::make_unique<TitleScene>();
 	currentScene->Initialize();
-	currentSceneID = SCENE::STAGE;
+	currentSceneID = SCENE::TITLE;
 }
 
 SceneManager::~SceneManager() {

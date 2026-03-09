@@ -10,6 +10,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <Windows.h>
 
 void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename)
 {
@@ -126,9 +127,18 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 		filePath = directoryPath + "/" + filename;
 	}
 
-	const aiScene* scene = importer.ReadFile(filePath.c_str(),
+	#include <filesystem>
+	std::string absolutePath = std::filesystem::absolute(filePath).string();
+
+	const aiScene* scene = importer.ReadFile(absolutePath.c_str(),
 		aiProcess_FlipWindingOrder | aiProcess_FlipUVs | aiProcess_Triangulate | aiProcess_GenNormals);
-	assert(scene && scene->HasMeshes()); // 読み込み失敗時はassert
+	if (!scene || !scene->HasMeshes()) {
+		std::string errorOut = "Assimp Error: ";
+		errorOut += importer.GetErrorString();
+		errorOut += "\nFailed to load: " + absolutePath;
+		MessageBoxA(nullptr, errorOut.c_str(), "Model Load Error", MB_OK | MB_ICONERROR);
+		assert(false);
+	}
 
 	// Mesh Analysis
 	for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
