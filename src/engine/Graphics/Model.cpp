@@ -11,6 +11,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <Windows.h>
+#include <filesystem>
 
 void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename)
 {
@@ -127,7 +128,6 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 		filePath = directoryPath + "/" + filename;
 	}
 
-	#include <filesystem>
 	std::string absolutePath = std::filesystem::absolute(filePath).string();
 
 	const aiScene* scene = importer.ReadFile(absolutePath.c_str(),
