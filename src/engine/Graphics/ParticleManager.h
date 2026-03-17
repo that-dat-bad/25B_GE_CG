@@ -97,8 +97,10 @@ public: // シングルトンパターン
 	// 加速度場の追加
 	void AddAccelerationField(const std::string& name, const Vector3& acceleration, const AABB& area);
 
-private:
+	~ParticleManager() = default;
+public:
 	ParticleManager() = default;
+private:
 	ParticleManager(const ParticleManager&) = delete;
 	ParticleManager& operator=(const ParticleManager&) = delete;
 

@@ -26,9 +26,9 @@ public:
 	/// <returns></returns>
 	Model* FindModel(const std::string& filePath);
 	~ModelManager();
+	ModelManager();
 private:
 	static std::unique_ptr<ModelManager> instance_;
-	ModelManager();
 	ModelManager(const ModelManager&) = delete;
 	ModelManager& operator=(const ModelManager&) = delete;
 	std::unique_ptr<ModelCommon> modelCommon_ = nullptr;

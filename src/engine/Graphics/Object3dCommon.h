@@ -53,6 +53,7 @@ public:
 	static Object3dCommon* GetInstance();
 
 	void Initialize(DirectXCommon* dxCommon);
+	// void Finalize(); // デストラクタで管理するため不要
 
 	//共通描画設定
 	void SetupCommonState();
@@ -82,8 +83,9 @@ public:
 	PointLight* GetPointLightData() { return pointLightData; }
 	SpotLight* GetSpotLightData() { return spotLightData; }
 	~Object3dCommon() = default;
-private:
+public:
 	Object3dCommon() = default;
+private:
 	Object3dCommon(const Object3dCommon&) = delete;
 	Object3dCommon& operator=(const Object3dCommon&) = delete;
 

@@ -34,8 +34,10 @@ public:
 	static AudioManager* GetInstance();
 	// 初期化
 	void Initialize();
-	// 終了処理
-	void Finalize();
+	// 終了処理はデストラクタで行うため削除
+	// void Finalize();
+
+	~AudioManager();
 
 	// 音声読み込み (WAV/MP3/AAC対応)
 	SoundData SoundLoadFile(const char* filename);
@@ -46,9 +48,10 @@ public:
 	// 音声再生
 	void SoundPlayWave(const SoundData& soundData);
 
-private:
-	IXAudio2* xAudio2_ = nullptr;
+public:
 	AudioManager() = default;
+private:
+	Microsoft::WRL::ComPtr<IXAudio2> xAudio2_ = nullptr;
 	static std::unique_ptr<AudioManager> instance;
 
 	IXAudio2MasteringVoice* masteringVoice_ = nullptr;

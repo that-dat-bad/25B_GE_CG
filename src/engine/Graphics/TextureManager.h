@@ -42,7 +42,9 @@ private:
 
 
 	static std::unique_ptr<TextureManager> instance_;
+public:
 	TextureManager() = default;
+private:
 	TextureManager(const TextureManager&) = delete;
 	TextureManager& operator=(const TextureManager&) = delete;
 

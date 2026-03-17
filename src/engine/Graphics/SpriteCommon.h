@@ -21,6 +21,8 @@ public:
 
 	DirectXCommon* GetDirectXCommon() { return dxCommon_; }
 
+	SpriteCommon() = default; // Public constructor added here
+
 private:
 	static std::unique_ptr<SpriteCommon> instance;
 	DirectXCommon* dxCommon_ = nullptr;

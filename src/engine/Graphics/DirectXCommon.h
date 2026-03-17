@@ -78,8 +78,9 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
 	~DirectXCommon() = default;
 
-private:
+public:
 	DirectXCommon() = default;
+private:
 	DirectXCommon(const DirectXCommon&) = delete;
 	DirectXCommon& operator=(const DirectXCommon&) = delete;
 	static std::unique_ptr<DirectXCommon> instance_;

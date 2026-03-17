@@ -118,13 +118,8 @@ void Game::Finalize() {
 
 	if (audioManager) {
 		audioManager->SoundUnload(&alarmSound);
-		audioManager->Finalize();
 	}
 
-	// シングルトン類
-	ModelManager::GetInstance()->Finalize();
-	TextureManager::GetInstance()->Finalize();
-	CameraManager::GetInstance()->Finalize();
-	ParticleManager::GetInstance()->Finalize();
-
+	// 各マネージャのインスタンスは unique_ptr により自動で破棄されるため
+	// 明示的な Finalize() 呼び出しは不要になりました。
 }

@@ -19,7 +19,7 @@ std::unique_ptr<DirectXCommon> DirectXCommon::instance_ = nullptr;
 
 DirectXCommon* DirectXCommon::GetInstance() {
 	if (instance_ == nullptr) {
-		instance_.reset(new DirectXCommon());
+		instance_ = std::make_unique<DirectXCommon>();
 	}
 	return instance_.get();
 }

@@ -28,7 +28,9 @@ public:
 	~Input() = default;
 
 private:
+public:
 	Input() = default;
+private:
 	Input(const Input&) = delete;
 	Input& operator=(const Input&) = delete;
 	static std::unique_ptr<Input> instance_;

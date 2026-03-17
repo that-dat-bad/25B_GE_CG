@@ -10,7 +10,7 @@ ModelManager::~ModelManager() = default;
 ModelManager* ModelManager::GetInstance()
 {
 	if (instance_ == nullptr) {
-		instance_.reset(new ModelManager());
+		instance_ = std::make_unique<ModelManager>();
 	}
 	return instance_.get();
 }
@@ -23,7 +23,7 @@ void ModelManager::Initialize(DirectXCommon* dxCommon)
 
 void ModelManager::Finalize()
 {
-	instance_.reset();
+	// インスタンスの破棄はデストラクタで行われるため、ここでの明示的な破棄は不要
 }
 
 void ModelManager::LoadModel(const std::string& filePath)

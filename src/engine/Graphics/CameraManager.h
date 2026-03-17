@@ -7,9 +7,8 @@
 class CameraManager {
 public: 
 	static CameraManager* GetInstance();
-	~CameraManager() = default;
 	void Initialize();
-	void Finalize();
+	// void Finalize(); // デストラクタで管理するため不要
 
 	// カメラの生成 (newしてmapに登録)
 	void CreateCamera(const std::string& name);
@@ -26,9 +25,10 @@ public:
 	//指定されたカメラの削除
 	void DeleteCamera(const std::string& name);
 
-private:
-	static std::unique_ptr<CameraManager> instance_;
+	~CameraManager() = default;
+ public:
 	CameraManager() = default;
+private:
 
 	CameraManager(const CameraManager&) = delete;
 	CameraManager& operator=(const CameraManager&) = delete;

@@ -22,7 +22,7 @@ using namespace Microsoft::WRL;
 std::unique_ptr<AudioManager> AudioManager::instance = nullptr;
 
 AudioManager* AudioManager::GetInstance() {
-	if (instance == nullptr) instance.reset(new AudioManager());
+	if (instance == nullptr) instance = std::make_unique<AudioManager>();
 	return instance.get();
 }
 
@@ -41,14 +41,13 @@ void AudioManager::Initialize() {
 	assert(SUCCEEDED(result));
 }
 
-void AudioManager::Finalize() {
+AudioManager::~AudioManager() {
 	if (masteringVoice_) {
 		masteringVoice_->DestroyVoice();
 		masteringVoice_ = nullptr;
 	}
 	if (xAudio2_) {
-		xAudio2_->Release();
-		xAudio2_ = nullptr;
+		xAudio2_.Reset();
 	}
 	// MFの終了
 	MFShutdown();
