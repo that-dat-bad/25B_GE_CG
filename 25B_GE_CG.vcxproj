@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -203,6 +203,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine\Debug\Dump.h" />
+    <ClInclude Include="src\engine\Graphics\PrimitiveGenerator.h" />
+    <ClInclude Include="src\engine\Graphics\PrimitiveModel.h" />
     <ClInclude Include="src\Game\Game.h" />
     <ClInclude Include="src\engine\Audio\AudioManager.h" />
     <ClInclude Include="src\engine\Debug\ImguiManager.h" />
@@ -246,9 +248,13 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\Game\Scene\SceneManager.h" />
     <ClInclude Include="src\Game\Scene\StageScene.h" />
     <ClInclude Include="src\Game\Scene\TitleScene.h" />
-  <ClInclude Include="src\engine\base\Math\Quaternion.h" /><ClInclude Include="src\engine\Graphics\BlendMode.h" /></ItemGroup>
+    <ClInclude Include="src\engine\base\Math\Quaternion.h" />
+    <ClInclude Include="src\engine\Graphics\BlendMode.h" />
+  </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\engine\Debug\Dump.cpp" />
+    <ClCompile Include="src\engine\Graphics\PrimitiveGenerator.cpp" />
+    <ClCompile Include="src\engine\Graphics\PrimitiveModel.cpp" />
     <ClCompile Include="src\Game\Game.cpp" />
     <ClCompile Include="src\engine\Audio\AudioManager.cpp" />
     <ClCompile Include="src\engine\Debug\ImguiManager.cpp" />
@@ -312,7 +318,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\Game\Scene\SceneManager.cpp" />
     <ClCompile Include="src\Game\Scene\StageScene.cpp" />
     <ClCompile Include="src\Game\Scene\TitleScene.cpp" />
-  <ClCompile Include="src\engine\base\Math\Quaternion.cpp" /></ItemGroup>
+    <ClCompile Include="src\engine\base\Math\Quaternion.cpp" />
+  </ItemGroup>
   <ItemGroup>
     <Text Include="external\imgui\LICENSE.txt" />
   </ItemGroup>

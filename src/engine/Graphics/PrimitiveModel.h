@@ -1,0 +1,94 @@
+#pragma once
+#include <d3d12.h>
+#include <wrl/client.h>
+#include <vector>
+#include <array>
+#include "../base/Math/MyMath.h"
+#include "BlendMode.h"
+#include "Camera.h"
+#include "DirectXCommon.h"
+
+using namespace MyMath;
+
+class PrimitiveModel {
+public:
+	// シングルトン
+	static PrimitiveModel* GetInstance();
+
+	void Initialize(DirectXCommon* dxCommon);
+	
+	// 描画カウントをリセットする（毎フレームの最初に呼ぶ、またはUpdateなどで呼ぶ）
+	void Reset();
+
+	// エフェクト描画関数 (Ring)
+	void DrawRing(const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode = BlendMode::kNormal);
+
+	// エフェクト描画関数 (Cylinder)
+	void DrawCylinder(const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode = BlendMode::kNormal);
+
+	// 頂点データ構造体（無駄なウェイトやインデックスを省いた軽量版）
+	struct VertexData {
+		Vector4 position;
+		Vector2 texcoord;
+		Vector3 normal;
+	};
+
+	~PrimitiveModel() = default;
+
+private:
+	PrimitiveModel() = default;
+	PrimitiveModel(const PrimitiveModel&) = delete;
+	PrimitiveModel& operator=(const PrimitiveModel&) = delete;
+
+	static std::unique_ptr<PrimitiveModel> instance_;
+
+	DirectXCommon* dxCommon_ = nullptr;
+
+	// パイプライン関連
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
+	std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, static_cast<size_t>(BlendMode::kCountOf)> pipelineStates_;
+
+	// リングのバッファ
+	Microsoft::WRL::ComPtr<ID3D12Resource> ringVertexBuffer_;
+	D3D12_VERTEX_BUFFER_VIEW ringVertexBufferView_{};
+	uint32_t ringVertexCount_ = 0;
+
+	// シリンダーのバッファ
+	Microsoft::WRL::ComPtr<ID3D12Resource> cylinderVertexBuffer_;
+	D3D12_VERTEX_BUFFER_VIEW cylinderVertexBufferView_{};
+	uint32_t cylinderVertexCount_ = 0;
+
+	// トランスフォームとマテリアルを定数バッファとしてGPUに送る構造体
+	struct TransformationMatrix {
+		Matrix4x4 WVP;
+		Matrix4x4 World;
+		Matrix4x4 WorldInverseTranspose;
+	};
+	struct MaterialData {
+		Vector4 color;
+		int32_t enableLighting;
+		float shininess;
+		float padding[2];
+		Matrix4x4 uvTransform;
+	};
+
+	// 定数バッファのアライメント制約（256バイトの倍数）に合わせたサイズ
+	static const uint32_t kCbAlignment = 256;
+	static const uint32_t kMaxDrawCount = 10000; // 1フレームあたりの最大描画数
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> transformBuffer_;
+	Microsoft::WRL::ComPtr<ID3D12Resource> materialBuffer_;
+
+	uint8_t* transformMappedData_ = nullptr;
+	uint8_t* materialMappedData_ = nullptr;
+
+	uint32_t currentDrawCount_ = 0;
+
+private:
+	void CreateRootSignature();
+	void CreateGraphicsPipeline();
+	void CreatePrimitiveBuffers();
+
+	// 描画実行の共通部分
+	void CallDrawCommand(D3D12_VERTEX_BUFFER_VIEW& vbView, uint32_t vertexCount, const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode);
+};
