@@ -3,6 +3,7 @@
 #include "Object3dCommon.h"
 #include "TextureManager.h"
 #include "SpriteCommon.h"
+#include "PrimitiveModel.h"
 #include "../../../external/imgui/imgui.h"
 #include "../../engine/io/Input.h"
 #include "../../engine/base/Math/MyMath.h"
@@ -32,6 +33,9 @@ void StageScene::Initialize() {
 	
 	// Position terrain slightly lower
 	terrainObject->SetTranslate({ 0.0f, -1.0f, 0.0f });
+
+	// テクスチャ読み込み
+	TextureManager::GetInstance()->LoadTexture("assets/textures/white1x1.png");
 
 
 
@@ -218,6 +222,13 @@ void StageScene::Draw() {
 	sphereObject->Draw();
 	terrainObject->Draw();
 
+	// エフェクト（プリミティブ）描画 (加算合成で光る柱のように描画)
+	uint32_t whiteTex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/white1x1.png");
+	Vector3 cylScale = { 2.0f, 8.0f, 2.0f }; // 太さ2, 高さ8
+	Vector3 cylRotate = { 0.0f, 0.0f, 0.0f };
+	Vector3 cylTranslate = { 5.0f, 0.0f, 0.0f }; // 球の右側に配置
+	Vector4 cylColor = { 1.0f, 0.3f, 0.3f, 0.8f }; // 半透明の赤
+	PrimitiveModel::GetInstance()->DrawCylinder(cylScale, cylRotate, cylTranslate, cylColor, whiteTex, CameraManager::GetInstance()->GetActiveCamera(), BlendMode::kAdd);
 
 }
 

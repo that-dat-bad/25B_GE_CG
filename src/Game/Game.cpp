@@ -1,5 +1,6 @@
 #include "Game.h"
 #include <cassert>
+#include "PrimitiveModel.h"
 
 void Game::Initialize() {
 	// 1. 基盤システムの初期化
@@ -19,6 +20,7 @@ void Game::Initialize() {
 	ParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager.get());
 
 	Object3dCommon::GetInstance()->Initialize(DirectXCommon::GetInstance());
+	PrimitiveModel::GetInstance()->Initialize(DirectXCommon::GetInstance());
 
 	imguiManager = std::make_unique<ImGuiManager>();
 	imguiManager->Initialize(winApp.get(), DirectXCommon::GetInstance(), srvManager.get());
@@ -75,6 +77,7 @@ void Game::Draw() {
 	// 描画前処理
 	DirectXCommon::GetInstance()->PreDraw();
 	srvManager->PreDraw();
+	PrimitiveModel::GetInstance()->Reset(); // プリミティブの描画カウントをリセット
 	// 3Dオブジェクト描画
 	Object3dCommon::GetInstance()->SetupCommonState();
 

@@ -55,10 +55,12 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	assert(SUCCEEDED(hr));
 
 	DirectX::ScratchImage mipImages;
-	if (DirectX::IsCompressed(image.GetMetadata().format)) {
+	const DirectX::TexMetadata& metadata = image.GetMetadata();
+	// 1x1テクスチャなど小さすぎる場合はミップマップ生成をスキップ
+	if (DirectX::IsCompressed(metadata.format) || (metadata.width <= 1 && metadata.height <= 1)) {
 		mipImages = std::move(image);
 	} else {
-		hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
+		hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), metadata, DirectX::TEX_FILTER_SRGB, 0, mipImages);
 		assert(SUCCEEDED(hr));
 	}
 
@@ -110,10 +112,12 @@ void TextureManager::LoadTextureFromMemory(const std::string& textureName, const
 	assert(SUCCEEDED(hr));
 
 	DirectX::ScratchImage mipImages;
-	if (DirectX::IsCompressed(image.GetMetadata().format)) {
+	const DirectX::TexMetadata& memMetadata = image.GetMetadata();
+	// 1x1テクスチャなど小さすぎる場合はミップマップ生成をスキップ
+	if (DirectX::IsCompressed(memMetadata.format) || (memMetadata.width <= 1 && memMetadata.height <= 1)) {
 		mipImages = std::move(image);
 	} else {
-		hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
+		hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), memMetadata, DirectX::TEX_FILTER_SRGB, 0, mipImages);
 		assert(SUCCEEDED(hr));
 	}
 
