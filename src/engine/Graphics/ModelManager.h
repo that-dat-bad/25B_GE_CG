@@ -18,7 +18,8 @@ public:
 	/// </summary>
 	/// <param name="filePath"></param>
 	void LoadModel(const std::string& filePath);
-
+	Model::Animation LoadAnimation(const std::string& filePath);
+	std::vector<std::string> LoadAnimationNames(const std::string& filePath);
 	/// <summary>
 	/// モデルの検索
 	/// </summary>

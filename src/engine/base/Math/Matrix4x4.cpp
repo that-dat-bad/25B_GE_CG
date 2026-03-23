@@ -258,6 +258,8 @@ namespace MyMath {
 		return buf;
 	}
 
+
+
 	Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate) {
 		//拡大縮小行列
 		Matrix4x4 scaleMatrix = Identity4x4();
@@ -308,10 +310,6 @@ namespace MyMath {
 
 
 
-
-
-	static const int kRowHeight = 20;
-	static const int kColumnWidth = 60;
 
 	Vector3 TransformV3(const Vector3& vector, const Matrix4x4& matrix)
 	{

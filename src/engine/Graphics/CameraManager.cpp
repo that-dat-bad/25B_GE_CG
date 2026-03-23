@@ -54,3 +54,15 @@ void CameraManager::DeleteCamera(const std::string& name) {
 		cameras_.erase(name);
 	}
 }
+
+void CameraManager::SetNearClip(float nearClip) {
+	if (activeCamera_) {
+		activeCamera_->SetNearClip(nearClip);
+	}
+}
+
+void CameraManager::SetFarClip(float farClip) {
+	if (activeCamera_) {
+		activeCamera_->SetFarClip(farClip);
+	}
+}

@@ -26,6 +26,10 @@ public:
 	//指定されたカメラの削除
 	void DeleteCamera(const std::string& name);
 
+	void SetNearClip(float nearClip);
+
+	void SetFarClip(float farClip);
+
 private:
 	static std::unique_ptr<CameraManager> instance_;
 	CameraManager() = default;

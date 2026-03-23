@@ -93,6 +93,58 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	);
 }
 
+void TextureManager::LoadTextureFromMemory(const std::string& textureName, const void* data, size_t size) {
+	HRESULT hr;
+
+	// 既に読み込み済みならスキップ (これが後で非常に役立ちます！)
+	if (textureDatas_.contains(textureName)) {
+		return;
+	}
+
+	assert(srvManager_->CanAllocate());
+
+	DirectX::ScratchImage image;
+
+	// ★ 変更点: ファイルパスではなく、メモリ(data)からWICでデコードする
+	hr = DirectX::LoadFromWICMemory(data, size, DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+	assert(SUCCEEDED(hr));
+
+	DirectX::ScratchImage mipImages;
+	if (DirectX::IsCompressed(image.GetMetadata().format)) {
+		mipImages = std::move(image);
+	} else {
+		hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
+		assert(SUCCEEDED(hr));
+	}
+
+	// --- テクスチャデータを追加 ---
+	// textureName をキーとして追加する
+	TextureData& textureData = textureDatas_[textureName];
+
+	// --- テクスチャデータ書き込み ---
+	textureData.filePath = textureName; // filePathという変数名ですが、ここでは識別子として使います
+	textureData.metadata = mipImages.GetMetadata();
+	textureData.resource = dxCommon_->CreateTextureResource(dxCommon_->GetDevice(), textureData.metadata);
+
+	// --- テクスチャデータ転送 ---
+	textureData.intermediateResource = dxCommon_->UploadTextureData(textureData.resource.Get(), mipImages);
+
+	// --- デスクリプタハンドルの計算 ---
+	textureData.srvIndex = srvManager_->Allocate();
+
+	// ハンドルを取得して保存
+	textureData.srvHandleCPU = srvManager_->GetCPUDescriptorHandle(textureData.srvIndex);
+	textureData.srvHandleGPU = srvManager_->GetGPUDescriptorHandle(textureData.srvIndex);
+
+	// SRV生成
+	srvManager_->CreateSRVforTexture2D(
+		textureData.srvIndex,
+		textureData.resource.Get(),
+		textureData.metadata.format,
+		UINT(textureData.metadata.mipLevels)
+	);
+}
+
 D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetSrvHandleGPU(uint32_t textureIndex) {
 	return srvManager_->GetGPUDescriptorHandle(textureIndex);
 }

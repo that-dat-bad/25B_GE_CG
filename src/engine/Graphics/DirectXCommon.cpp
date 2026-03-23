@@ -496,17 +496,23 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 	// 必要なサイズを計算
 	UINT64 intermediateSize = GetRequiredIntermediateSize(texture, 0, UINT(subresources.size()));
 
-	// 中間リソースの作成
+	// 中間リソースの作成 (アップロード用バッファ)
 	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = CreateBufferResource(intermediateSize);
 
+	// --- ここから変更: メインのコマンドアロケータ/コマンドリストをリセットせずに
+	// --- 一時コマンドアロケータ / 一時コマンドリストを生成して転送を行う ---
+	HRESULT hr;
 
-	HRESULT hr = commandAllocator_->Reset();
-	assert(SUCCEEDED(hr));
-	hr = commandList_->Reset(commandAllocator_.Get(), nullptr);
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> uploadAllocator;
+	hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&uploadAllocator));
 	assert(SUCCEEDED(hr));
 
-	// データ転送命令を積む
-	UpdateSubresources(commandList_.Get(), texture, intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> uploadList;
+	hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, uploadAllocator.Get(), nullptr, IID_PPV_ARGS(&uploadList));
+	assert(SUCCEEDED(hr));
+
+	// データ転送命令を積む（uploadList を使用）
+	UpdateSubresources(uploadList.Get(), texture, intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
 
 	// バリアの設定（書き込み可能 -> 読み取り専用）
 	D3D12_RESOURCE_BARRIER barrier = {};
@@ -516,14 +522,12 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
-	commandList_->ResourceBarrier(1, &barrier);
+	uploadList->ResourceBarrier(1, &barrier);
 
-
-
-	hr = commandList_->Close();
+	hr = uploadList->Close();
 	assert(SUCCEEDED(hr));
 
-	ID3D12CommandList* commandLists[] = { commandList_.Get() };
+	ID3D12CommandList* commandLists[] = { uploadList.Get() };
 	commandQueue_->ExecuteCommandLists(1, commandLists);
 
 	// 実行完了を待つ (フェンス)
@@ -534,7 +538,6 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 		fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
 		WaitForSingleObject(fenceEvent_, INFINITE);
 	}
-
 
 	// 中間リソースを返す
 	return intermediateResource;

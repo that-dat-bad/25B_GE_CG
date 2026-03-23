@@ -61,3 +61,25 @@ Model* ModelManager::FindModel(const std::string& filePath)
 	//ファイル名一致なし
 	return nullptr;
 }
+
+Model::Animation ModelManager::LoadAnimation(const std::string& filePath)
+{
+	std::string fullPath;
+	if (std::filesystem::exists(filePath)) {
+		fullPath = filePath;
+	} else {
+		fullPath = "assets/" + filePath;
+	}
+	return Model::LoadAnimationFile("", fullPath,"");
+}
+
+std::vector<std::string> ModelManager::LoadAnimationNames(const std::string& filePath)
+{
+	std::string fullPath;
+	if (std::filesystem::exists(filePath)) {
+		fullPath = filePath;
+	} else {
+		fullPath = "assets/" + filePath;
+	}
+	return Model::LoadAnimationNames("", fullPath);
+}

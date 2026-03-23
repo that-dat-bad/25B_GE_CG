@@ -25,6 +25,8 @@ public:
 	// テクスチャ読み込み
 	void LoadTexture(const std::string& filePath);
 
+	void LoadTextureFromMemory(const std::string& textureName, const void* data, size_t size);
+
 	// SRVハンドル(GPU)を取得
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(uint32_t textureIndex);
 
