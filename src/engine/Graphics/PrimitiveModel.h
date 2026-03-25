@@ -16,6 +16,7 @@ public:
 	static PrimitiveModel* GetInstance();
 
 	void Initialize(DirectXCommon* dxCommon);
+	void Finalize();
 	
 	// 描画カウントをリセットする（毎フレームの最初に呼ぶ、またはUpdateなどで呼ぶ）
 	void Reset();
@@ -25,6 +26,9 @@ public:
 
 	// エフェクト描画関数 (Cylinder)
 	void DrawCylinder(const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode = BlendMode::kNormal);
+
+	// 3D直線描画関数 (デバッグ用などに使用)
+	void DrawLine3D(const Vector3& p1, const Vector3& p2, const Vector4& color, Camera* camera);
 
 	// 頂点データ構造体（無駄なウェイトやインデックスを省いた軽量版）
 	struct VertexData {
@@ -47,6 +51,7 @@ private:
 	// パイプライン関連
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
 	std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, static_cast<size_t>(BlendMode::kCountOf)> pipelineStates_;
+	std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, static_cast<size_t>(BlendMode::kCountOf)> pipelineStatesLine_;
 
 	// リングのバッファ
 	Microsoft::WRL::ComPtr<ID3D12Resource> ringVertexBuffer_;
@@ -57,6 +62,11 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> cylinderVertexBuffer_;
 	D3D12_VERTEX_BUFFER_VIEW cylinderVertexBufferView_{};
 	uint32_t cylinderVertexCount_ = 0;
+
+	// ラインのバッファ
+	Microsoft::WRL::ComPtr<ID3D12Resource> lineVertexBuffer_;
+	D3D12_VERTEX_BUFFER_VIEW lineVertexBufferView_{};
+	uint32_t lineVertexCount_ = 0;
 
 	// トランスフォームとマテリアルを定数バッファとしてGPUに送る構造体
 	struct TransformationMatrix {

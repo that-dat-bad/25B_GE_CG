@@ -8,10 +8,15 @@
 
 using namespace MyMath;
 class ModelCommon;
+class Camera;
+
 class Model {
 public:
 	void Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename);
 	void Draw();
+	
+	// デバッグ用: スケルトンの描画
+	void DebugDrawSkeleton(const Matrix4x4& objectWorldMatrix, Camera* camera, const Vector4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
 
 	void SetShininess(float shininess) { materialData_->shininess = shininess; }
 	float GetShininess() const { return materialData_->shininess; }
@@ -114,4 +119,5 @@ private:
 	// 現在の再生時間（秒）
 	float animationTime_ = 0.0f;
 	void UpdateNodeAnimation(const Node& node, const Matrix4x4& parentMatrix);
+	void DebugDrawNodeSkeleton(const Node& node, const Matrix4x4& parentMatrix, const Matrix4x4& objectWorldMatrix, Camera* camera, const Vector4& color);
 };

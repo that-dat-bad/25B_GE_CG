@@ -53,6 +53,7 @@ public:
 	static Object3dCommon* GetInstance();
 
 	void Initialize(DirectXCommon* dxCommon);
+	void Finalize();
 
 	//共通描画設定
 	void SetupCommonState();

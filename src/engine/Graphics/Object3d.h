@@ -35,6 +35,8 @@ public: // メンバ関数
 	void Update();
 	// 描画
 	void Draw();
+	// スケルトンのデバッグ描画
+	void DebugDrawSkeleton(const Vector4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
 
 	// セッター
 	void SetScale(const Vector3& scale) { transform_.scale = scale; }

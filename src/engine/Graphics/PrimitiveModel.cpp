@@ -17,6 +17,10 @@ PrimitiveModel* PrimitiveModel::GetInstance() {
 	return instance_.get();
 }
 
+void PrimitiveModel::Finalize() {
+	instance_.reset();
+}
+
 void PrimitiveModel::Initialize(DirectXCommon* dxCommon) {
 	dxCommon_ = dxCommon;
 	
@@ -54,6 +58,53 @@ void PrimitiveModel::DrawRing(const Vector3& scale, const Vector3& rotate, const
 
 void PrimitiveModel::DrawCylinder(const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode) {
 	CallDrawCommand(cylinderVertexBufferView_, cylinderVertexCount_, scale, rotate, translate, color, textureIndex, camera, blendMode);
+}
+
+void PrimitiveModel::DrawLine3D(const Vector3& p1, const Vector3& p2, const Vector4& color, Camera* camera) {
+	if (currentDrawCount_ >= kMaxDrawCount) return;
+	if (!camera) return;
+
+	// X軸方向に1.0の長さを持つ「基本ライン」( (0,0,0)～(1,0,0) ) を、指定されたp1, p2に一致させるワールド行列
+	Matrix4x4 wMatrix = {
+		p2.x - p1.x, p2.y - p1.y, p2.z - p1.z, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		p1.x, p1.y, p1.z, 1.0f
+	};
+	Matrix4x4 wvpMatrix = wMatrix * camera->GetViewProjectionMatrix();
+
+	uint32_t index = currentDrawCount_;
+	currentDrawCount_++;
+
+	TransformationMatrix* transformData = reinterpret_cast<TransformationMatrix*>(&transformMappedData_[index * kCbAlignment]);
+	transformData->WVP = wvpMatrix;
+	transformData->World = wMatrix;
+	transformData->WorldInverseTranspose = wMatrix; 
+
+	MaterialData* materialData = reinterpret_cast<MaterialData*>(&materialMappedData_[index * kCbAlignment]);
+	materialData->color = color;
+	materialData->enableLighting = 0; 
+	materialData->shininess = 50.0f;
+	materialData->uvTransform = Identity4x4();
+
+	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+
+	commandList->SetPipelineState(pipelineStatesLine_[static_cast<size_t>(BlendMode::kNormal)].Get());
+	commandList->SetGraphicsRootSignature(rootSignature_.Get());
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+	commandList->IASetVertexBuffers(0, 1, &lineVertexBufferView_);
+
+	commandList->SetGraphicsRootConstantBufferView(0, materialBuffer_->GetGPUVirtualAddress() + (index * kCbAlignment));
+	commandList->SetGraphicsRootConstantBufferView(1, transformBuffer_->GetGPUVirtualAddress() + (index * kCbAlignment));
+
+	// ダミーテクスチャをセット
+	uint32_t texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/uvChecker.png");
+	if (texIndex == 0) texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/models/uvChecker.png");
+	if (texIndex != 0) {
+		commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(texIndex));
+	}
+
+	commandList->DrawInstanced(lineVertexCount_, 1, 0, 0);
 }
 
 void PrimitiveModel::CallDrawCommand(D3D12_VERTEX_BUFFER_VIEW& vbView, uint32_t vertexCount, const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode) {
@@ -203,6 +254,15 @@ void PrimitiveModel::CreateGraphicsPipeline() {
 		HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&pipelineStates_[i]));
 		assert(SUCCEEDED(hr));
 	}
+
+	// ライン描画用パイプラインの生成 (トポロジータイプをLINEに変更)
+	graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+	for (size_t i = 0; i < static_cast<size_t>(BlendMode::kCountOf); ++i) {
+		BlendMode mode = static_cast<BlendMode>(i);
+		graphicsPipelineStateDesc.BlendState = GetBlendDesc(mode);
+		HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&pipelineStatesLine_[i]));
+		assert(SUCCEEDED(hr));
+	}
 }
 
 void PrimitiveModel::CreatePrimitiveBuffers() {
@@ -237,4 +297,19 @@ void PrimitiveModel::CreatePrimitiveBuffers() {
 	cylinderVertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&cylMapped));
 	std::memcpy(cylMapped, cylinderVertices.data(), cylinderVertexBufferView_.SizeInBytes);
 	cylinderVertexBuffer_->Unmap(0, nullptr);
+
+	// ===================================
+	// ラインの頂点データ生成 (0,0,0) -> (1,0,0)
+	// ===================================
+	lineVertexCount_ = 2;
+	lineVertexBuffer_ = dxCommon_->CreateBufferResource(sizeof(VertexData) * lineVertexCount_);
+	lineVertexBufferView_.BufferLocation = lineVertexBuffer_->GetGPUVirtualAddress();
+	lineVertexBufferView_.SizeInBytes = sizeof(VertexData) * lineVertexCount_;
+	lineVertexBufferView_.StrideInBytes = sizeof(VertexData);
+	
+	VertexData* lineMapped = nullptr;
+	lineVertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&lineMapped));
+	lineMapped[0] = { {0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f} };
+	lineMapped[1] = { {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 1.0f, 0.0f} };
+	lineVertexBuffer_->Unmap(0, nullptr);
 }

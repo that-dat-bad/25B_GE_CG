@@ -78,6 +78,9 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	// ---テクスチャデータ転送 ---
 	textureData.intermediateResource = dxCommon_->UploadTextureData(textureData.resource.Get(), mipImages);
 
+	//-- アップロードとバリアを完了
+	dxCommon_->FlushTextureUploads();
+
 
 	// ---  デスクリプタハンドルの計算 ---
 	textureData.srvIndex = srvManager_->Allocate();

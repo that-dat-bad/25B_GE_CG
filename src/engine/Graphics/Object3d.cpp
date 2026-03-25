@@ -80,3 +80,10 @@ void Object3d::Draw() {
 void Object3d::SetModel(const std::string& filePath) {
 	model_ = ModelManager::GetInstance()->FindModel(filePath);
 }
+
+void Object3d::DebugDrawSkeleton(const Vector4& color) {
+	if (model_ && camera_) {
+		Matrix4x4 wMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+		model_->DebugDrawSkeleton(wMatrix, camera_, color);
+	}
+}

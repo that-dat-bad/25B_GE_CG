@@ -27,6 +27,10 @@ public:
 
 	// 初期化
 	void Initialize(WinApp* winApp);
+	void Finalize();
+
+	// 全てのGPU処理の完了を待つ
+	void WaitForGPU();
 
 	//描画前処理
 	void PreDraw();

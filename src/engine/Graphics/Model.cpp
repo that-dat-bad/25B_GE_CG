@@ -2,6 +2,8 @@
 #include "ModelCommon.h"
 #include "DirectXCommon.h"
 #include "TextureManager.h"
+#include "PrimitiveModel.h"
+#include "Camera.h"
 
 #include <cassert>
 #include <map>
@@ -164,8 +166,6 @@ Model::Node ReadNode(aiNode* node) {
 	aiMatrix4x4 aiLocalMatrix = node->mTransformation;
 	aiLocalMatrix.Transpose(); // Row-major conversion
 
-	// aiMatrix4x4 is struct with a1..d4. It also has operator[].
-	// Assuming simple copy to MyMath::Matrix4x4 (float m[4][4])
 	for (int i = 0; i < 4; ++i) {
 		for (int j = 0; j < 4; ++j) {
 			result.localMatrix.m[i][j] = aiLocalMatrix[i][j];
@@ -558,3 +558,46 @@ void Model::UpdateNodeAnimation(const Node& node, const Matrix4x4& parentMatrix)
 		UpdateNodeAnimation(child, globalMatrix);
 	}
 }
+
+void Model::DebugDrawSkeleton(const Matrix4x4& objectWorldMatrix, Camera* camera, const Vector4& color) {
+	if (modelData_.rootNode.children.empty()) return;
+	// ルートノードから再帰的に描画
+	DebugDrawNodeSkeleton(modelData_.rootNode, Identity4x4(), objectWorldMatrix, camera, color);
+}
+
+void Model::DebugDrawNodeSkeleton(const Node& node, const Matrix4x4& parentMatrix, const Matrix4x4& objectWorldMatrix, Camera* camera, const Vector4& color) {
+	Matrix4x4 localMatrix = node.localMatrix;
+
+	if (playingAnimation_ && playingAnimation_->nodeAnimations.contains(node.name)) {
+		const NodeAnimation& anim = playingAnimation_->nodeAnimations.at(node.name);
+
+		Vector3 scale = CalculateScale(anim.scale, animationTime_);
+		Quaternion rotate = CalculateRotate(anim.rotate, animationTime_);
+		Vector3 translate = CalculateTranslate(anim.translate, animationTime_);
+
+		localMatrix = MakeAffineMatrix(scale, rotate, translate);
+	}
+
+	Matrix4x4 globalMatrix = localMatrix * parentMatrix;
+
+	// 親のワールド座標
+	Matrix4x4 parentFinal = parentMatrix * objectWorldMatrix;
+	Vector3 parentPos = { parentFinal.m[3][0], parentFinal.m[3][1], parentFinal.m[3][2] };
+
+	// 自分のワールド座標
+	Matrix4x4 myFinal = globalMatrix * objectWorldMatrix;
+	Vector3 myPos = { myFinal.m[3][0], myFinal.m[3][1], myFinal.m[3][2] };
+
+	// 線を描画（親と自分の位置が同じなら描画しない。ルートの初回など）
+	float distSq = (myPos.x - parentPos.x) * (myPos.x - parentPos.x) +
+				   (myPos.y - parentPos.y) * (myPos.y - parentPos.y) +
+				   (myPos.z - parentPos.z) * (myPos.z - parentPos.z);
+	
+	if (distSq > 0.0001f) {
+		PrimitiveModel::GetInstance()->DrawLine3D(parentPos, myPos, color, camera);
+	}
+
+	for (const auto& child : node.children) {
+		DebugDrawNodeSkeleton(child, globalMatrix, objectWorldMatrix, camera, color);
+	}
+}

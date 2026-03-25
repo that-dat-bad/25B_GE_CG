@@ -12,7 +12,7 @@ void Game::Initialize() {
 	srvManager = std::make_unique<SrvManager>();
 	srvManager->Initialize(DirectXCommon::GetInstance());
 
-	// 2. マネージャ類の初期化 (SceneManager より先に！ )
+	// 2. マネージャ類の初期化
 	SpriteCommon::GetInstance()->Initialize(DirectXCommon::GetInstance());
 	TextureManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager.get());
 	ModelManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
@@ -116,17 +116,33 @@ void Game::Run() {
 }
 
 void Game::Finalize() {
-	// クリーンアップ処理
+	// 1. GPUの完了を待機
+	DirectXCommon::GetInstance()->FlushTextureUploads();
+	DirectXCommon::GetInstance()->WaitForGPU();
+
+	// 2. シーンを先に解放 (Object3dが持つComPtrリソースをデバイス破棄前に手放す)
+	sceneManager.reset();
+
+	// 3. ImGuiの終了処理と解放
 	if (imguiManager) {
 		imguiManager->Finalize();
+		imguiManager.reset();
 	}
 
+	// 4. マネージャ・シングルトン類の終了処理
 	AudioManager::GetInstance()->Finalize();
-
-	// シングルトン類
 	ModelManager::GetInstance()->Finalize();
 	TextureManager::GetInstance()->Finalize();
 	CameraManager::GetInstance()->Finalize();
 	ParticleManager::GetInstance()->Finalize();
 
+	PrimitiveModel::GetInstance()->Finalize();
+	Object3dCommon::GetInstance()->Finalize();
+	SpriteCommon::GetInstance()->Finalize();
+
+	// 5. SRVマネージャの解放 (ヒープを持つため、デバイス破棄前に)
+	srvManager.reset();
+
+	// 6. 基盤システムの終了処理 (最後にデバイスを破棄)
+	DirectXCommon::GetInstance()->Finalize();
 }

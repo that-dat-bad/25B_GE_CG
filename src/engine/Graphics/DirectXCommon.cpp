@@ -24,6 +24,28 @@ DirectXCommon* DirectXCommon::GetInstance() {
 	return instance_.get();
 }
 
+void DirectXCommon::Finalize() {
+	if (instance_) {
+		instance_->WaitForGPU();
+		if (instance_->fenceEvent_) {
+			CloseHandle(instance_->fenceEvent_);
+			instance_->fenceEvent_ = nullptr;
+		}
+		instance_.reset();
+	}
+}
+
+void DirectXCommon::WaitForGPU() {
+	// Signal
+	fenceValue_++;
+	commandQueue_->Signal(fence_.Get(), fenceValue_);
+	// Wait
+	if (fence_->GetCompletedValue() < fenceValue_) {
+		fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
+		WaitForSingleObject(fenceEvent_, INFINITE);
+	}
+}
+
 void DirectXCommon::Initialize(WinApp* winApp) {
 
 	//FPS固定初期化
@@ -537,7 +559,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 	barrier.Transition.pResource = texture;
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
+	barrier.Transition.StateAfter =  D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	uploadCommandList_->ResourceBarrier(1, &barrier);
 
 	// 中間リソースを転送完了まで保持（リストに追加）

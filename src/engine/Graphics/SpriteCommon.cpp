@@ -13,6 +13,10 @@ SpriteCommon* SpriteCommon::GetInstance() {
 	return instance.get();
 }
 
+void SpriteCommon::Finalize() {
+	instance.reset();
+}
+
 void SpriteCommon::Initialize(DirectXCommon* dxCommon)
 {
 	dxCommon_ = dxCommon;
