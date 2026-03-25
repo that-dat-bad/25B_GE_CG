@@ -13,4 +13,5 @@ public:
 private:
 	std::unique_ptr<Object3d> sphereObject = nullptr;
 	std::unique_ptr<Object3d> terrainObject = nullptr;
+	//std::unique_ptr<Object3d> modelObject = nullptr;
 };

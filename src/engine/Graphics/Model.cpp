@@ -195,7 +195,7 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 	std::string absolutePath = std::filesystem::absolute(filePath).string();
 
 	const aiScene* scene = importer.ReadFile(absolutePath.c_str(),
-		aiProcess_FlipWindingOrder | aiProcess_FlipUVs | aiProcess_Triangulate | aiProcess_GenNormals);
+		aiProcess_FlipWindingOrder | aiProcess_FlipUVs | aiProcess_Triangulate | aiProcess_GenSmoothNormals);
 	if (!scene || !scene->HasMeshes()) {
 		return modelData;
 	}

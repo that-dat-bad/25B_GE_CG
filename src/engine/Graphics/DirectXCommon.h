@@ -11,7 +11,8 @@
 #include<string>
 #include<chrono>
 
-#include <memory> 
+#include <memory>
+#include <vector>
 
 class DirectXCommon
 {
@@ -75,6 +76,10 @@ public:
 	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata);
 	Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
+
+	// バッチアップロード: 溜めたテクスチャ転送コマンドを一括実行し、GPU完了を1回だけ待つ
+	void FlushTextureUploads();
+
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
 	~DirectXCommon() = default;
 
@@ -133,6 +138,12 @@ private:
 	std::chrono::steady_clock::time_point reference_;
 
 	WinApp* winApp_ = nullptr;
+
+	// テクスチャバッチアップロード用
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> uploadAllocator_;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> uploadCommandList_;
+	bool uploadRecording_ = false; // アップロードコマンドを記録中かどうか
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> pendingIntermediateResources_; // 転送完了まで保持
 
 	//デバイスの初期化
 	void CreateDevice();

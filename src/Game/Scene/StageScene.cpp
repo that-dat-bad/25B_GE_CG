@@ -15,8 +15,6 @@ void StageScene::Initialize() {
 	sceneID = SCENE::STAGE;
 
 	// --- 3Dオブジェクト ---
-	// --- 3Dオブジェクト ---
-	// --- 3Dオブジェクト ---
 	sphereObject = std::make_unique<Object3d>();
 	sphereObject->Initialize(Object3dCommon::GetInstance());
 	sphereObject->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
@@ -31,6 +29,13 @@ void StageScene::Initialize() {
 	ModelManager::GetInstance()->LoadModel("models/terrain.obj");
 	terrainObject->SetModel("models/terrain.obj");
 	
+
+	//modelObject = std::make_unique<Object3d>();
+	//modelObject->Initialize(Object3dCommon::GetInstance());
+	//modelObject->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
+	//ModelManager::GetInstance()->LoadModel("Resources/M113A1.glb");
+	//modelObject->SetModel("Resources/M113A1.glb");
+
 	// Position terrain slightly lower
 	terrainObject->SetTranslate({ 0.0f, -1.0f, 0.0f });
 
@@ -95,6 +100,7 @@ void StageScene::Update() {
 
 	sphereObject->Update();
 	terrainObject->Update();
+	//modelObject->Update();
 
 
 
@@ -221,6 +227,8 @@ void StageScene::Draw() {
 	Object3dCommon::GetInstance()->SetupCommonState();
 	sphereObject->Draw();
 	terrainObject->Draw();
+	//modelObject->Draw();
+
 
 	// エフェクト（プリミティブ）描画 (加算合成で光る柱のように描画)
 	uint32_t whiteTex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/white1x1.png");

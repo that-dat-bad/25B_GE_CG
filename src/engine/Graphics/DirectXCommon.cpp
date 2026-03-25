@@ -61,6 +61,9 @@ void DirectXCommon::Initialize(WinApp* winApp) {
 
 void DirectXCommon::PreDraw()
 {
+	// 描画開始前に、溜まっているテクスチャアップロードを一括で実行・完了させる
+	FlushTextureUploads();
+
 	HRESULT hr;
 
 	// 現在のフレームのアロケーターがGPUで使い終わるのを待つ
@@ -195,6 +198,14 @@ void DirectXCommon::CreateCommand()
 	hr = device_->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue_));
 	assert(SUCCEEDED(hr));
 	commandList_->Close();
+
+	// テクスチャバッチアップロード用のコマンドアロケーター/リストを生成
+	hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&uploadAllocator_));
+	assert(SUCCEEDED(hr));
+	hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, uploadAllocator_.Get(), nullptr, IID_PPV_ARGS(&uploadCommandList_));
+	assert(SUCCEEDED(hr));
+	uploadCommandList_->Close();
+	uploadRecording_ = false;
 
 }
 
@@ -487,10 +498,6 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateTextureResource(ID3D
 }
 
 
-// DirectXCommon.cpp
-
-// DirectXCommon.cpp
-
 Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages)
 {
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
@@ -510,22 +517,20 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 	// 中間リソースの作成 (アップロード用バッファ)
 	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = CreateBufferResource(intermediateSize);
 
-	// --- ここから変更: メインのコマンドアロケータ/コマンドリストをリセットせずに
-	// --- 一時コマンドアロケータ / 一時コマンドリストを生成して転送を行う ---
-	HRESULT hr;
+	// アップロード用コマンドリストがまだ開かれていなければ開く
+	if (!uploadRecording_) {
+		HRESULT hr;
+		hr = uploadAllocator_->Reset();
+		assert(SUCCEEDED(hr));
+		hr = uploadCommandList_->Reset(uploadAllocator_.Get(), nullptr);
+		assert(SUCCEEDED(hr));
+		uploadRecording_ = true;
+	}
 
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> uploadAllocator;
-	hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&uploadAllocator));
-	assert(SUCCEEDED(hr));
+	// データ転送命令を積む（実行はまだしない）
+	UpdateSubresources(uploadCommandList_.Get(), texture, intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
 
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> uploadList;
-	hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, uploadAllocator.Get(), nullptr, IID_PPV_ARGS(&uploadList));
-	assert(SUCCEEDED(hr));
-
-	// データ転送命令を積む（uploadList を使用）
-	UpdateSubresources(uploadList.Get(), texture, intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
-
-	// バリアの設定（書き込み可能 -> 読み取り専用）
+	// バリアの設定（コピー先 -> 読み取り専用）
 	D3D12_RESOURCE_BARRIER barrier = {};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -533,15 +538,32 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
-	uploadList->ResourceBarrier(1, &barrier);
+	uploadCommandList_->ResourceBarrier(1, &barrier);
 
-	hr = uploadList->Close();
+	// 中間リソースを転送完了まで保持（リストに追加）
+	pendingIntermediateResources_.push_back(intermediateResource);
+
+	// 中間リソースを返す（呼び出し元でも保持）
+	return intermediateResource;
+}
+
+void DirectXCommon::FlushTextureUploads()
+{
+	// 溜めたコマンドがなければ何もしない
+	if (!uploadRecording_) {
+		return;
+	}
+
+	HRESULT hr;
+
+	// コマンドリストをクローズして一括実行
+	hr = uploadCommandList_->Close();
 	assert(SUCCEEDED(hr));
 
-	ID3D12CommandList* commandLists[] = { uploadList.Get() };
+	ID3D12CommandList* commandLists[] = { uploadCommandList_.Get() };
 	commandQueue_->ExecuteCommandLists(1, commandLists);
 
-	// 実行完了を待つ (フェンス)
+	// 実行完了を待つ (フェンス) - 1回だけ！
 	fenceValue_++;
 	commandQueue_->Signal(fence_.Get(), fenceValue_);
 
@@ -550,7 +572,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::UploadTextureData(ID3D12Re
 		WaitForSingleObject(fenceEvent_, INFINITE);
 	}
 
-	// 中間リソースを返す
-	return intermediateResource;
+	// 中間リソースを解放（GPU転送が完了したので安全）
+	pendingIntermediateResources_.clear();
+	uploadRecording_ = false;
 }
-
