@@ -1,7 +1,6 @@
 #include "SrvManager.h"
 #include<cassert>
 #include"DirectXCommon.h"
-const uint32_t SrvManager::kMaxSRVCount_ = 512;
 
 void SrvManager::Initialize(DirectXCommon* dxCommon) {
 	dxCommon_ = dxCommon;
@@ -77,4 +76,10 @@ void SrvManager::CreateSRVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource*
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
 	dxCommon_->GetDevice()->CreateShaderResourceView(pResource, &srvDesc, GetCPUDescriptorHandle(srvIndex));
+}
+
+void SrvManager::Finalize()
+{
+	descriptorHeap_.Reset();
+	useIndex_ = 0;
 }

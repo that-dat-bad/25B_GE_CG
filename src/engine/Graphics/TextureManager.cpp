@@ -33,6 +33,7 @@ void TextureManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager)
 
 void TextureManager::Finalize()
 {
+	textureDatas_.clear();
 	instance_.reset();
 }
 
@@ -40,7 +41,7 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	HRESULT hr;
 
 
-	if (textureDatas_.contains(filePath)) {
+	if (textureDatas_.contains(filePath)) {	
 		return;
 	}
 

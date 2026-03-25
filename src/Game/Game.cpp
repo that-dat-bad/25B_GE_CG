@@ -120,7 +120,7 @@ void Game::Finalize() {
 	DirectXCommon::GetInstance()->FlushTextureUploads();
 	DirectXCommon::GetInstance()->WaitForGPU();
 
-	// 2. シーンを先に解放 (Object3dが持つComPtrリソースをデバイス破棄前に手放す)
+	// 2. シーンを先に解放
 	sceneManager.reset();
 
 	// 3. ImGuiの終了処理と解放
@@ -132,7 +132,7 @@ void Game::Finalize() {
 	// 4. マネージャ・シングルトン類の終了処理
 	AudioManager::GetInstance()->Finalize();
 	ModelManager::GetInstance()->Finalize();
-	TextureManager::GetInstance()->Finalize();
+	TextureManager::GetInstance()->Finalize();  // テクスチャクリア
 	CameraManager::GetInstance()->Finalize();
 	ParticleManager::GetInstance()->Finalize();
 
@@ -140,9 +140,16 @@ void Game::Finalize() {
 	Object3dCommon::GetInstance()->Finalize();
 	SpriteCommon::GetInstance()->Finalize();
 
-	// 5. SRVマネージャの解放 (ヒープを持つため、デバイス破棄前に)
+	// 5. SRVマネージャの終了処理
+	srvManager->Finalize();
 	srvManager.reset();
 
-	// 6. 基盤システムの終了処理 (最後にデバイスを破棄)
+	// 6. 基盤システムの終了処理
 	DirectXCommon::GetInstance()->Finalize();
+
+	// 7. ウィンドウの終了処理
+	if (winApp) {
+		winApp->Finalize();
+		winApp.reset();
+	}
 }

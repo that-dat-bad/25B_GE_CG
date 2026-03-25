@@ -36,16 +36,7 @@ private:
 	std::unique_ptr<ImGuiManager> imguiManager = nullptr;
 
 
-	std::unique_ptr<SpriteCommon> spriteCommon = nullptr;
 
-	// ゲームオブジェクト
-
-
-	// ライト・設定用リソース
-	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource;
-	DirectionalLight* directionalLightData = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> lightingSettingsResource;
-	LightingSettings* lightingSettingsData = nullptr;
 
 	// ゲーム終了フラグ
 	bool endRequest_ = false;

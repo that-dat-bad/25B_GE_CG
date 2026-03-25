@@ -6,8 +6,11 @@ class DirectXCommon;
 
 class SrvManager {
 public:
-	void Initialize(DirectXCommon* dxCommon);
+	//最大SRV数(最大テクスチャ枚数)
+	static const uint32_t kMaxSRVCount_ = 512;
 
+	void Initialize(DirectXCommon* dxCommon);
+	void Finalize();
 	void PreDraw();
 
 	void SetGraphicsRootDescriptorTable(UINT RootParameterIndex, uint32_t srvIndex);
@@ -17,8 +20,6 @@ public:
 	//テクスチャ枚数上限チェック
 	bool CanAllocate() const;
 
-	//最大SRV数(最大テクスチャ枚数)
-	static const uint32_t kMaxSRVCount_;
 	//SRV用のデスクリプタサイズ
 	uint32_t descriptorSize_;
 	//SRV用デスクリプタヒープ
