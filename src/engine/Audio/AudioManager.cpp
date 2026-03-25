@@ -21,6 +21,22 @@ using namespace Microsoft::WRL;
 
 std::unique_ptr<AudioManager> AudioManager::instance = nullptr;
 
+// ============================
+// VoiceCallback 実装
+// ============================
+void VoiceCallback::OnStreamEnd() {
+	// XAudio2 のコールバックスレッドから呼ばれる
+	// SourceVoice を停止してフラグを立てる
+	// (DestroyVoice はコールバック内で呼ぶとデッドロックの恐れがあるため、
+	//  メインスレッドの Update() で回収する)
+	if (sourceVoice) {
+		sourceVoice->Stop();
+	}
+}
+
+// ============================
+// AudioManager 実装
+// ============================
 AudioManager* AudioManager::GetInstance() {
 	if (instance == nullptr) instance.reset(new AudioManager());
 	return instance.get();
@@ -42,6 +58,9 @@ void AudioManager::Initialize() {
 }
 
 void AudioManager::Finalize() {
+	// すべての再生中 Voice を停止・破棄
+	StopAllSounds();
+
 	if (masteringVoice_) {
 		masteringVoice_->DestroyVoice();
 		masteringVoice_ = nullptr;
@@ -52,6 +71,29 @@ void AudioManager::Finalize() {
 	}
 	// MFの終了
 	MFShutdown();
+}
+
+void AudioManager::Update() {
+	std::lock_guard<std::mutex> lock(voicesMutex_);
+
+	// 再生が完了した Voice を回収・破棄
+	auto it = playingVoices_.begin();
+	while (it != playingVoices_.end()) {
+		auto& pv = *it;
+
+		// Voice の状態を問い合わせて、バッファが空なら再生完了
+		XAUDIO2_VOICE_STATE state{};
+		pv->sourceVoice->GetState(&state);
+
+		if (state.BuffersQueued == 0) {
+			// 再生完了 → DestroyVoice してリストから削除
+			pv->sourceVoice->DestroyVoice();
+			pv->sourceVoice = nullptr;
+			it = playingVoices_.erase(it);
+		} else {
+			++it;
+		}
+	}
 }
 
 SoundData AudioManager::SoundLoadFile(const char* filename) {
@@ -88,15 +130,14 @@ SoundData AudioManager::SoundLoadFile(const char* filename) {
 	// MFで確保したフォーマットメモリを解放
 	CoTaskMemFree(waveFormat);
 
-	// 5. PCM波形データの取得 (画像の仕様に従ったループ処理)
+	// 5. PCM波形データの取得
 	while (true) {
 		ComPtr<IMFSample> pSample;
 		DWORD streamIndex = 0, flags = 0;
 		LONGLONG llTimeStamp = 0;
 
-		// サンプルを読み込む
 		result = pReader->ReadSample(MF_SOURCE_READER_FIRST_AUDIO_STREAM, 0, &streamIndex, &flags, &llTimeStamp, &pSample);
-		assert(SUCCEEDED(result)); // エラーチェックを追加しています
+		assert(SUCCEEDED(result));
 
 		// ストリームの末尾に達したら抜ける
 		if (flags & MF_SOURCE_READERF_ENDOFSTREAM) break;
@@ -104,19 +145,13 @@ SoundData AudioManager::SoundLoadFile(const char* filename) {
 		// pSampleが有効な場合、バッファを取り出す
 		if (pSample) {
 			ComPtr<IMFMediaBuffer> pBuffer;
-			// サンプルに含まれるサウンドデータのバッファを一繋ぎにして取得
 			pSample->ConvertToContiguousBuffer(&pBuffer);
 
-			BYTE* pData = nullptr; // データ読み取り用ポインタ
+			BYTE* pData = nullptr;
 			DWORD maxLength = 0, currentLength = 0;
 
-			// バッファ読み込み用にロック
 			pBuffer->Lock(&pData, &maxLength, &currentLength);
-
-			// バッファの末尾にデータを追加 (vector::insertを使用)
 			soundData.buffer.insert(soundData.buffer.end(), pData, pData + currentLength);
-
-			// ロック解除
 			pBuffer->Unlock();
 		}
 	}
@@ -124,29 +159,69 @@ SoundData AudioManager::SoundLoadFile(const char* filename) {
 	return soundData;
 }
 
-// 画像の仕様に合わせて clear() を使用
 void AudioManager::SoundUnload(SoundData* soundData) {
-	// バッファをクリアしてメモリ解放
 	soundData->buffer.clear();
 	soundData->wfex = {};
 }
 
 void AudioManager::SoundPlayWave(const SoundData& soundData) {
-	HRESULT result;
-	IXAudio2SourceVoice* pSourceVoice = nullptr;
+	PlayInternal(soundData, false);
+}
 
-	result = xAudio2_->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
+void AudioManager::SoundPlayWaveLoop(const SoundData& soundData) {
+	PlayInternal(soundData, true);
+}
+
+void AudioManager::PlayInternal(const SoundData& soundData, bool loop) {
+	HRESULT result;
+
+	// コールバックオブジェクトを作成
+	auto callback = std::make_unique<VoiceCallback>();
+
+	IXAudio2SourceVoice* pSourceVoice = nullptr;
+	result = xAudio2_->CreateSourceVoice(&pSourceVoice, &soundData.wfex, 0,
+		XAUDIO2_DEFAULT_FREQ_RATIO, callback.get());
 	assert(SUCCEEDED(result));
 
+	// コールバックに SourceVoice を登録
+	callback->sourceVoice = pSourceVoice;
+
+	// バッファの設定
 	XAUDIO2_BUFFER buf{};
-	// std::vector なので data() と size() を使用してアドレスとサイズを取得
 	buf.pAudioData = soundData.buffer.data();
 	buf.AudioBytes = static_cast<UINT32>(soundData.buffer.size());
 	buf.Flags = XAUDIO2_END_OF_STREAM;
+
+	if (loop) {
+		buf.LoopCount = XAUDIO2_LOOP_INFINITE;
+	}
 
 	result = pSourceVoice->SubmitSourceBuffer(&buf);
 	assert(SUCCEEDED(result));
 
 	result = pSourceVoice->Start();
 	assert(SUCCEEDED(result));
+
+	// 再生中リストに追加
+	auto playingVoice = std::make_unique<PlayingVoice>();
+	playingVoice->sourceVoice = pSourceVoice;
+	playingVoice->callback = std::move(callback);
+
+	{
+		std::lock_guard<std::mutex> lock(voicesMutex_);
+		playingVoices_.push_back(std::move(playingVoice));
+	}
+}
+
+void AudioManager::StopAllSounds() {
+	std::lock_guard<std::mutex> lock(voicesMutex_);
+
+	for (auto& pv : playingVoices_) {
+		if (pv->sourceVoice) {
+			pv->sourceVoice->Stop();
+			pv->sourceVoice->DestroyVoice();
+			pv->sourceVoice = nullptr;
+		}
+	}
+	playingVoices_.clear();
 }

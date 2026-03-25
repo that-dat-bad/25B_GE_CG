@@ -21,6 +21,7 @@ void Game::Initialize() {
 
 	Object3dCommon::GetInstance()->Initialize(DirectXCommon::GetInstance());
 	PrimitiveModel::GetInstance()->Initialize(DirectXCommon::GetInstance());
+	AudioManager::GetInstance()->Initialize();
 
 	imguiManager = std::make_unique<ImGuiManager>();
 	imguiManager->Initialize(winApp.get(), DirectXCommon::GetInstance(), srvManager.get());
@@ -42,6 +43,7 @@ void Game::Update() {
 
 
 	ParticleManager::GetInstance()->Update();
+	AudioManager::GetInstance()->Update();
 
 
 #ifdef USE_IMGUI
@@ -119,10 +121,7 @@ void Game::Finalize() {
 		imguiManager->Finalize();
 	}
 
-	if (audioManager) {
-		audioManager->SoundUnload(&alarmSound);
-		audioManager->Finalize();
-	}
+	AudioManager::GetInstance()->Finalize();
 
 	// シングルトン類
 	ModelManager::GetInstance()->Finalize();

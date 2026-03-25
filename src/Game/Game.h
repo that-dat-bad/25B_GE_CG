@@ -34,12 +34,12 @@ private:
 	std::unique_ptr<WinApp> winApp = nullptr;
 	std::unique_ptr<SrvManager> srvManager = nullptr;
 	std::unique_ptr<ImGuiManager> imguiManager = nullptr;
-	std::unique_ptr<AudioManager> audioManager = nullptr;
+
 
 	std::unique_ptr<SpriteCommon> spriteCommon = nullptr;
 
 	// ゲームオブジェクト
-	SoundData alarmSound;
+
 
 	// ライト・設定用リソース
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource;

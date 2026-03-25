@@ -42,7 +42,7 @@ public:
 	ID3D12Device* GetDevice() { return device_.Get(); }
 	ID3D12GraphicsCommandList* GetCommandList() { return commandList_.Get(); }
 	ID3D12CommandQueue* GetCommandQueue() { return commandQueue_.Get(); }
-	ID3D12CommandAllocator* GetCommandAllocator() { return commandAllocator_.Get(); }
+	ID3D12CommandAllocator* GetCommandAllocator() { return commandAllocators_[currentFrameIndex_].Get(); }
 	IDXGISwapChain4* GetSwapChain() { return swapChain_.Get(); }
 	ID3D12Resource* GetCurrentBackBuffer() {
 		return swapChainResources_[swapChain_->GetCurrentBackBufferIndex()].Get();
@@ -89,7 +89,8 @@ private:
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Device> device_ = nullptr;
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain_ = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator_ = nullptr;
+	// フレームバッファリング: フレーム数分のコマンドアロケーター
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kSwapChainBufferCount_> commandAllocators_;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_ = nullptr;
 
@@ -120,6 +121,10 @@ private:
 
 	HANDLE fenceEvent_ = nullptr;
 	UINT64 fenceValue_ = 0;
+
+	// フレームバッファリング: フレームごとのフェンス値と現在のフレームインデックス
+	std::array<UINT64, kSwapChainBufferCount_> frameFenceValues_ = {};
+	uint32_t currentFrameIndex_ = 0;
 
 	D3D12_VIEWPORT viewport_{};
 

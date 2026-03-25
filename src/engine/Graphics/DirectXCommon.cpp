@@ -62,9 +62,17 @@ void DirectXCommon::Initialize(WinApp* winApp) {
 void DirectXCommon::PreDraw()
 {
 	HRESULT hr;
-	hr = commandAllocator_->Reset();
+
+	// 現在のフレームのアロケーターがGPUで使い終わるのを待つ
+	// （ダブルバッファなので、2フレーム前のGPU完了を待つことになる）
+	if (fence_->GetCompletedValue() < frameFenceValues_[currentFrameIndex_]) {
+		fence_->SetEventOnCompletion(frameFenceValues_[currentFrameIndex_], fenceEvent_);
+		WaitForSingleObject(fenceEvent_, INFINITE);
+	}
+
+	hr = commandAllocators_[currentFrameIndex_]->Reset();
 	assert(SUCCEEDED(hr));
-	hr = commandList_->Reset(commandAllocator_.Get(), nullptr);
+	hr = commandList_->Reset(commandAllocators_[currentFrameIndex_].Get(), nullptr);
 	assert(SUCCEEDED(hr));
 
 	// 描画処理
@@ -104,12 +112,14 @@ void DirectXCommon::PostDraw()
 	commandQueue_->ExecuteCommandLists(1, commandLists);
 	swapChain_->Present(1, 0);
 
+	// 現在のフレームにフェンス値を記録してSignal
 	fenceValue_++;
+	frameFenceValues_[currentFrameIndex_] = fenceValue_;
 	commandQueue_->Signal(fence_.Get(), fenceValue_);
-	if (fence_->GetCompletedValue() < fenceValue_) {
-		fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
-		WaitForSingleObject(fenceEvent_, INFINITE);
-	}
+
+	// 次のフレームへ進む（ブロック待ちなし！）
+	currentFrameIndex_ = (currentFrameIndex_ + 1) % kSwapChainBufferCount_;
+
 	UpdateFixFPS();
 
 }
@@ -170,12 +180,14 @@ void DirectXCommon::CreateCommand()
 {
 	HRESULT hr;
 
-	// コマンドアロケータの生成
-	hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocator_));
-	assert(SUCCEEDED(hr));
+	// フレーム数分のコマンドアロケーターを生成
+	for (uint32_t i = 0; i < kSwapChainBufferCount_; ++i) {
+		hr = device_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&commandAllocators_[i]));
+		assert(SUCCEEDED(hr));
+	}
 
-	// コマンドリストの生成
-	hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator_.Get(), nullptr, IID_PPV_ARGS(&commandList_));
+	// コマンドリストの生成（最初のアロケーターで作成）
+	hr = device_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocators_[0].Get(), nullptr, IID_PPV_ARGS(&commandList_));
 	assert(SUCCEEDED(hr));
 
 	// コマンドキューの生成
@@ -183,7 +195,6 @@ void DirectXCommon::CreateCommand()
 	hr = device_->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue_));
 	assert(SUCCEEDED(hr));
 	commandList_->Close();
-
 
 }
 
