@@ -1,6 +1,7 @@
 #include "CameraManager.h"
 #include "StageScene.h"
 #include "Object3dCommon.h"
+#include "SkyboxCommon.h"
 #include "TextureManager.h"
 #include "SpriteCommon.h"
 #include "PrimitiveModel.h"
@@ -40,6 +41,13 @@ void StageScene::Initialize() {
 
 	CameraManager::GetInstance()->GetActiveCamera()->SetTranslate({ 0.0f, 0.0f, -10.0f });
 	CameraManager::GetInstance()->Update();
+
+	// --- Skybox ---
+	TextureManager::GetInstance()->LoadTexture("assets/textures/cedar_bridge_sunset_1_2k.dds");
+	skybox_ = std::make_unique<Skybox>();
+	skybox_->Initialize(SkyboxCommon::GetInstance());
+	skybox_->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
+	skybox_->SetTextureIndex(TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/cedar_bridge_sunset_1_2k.dds"));
 }
 
 void StageScene::Update() {
@@ -94,6 +102,9 @@ void StageScene::Update() {
 
 	sphereObject->Update();
 	terrainObject->Update();
+	if (skybox_) {
+		skybox_->Update();
+	}
 
 
 
@@ -216,6 +227,12 @@ void StageScene::Update() {
 }
 
 void StageScene::Draw() {
+	// 0. Skybox描画 (最初に描画。深度書き込みなしで最遠方に配置)
+	SkyboxCommon::GetInstance()->SetupCommonState();
+	if (skybox_) {
+		skybox_->Draw();
+	}
+
 	// 1. 3D描画
 	Object3dCommon::GetInstance()->SetupCommonState();
 	sphereObject->Draw();

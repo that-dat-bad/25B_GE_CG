@@ -3,7 +3,7 @@
 #include <cassert>
 #include <filesystem> 
 #include"SrvManager.h"
-#include <memory> // Required for std::unique_ptr
+#include <memory>
 
 std::unique_ptr<TextureManager> TextureManager::instance_ = nullptr;
 
@@ -23,16 +23,14 @@ TextureManager* TextureManager::GetInstance() {
 	return instance_.get();
 }
 
-void TextureManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager)
-{
+void TextureManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager) {
 	dxCommon_ = dxCommon;
 	srvManager_ = srvManager;
 
 	textureDatas_.reserve(SrvManager::kMaxSRVCount_);
 }
 
-void TextureManager::Finalize()
-{
+void TextureManager::Finalize() {
 	textureDatas_.clear();
 	instance_.reset();
 }
@@ -41,7 +39,7 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	HRESULT hr;
 
 
-	if (textureDatas_.contains(filePath)) {	
+	if (textureDatas_.contains(filePath)) {
 		return;
 	}
 
@@ -50,8 +48,14 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	DirectX::ScratchImage image;
 	std::wstring wFilePath = ConvertString(filePath);
 
+	DirectX::TexMetadata fileMetadata;
+	hr = DirectX::GetMetadataFromDDSFile(wFilePath.c_str(), DirectX::DDS_FLAGS_NONE, fileMetadata);
 
-	hr = DirectX::LoadFromWICFile(wFilePath.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+	if (wFilePath.ends_with(L".dds")) {//ddsで終わっていたらddsとする(要改修)
+		hr = DirectX::LoadFromDDSFile(wFilePath.c_str(), DirectX::DDS_FLAGS_NONE, nullptr, image);
+	} else {
+		hr = DirectX::LoadFromWICFile(wFilePath.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+	}
 
 	assert(SUCCEEDED(hr));
 
@@ -90,19 +94,28 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	textureData.srvHandleCPU = srvManager_->GetCPUDescriptorHandle(textureData.srvIndex);
 	textureData.srvHandleGPU = srvManager_->GetGPUDescriptorHandle(textureData.srvIndex);
 
-	//SRV生成
-	srvManager_->CreateSRVforTexture2D(
-		textureData.srvIndex,
-		textureData.resource.Get(),
-		textureData.metadata.format,
-		UINT(textureData.metadata.mipLevels)
-	);
+	//SRV生成 - metadataからcubemapかどうかを判定して分岐
+	if (textureData.metadata.IsCubemap()) {
+		srvManager_->CreateSRVforTextureCube(
+			textureData.srvIndex,
+			textureData.resource.Get(),
+			textureData.metadata.format,
+			UINT(textureData.metadata.mipLevels)
+		);
+	} else {
+		srvManager_->CreateSRVforTexture2D(
+			textureData.srvIndex,
+			textureData.resource.Get(),
+			textureData.metadata.format,
+			UINT(textureData.metadata.mipLevels)
+		);
+	}
 }
 
 void TextureManager::LoadTextureFromMemory(const std::string& textureName, const void* data, size_t size) {
 	HRESULT hr;
 
-	// 既に読み込み済みならスキップ (これが後で非常に役立ちます！)
+	// 既に読み込み済みならスキップ
 	if (textureDatas_.contains(textureName)) {
 		return;
 	}
@@ -111,7 +124,7 @@ void TextureManager::LoadTextureFromMemory(const std::string& textureName, const
 
 	DirectX::ScratchImage image;
 
-	// ★ 変更点: ファイルパスではなく、メモリ(data)からWICでデコードする
+	
 	hr = DirectX::LoadFromWICMemory(data, size, DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
 	assert(SUCCEEDED(hr));
 

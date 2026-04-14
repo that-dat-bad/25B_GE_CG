@@ -14,6 +14,7 @@
 #include "SpriteCommon.h"
 #include "Object3dCommon.h"
 #include "Object3d.h"
+#include "SkyboxCommon.h"
 #include "ParticleManager.h"
 #include "SceneManager.h"
 

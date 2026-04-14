@@ -154,6 +154,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="assets\shaders\Particle.hlsli" />
     <None Include="assets\shaders\Object3d.hlsli" />
     <None Include="assets\shaders\Sprite2d.hlsli" />
+    <None Include="assets\shaders\Skybox.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="assets\shaders\Object3d.PS.hlsl">
@@ -216,6 +217,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\Graphics\Model.h" />
     <ClInclude Include="src\engine\Graphics\ModelCommon.h" />
     <ClInclude Include="src\engine\Graphics\Object3dCommon.h" />
+    <ClInclude Include="src\engine\Graphics\SkyboxCommon.h" />
+    <ClInclude Include="src\engine\Graphics\Skybox.h" />
     <ClInclude Include="src\engine\Graphics\Object3d.h" />
     <ClInclude Include="src\engine\base\Math\MyMath.h" />
     <ClInclude Include="src\engine\Graphics\Sprite.h" />
@@ -266,6 +269,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\engine\Graphics\Model.cpp" />
     <ClCompile Include="src\engine\Graphics\ModelCommon.cpp" />
     <ClCompile Include="src\engine\Graphics\Object3dCommon.cpp" />
+    <ClCompile Include="src\engine\Graphics\SkyboxCommon.cpp" />
+    <ClCompile Include="src\engine\Graphics\Skybox.cpp" />
     <ClCompile Include="src\engine\Graphics\Object3d.cpp" />
     <ClCompile Include="src\engine\Graphics\Sprite.cpp" />
     <ClCompile Include="src\engine\Graphics\SpriteCommon.cpp" />

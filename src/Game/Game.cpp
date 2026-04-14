@@ -20,6 +20,7 @@ void Game::Initialize() {
 	ParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager.get());
 
 	Object3dCommon::GetInstance()->Initialize(DirectXCommon::GetInstance());
+	SkyboxCommon::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager.get());
 	PrimitiveModel::GetInstance()->Initialize(DirectXCommon::GetInstance());
 	AudioManager::GetInstance()->Initialize();
 
@@ -137,6 +138,7 @@ void Game::Finalize() {
 	ParticleManager::GetInstance()->Finalize();
 
 	PrimitiveModel::GetInstance()->Finalize();
+	SkyboxCommon::GetInstance()->Finalize();
 	Object3dCommon::GetInstance()->Finalize();
 	SpriteCommon::GetInstance()->Finalize();
 
