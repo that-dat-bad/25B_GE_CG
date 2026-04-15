@@ -13,13 +13,15 @@
 
 #include <memory>
 #include <vector>
+#include "../base/Math/MyMath.h"
+using namespace MyMath;
 
 class DirectXCommon
 {
 public:
 	static DirectXCommon* GetInstance();
 
-	static const uint32_t kRtvHeapDescriptorNum_ = 2; // ダブルバッファ用
+	static const uint32_t kRtvHeapDescriptorNum_ = 5; // ダブルバッファ(2) + レンダーテクスチャ用(3)
 	static const uint32_t kDsvHeapDescriptorNum_ = 1; // 深度バッファ用
 	static const uint32_t kSwapChainBufferCount_ = 2;
 	//static const uint32_t kMaxSRVCount_;//最大SRV数(最大テクスチャ枚数)
@@ -80,7 +82,7 @@ public:
 	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index);
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata);
 	Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
-
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateRenderTextureResource(ID3D12Device* device, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor);
 	// バッチアップロード: 溜めたテクスチャ転送コマンドを一括実行し、GPU完了を1回だけ待つ
 	void FlushTextureUploads();
 

@@ -200,3 +200,62 @@ const DirectX::TexMetadata& TextureManager::GetMetaData(uint32_t textureIndex) {
 	static DirectX::TexMetadata dummy{};
 	return dummy;
 }
+
+void TextureManager::CreateRenderTexture(const std::string& name, uint32_t width, uint32_t height, DXGI_FORMAT format, const Vector4& clearColor) {
+	// 既に作成済みならスキップ
+	if (textureDatas_.contains(name)) {
+		return;
+	}
+
+	assert(srvManager_->CanAllocate());
+	assert(rtvNextIndex_ < DirectXCommon::kRtvHeapDescriptorNum_ && "RTV heap is full");
+
+	// レンダーテクスチャリソースの作成
+	TextureData& textureData = textureDatas_[name];
+	textureData.filePath = name;
+	textureData.isRenderTexture = true;
+	textureData.resource = dxCommon_->CreateRenderTextureResource(dxCommon_->GetDevice(), width, height, format, clearColor);
+
+	// メタデータを手動設定
+	textureData.metadata.width = width;
+	textureData.metadata.height = height;
+	textureData.metadata.format = format;
+	textureData.metadata.mipLevels = 1;
+	textureData.metadata.arraySize = 1;
+	textureData.metadata.dimension = DirectX::TEX_DIMENSION_TEXTURE2D;
+
+	// --- RTV の作成 ---
+	uint32_t rtvDescriptorSize = dxCommon_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = DirectXCommon::GetCPUDescriptorHandle(
+		dxCommon_->GetRTVDescriptorHeap(), rtvDescriptorSize, rtvNextIndex_);
+
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
+	rtvDesc.Format = format;
+	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	dxCommon_->GetDevice()->CreateRenderTargetView(textureData.resource.Get(), &rtvDesc, rtvHandle);
+
+	textureData.rtvHandle = rtvHandle;
+	rtvNextIndex_++;
+
+	// --- SRV の作成 ---
+	textureData.srvIndex = srvManager_->Allocate();
+	textureData.srvHandleCPU = srvManager_->GetCPUDescriptorHandle(textureData.srvIndex);
+	textureData.srvHandleGPU = srvManager_->GetGPUDescriptorHandle(textureData.srvIndex);
+	srvManager_->CreateSRVforTexture2D(
+		textureData.srvIndex,
+		textureData.resource.Get(),
+		format,
+		1
+	);
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE TextureManager::GetRtvHandle(const std::string& name) {
+	assert(textureDatas_.contains(name) && "Render texture not found.");
+	assert(textureDatas_[name].isRenderTexture && "Not a render texture.");
+	return textureDatas_[name].rtvHandle;
+}
+
+ID3D12Resource* TextureManager::GetResource(const std::string& name) {
+	assert(textureDatas_.contains(name) && "Texture not found.");
+	return textureDatas_[name].resource.Get();
+}
