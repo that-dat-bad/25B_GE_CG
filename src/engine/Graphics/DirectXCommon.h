@@ -128,6 +128,10 @@ private:
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 2> swapChainResources_;
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, 2> rtvHandles_;
 
+	static const uint32_t kRenderTextureCount_ = kRtvHeapDescriptorNum_ - kSwapChainBufferCount_;
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kRenderTextureCount_> renderTextures_;
+	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kRenderTextureCount_> renderTextureRtvHandles_;
+
 	DXGI_FORMAT rtvFormat_;
 
 	HANDLE fenceEvent_ = nullptr;
@@ -171,6 +175,9 @@ private:
 
 	//レンダーターゲットビューの初期化
 	void CreateRenderTargetView();
+
+	//レンダーテクスチャの生成
+	void CreateRenderTargetTextures();
 
 	//フェンスの作成
 	void CreateFence();

@@ -78,7 +78,8 @@ void DirectXCommon::Initialize(WinApp* winApp) {
 	SetScissorRect();
 	//DxcCompilerの初期化
 	InitializeDxcCompiler();
-
+	
+	CreateRenderTargetTextures();
 }
 
 void DirectXCommon::PreDraw()
@@ -100,20 +101,21 @@ void DirectXCommon::PreDraw()
 	hr = commandList_->Reset(commandAllocators_[currentFrameIndex_].Get(), nullptr);
 	assert(SUCCEEDED(hr));
 
-	// 描画処理
-	UINT backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
-	D3D12_RESOURCE_BARRIER barrier = {};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = swapChainResources_[backBufferIndex].Get();
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	commandList_->ResourceBarrier(1, &barrier);
+	// renderTextures_[0] をレンダーターゲットに遷移してクリア
+	D3D12_RESOURCE_BARRIER barrierRT = {};
+	barrierRT.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierRT.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrierRT.Transition.pResource = renderTextures_[0].Get();
+	barrierRT.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierRT.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	barrierRT.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	commandList_->ResourceBarrier(1, &barrierRT);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
-	commandList_->OMSetRenderTargets(1, &rtvHandles_[backBufferIndex], false, &dsvHandle);
-	float clearColor[] = { 0.1f, 0.25f, 0.5f, 1.0f };
-	commandList_->ClearRenderTargetView(rtvHandles_[backBufferIndex], clearColor, 0, nullptr);
+	commandList_->OMSetRenderTargets(1, &renderTextureRtvHandles_[0], false, &dsvHandle);
+
+	float clearColor[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+	commandList_->ClearRenderTargetView(renderTextureRtvHandles_[0], clearColor, 0, nullptr);
 	commandList_->ClearDepthStencilView(dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 	commandList_->RSSetViewports(1, &viewport_);
@@ -123,30 +125,66 @@ void DirectXCommon::PreDraw()
 
 void DirectXCommon::PostDraw()
 {
-	HRESULT hr;
 	UINT backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
-	D3D12_RESOURCE_BARRIER barrier = {};
-	barrier.Transition.pResource = swapChainResources_[backBufferIndex].Get();
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-	commandList_->ResourceBarrier(1, &barrier);
 
-	hr = commandList_->Close();
+	// renderTextures_[0]: RENDER_TARGET -> COPY_SOURCE
+	D3D12_RESOURCE_BARRIER barrierRTtoCopy = {};
+	barrierRTtoCopy.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierRTtoCopy.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrierRTtoCopy.Transition.pResource = renderTextures_[0].Get();
+	barrierRTtoCopy.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierRTtoCopy.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrierRTtoCopy.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+
+	// swapChainResources_[backBufferIndex]: PRESENT -> COPY_DEST
+	D3D12_RESOURCE_BARRIER barrierBackToCopy = {};
+	barrierBackToCopy.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierBackToCopy.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrierBackToCopy.Transition.pResource = swapChainResources_[backBufferIndex].Get();
+	barrierBackToCopy.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierBackToCopy.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	barrierBackToCopy.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+
+	D3D12_RESOURCE_BARRIER barriers[] = { barrierRTtoCopy, barrierBackToCopy };
+	commandList_->ResourceBarrier(_countof(barriers), barriers);
+
+	// GPU コピー（高速でシンプル）
+	commandList_->CopyResource(swapChainResources_[backBufferIndex].Get(), renderTextures_[0].Get());
+
+	// swapChain -> PRESENT に戻す
+	D3D12_RESOURCE_BARRIER barrierBackToPresent = {};
+	barrierBackToPresent.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierBackToPresent.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrierBackToPresent.Transition.pResource = swapChainResources_[backBufferIndex].Get();
+	barrierBackToPresent.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierBackToPresent.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+	barrierBackToPresent.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+	commandList_->ResourceBarrier(1, &barrierBackToPresent);
+
+	// renderTextures_[0] を SRV 相当に戻す
+	D3D12_RESOURCE_BARRIER barrierRTtoSRV = {};
+	barrierRTtoSRV.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierRTtoSRV.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrierRTtoSRV.Transition.pResource = renderTextures_[0].Get();
+	barrierRTtoSRV.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierRTtoSRV.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+	barrierRTtoSRV.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	commandList_->ResourceBarrier(1, &barrierRTtoSRV);
+
+	HRESULT hr = commandList_->Close();
 	assert(SUCCEEDED(hr));
 	ID3D12CommandList* commandLists[] = { commandList_.Get() };
 	commandQueue_->ExecuteCommandLists(1, commandLists);
 	swapChain_->Present(1, 0);
 
-	// 現在のフレームにフェンス値を記録してSignal
+	// 既存のフェンス処理
 	fenceValue_++;
 	frameFenceValues_[currentFrameIndex_] = fenceValue_;
 	commandQueue_->Signal(fence_.Get(), fenceValue_);
 
-	// 次のフレームへ進む（ブロック待ちなし！）
 	currentFrameIndex_ = (currentFrameIndex_ + 1) % kSwapChainBufferCount_;
 
 	UpdateFixFPS();
-
 }
 
 void DirectXCommon::CreateDevice()
@@ -610,30 +648,47 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateRenderTextureResourc
 
 void DirectXCommon::FlushTextureUploads()
 {
-	// 溜めたコマンドがなければ何もしない
+	// アップロードコマンドが記録されていなければ何もしない
 	if (!uploadRecording_) {
 		return;
 	}
 
-	HRESULT hr;
-
-	// コマンドリストをクローズして一括実行
-	hr = uploadCommandList_->Close();
+	// コマンドリストを閉じる
+	HRESULT hr = uploadCommandList_->Close();
 	assert(SUCCEEDED(hr));
 
+	// コマンドリストを実行
 	ID3D12CommandList* commandLists[] = { uploadCommandList_.Get() };
 	commandQueue_->ExecuteCommandLists(1, commandLists);
 
-	// 実行完了を待つ (フェンス) - 1回だけ！
-	fenceValue_++;
-	commandQueue_->Signal(fence_.Get(), fenceValue_);
+	// GPU完了を待つ
+	WaitForGPU();
 
-	if (fence_->GetCompletedValue() < fenceValue_) {
-		fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
-		WaitForSingleObject(fenceEvent_, INFINITE);
-	}
-
-	// 中間リソースを解放（GPU転送が完了したので安全）
+	// 中間リソースを解放
 	pendingIntermediateResources_.clear();
+
+	// 記録フラグをリセット
 	uploadRecording_ = false;
+}
+
+//レンダーテクスチャを生成して RTV を作成
+void DirectXCommon::CreateRenderTargetTextures()
+{
+    D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
+    rtvDesc.Format = rtvFormat_;
+    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+    Vector4 defaultClear = { 1.0f, 0.0f, 0.0f, 1.0f };
+    uint32_t descriptorSize = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+    for (uint32_t i = 0; i < kRenderTextureCount_; ++i) {
+        // リソース作成（初期状態は SRV 相当）
+        renderTextures_[i] = CreateRenderTextureResource(device_.Get(), winApp_->kClientWidth, winApp_->kClientHeight, rtvFormat_, defaultClear);
+
+        // RTV ハンドルは swapchain 用 RTV スロットの後ろに配置（インデックス: kSwapChainBufferCount_ + i）
+        uint32_t descriptorIndex = kSwapChainBufferCount_ + i;
+        renderTextureRtvHandles_[i] = GetCPUDescriptorHandle(rtvDescriptorHeap_.Get(), descriptorSize, descriptorIndex);
+
+        device_->CreateRenderTargetView(renderTextures_[i].Get(), &rtvDesc, renderTextureRtvHandles_[i]);
+    }
 }

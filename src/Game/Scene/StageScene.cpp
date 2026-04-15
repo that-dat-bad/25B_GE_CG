@@ -136,6 +136,7 @@ void StageScene::Update() {
 	static bool enableSpot = false;
 	
 	bool changed = false;
+	changed |= ImGui::Checkbox("Skybox Visible", &isSkyboxVisible_);
 	changed |= ImGui::Checkbox("Enable Directional Light", &enableDirectional);
 	changed |= ImGui::Checkbox("Enable Point Light", &enablePoint);
 	changed |= ImGui::Checkbox("Enable Spot Light", &enableSpot);
@@ -228,8 +229,8 @@ void StageScene::Update() {
 
 void StageScene::Draw() {
 	// 0. Skybox描画 (最初に描画。深度書き込みなしで最遠方に配置)
-	SkyboxCommon::GetInstance()->SetupCommonState();
-	if (skybox_) {
+	if (isSkyboxVisible_ && skybox_) {
+		SkyboxCommon::GetInstance()->SetupCommonState();
 		skybox_->Draw();
 	}
 
