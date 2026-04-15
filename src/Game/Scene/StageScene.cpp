@@ -11,6 +11,7 @@
 
 #include <cmath>
 #include <ModelManager.h>
+#include "../../engine/Graphics/PostProcess/PostEffect.h"
 
 void StageScene::Initialize() {
 	sceneID = SCENE::STAGE;
@@ -137,6 +138,14 @@ void StageScene::Update() {
 	
 	bool changed = false;
 	changed |= ImGui::Checkbox("Skybox Visible", &isSkyboxVisible_);
+
+	static bool isGrayScale = false;
+	if (ImGui::Checkbox("GrayScale", &isGrayScale)) {
+		PostEffect::GetInstance()->SetEffectType(
+			isGrayScale ? PostEffectType::kGrayScale : PostEffectType::kNone
+		);
+	}
+
 	changed |= ImGui::Checkbox("Enable Directional Light", &enableDirectional);
 	changed |= ImGui::Checkbox("Enable Point Light", &enablePoint);
 	changed |= ImGui::Checkbox("Enable Spot Light", &enableSpot);

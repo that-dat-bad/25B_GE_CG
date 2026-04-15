@@ -1,6 +1,7 @@
 #include "Game.h"
 #include <cassert>
 #include "PrimitiveModel.h"
+#include "PostProcess/PostEffect.h"
 
 void Game::Initialize() {
 	// 1. 基盤システムの初期化
@@ -27,7 +28,11 @@ void Game::Initialize() {
 	imguiManager = std::make_unique<ImGuiManager>();
 	imguiManager->Initialize(winApp.get(), DirectXCommon::GetInstance(), srvManager.get());
 
-	// 3. シーンマネージャの生成 (全ての準備が整ってから)
+	// 4. ポストエフェクト初期化
+	DirectXCommon::GetInstance()->SetupRenderTextureSRV(srvManager.get());
+	PostEffect::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager.get());
+
+	// 5. シーンマネージャの生成 (全ての準備が整ってから)
 	sceneManager = std::make_unique<SceneManager>(); // 内部でシーンの Initialize が走る
 
 }
@@ -141,6 +146,7 @@ void Game::Finalize() {
 	SkyboxCommon::GetInstance()->Finalize();
 	Object3dCommon::GetInstance()->Finalize();
 	SpriteCommon::GetInstance()->Finalize();
+	PostEffect::GetInstance()->Finalize();
 
 	// 5. SRVマネージャの終了処理
 	srvManager->Finalize();

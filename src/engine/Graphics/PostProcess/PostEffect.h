@@ -1,0 +1,61 @@
+#pragma once
+#include <d3d12.h>
+#include <wrl/client.h>
+#include <cstdint>
+#include <memory>
+
+class DirectXCommon;
+class SrvManager;
+
+/// ポストエフェクトの種類
+enum class PostEffectType : uint32_t {
+	kNone = 0,      // エフェクトなし（そのままコピー）
+	kGrayScale,     // グレースケール
+	kCountOf
+};
+
+/// フルスクリーンポストエフェクトを管理するシングルトンクラス
+class PostEffect {
+public:
+	static PostEffect* GetInstance();
+
+	/// 初期化（PSO 生成、SRV 登録）
+	void Initialize(DirectXCommon* dxCommon, SrvManager* srvManager);
+
+	/// 終了処理
+	void Finalize();
+
+	/// レンダーテクスチャから swap chain への fullscreen 描画を実行する
+	/// PostDraw 内で CopyResource の代わりに呼ぶ
+	void Draw(ID3D12Resource* renderTextureResource, uint32_t renderTextureSrvIndex);
+
+	/// 現在のエフェクトを設定
+	void SetEffectType(PostEffectType type) { currentEffect_ = type; }
+
+	/// 現在のエフェクトを取得
+	PostEffectType GetEffectType() const { return currentEffect_; }
+
+	~PostEffect() = default;
+
+private:
+	PostEffect() = default;
+	PostEffect(const PostEffect&) = delete;
+	PostEffect& operator=(const PostEffect&) = delete;
+
+	static std::unique_ptr<PostEffect> instance_;
+
+	DirectXCommon* dxCommon_ = nullptr;
+	SrvManager* srvManager_ = nullptr;
+
+	// ルートシグネチャ（全エフェクト共通）
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
+
+	// エフェクトごとの PSO
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineStates_[static_cast<size_t>(PostEffectType::kCountOf)];
+
+	// 現在のエフェクト種類
+	PostEffectType currentEffect_ = PostEffectType::kNone;
+
+	void CreateRootSignature();
+	void CreateGraphicsPipelines();
+};

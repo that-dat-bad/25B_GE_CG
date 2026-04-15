@@ -11,6 +11,7 @@
 #include "../../../external/DirectXTex/DirectXTex.h"
 #include "../../../external/DirectXTex/d3dx12.h"
 #include"../Graphics/SrvManager.h"
+#include "PostProcess/PostEffect.h"
 
 using namespace logger;
 using namespace StringUtility;
@@ -127,29 +128,32 @@ void DirectXCommon::PostDraw()
 {
 	UINT backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
 
-	// renderTextures_[0]: RENDER_TARGET -> COPY_SOURCE
-	D3D12_RESOURCE_BARRIER barrierRTtoCopy = {};
-	barrierRTtoCopy.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrierRTtoCopy.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrierRTtoCopy.Transition.pResource = renderTextures_[0].Get();
-	barrierRTtoCopy.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrierRTtoCopy.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	barrierRTtoCopy.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+	// renderTextures_[0]: RENDER_TARGET -> PIXEL_SHADER_RESOURCE（PS でサンプリング可能に）
+	D3D12_RESOURCE_BARRIER barrierRTtoSRV = {};
+	barrierRTtoSRV.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierRTtoSRV.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrierRTtoSRV.Transition.pResource = renderTextures_[0].Get();
+	barrierRTtoSRV.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierRTtoSRV.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrierRTtoSRV.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
-	// swapChainResources_[backBufferIndex]: PRESENT -> COPY_DEST
-	D3D12_RESOURCE_BARRIER barrierBackToCopy = {};
-	barrierBackToCopy.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrierBackToCopy.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrierBackToCopy.Transition.pResource = swapChainResources_[backBufferIndex].Get();
-	barrierBackToCopy.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrierBackToCopy.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	barrierBackToCopy.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+	// swapChainResources_[backBufferIndex]: PRESENT -> RENDER_TARGET
+	D3D12_RESOURCE_BARRIER barrierBackToRT = {};
+	barrierBackToRT.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrierBackToRT.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrierBackToRT.Transition.pResource = swapChainResources_[backBufferIndex].Get();
+	barrierBackToRT.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrierBackToRT.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	barrierBackToRT.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
-	D3D12_RESOURCE_BARRIER barriers[] = { barrierRTtoCopy, barrierBackToCopy };
+	D3D12_RESOURCE_BARRIER barriers[] = { barrierRTtoSRV, barrierBackToRT };
 	commandList_->ResourceBarrier(_countof(barriers), barriers);
 
-	// GPU コピー（高速でシンプル）
-	commandList_->CopyResource(swapChainResources_[backBufferIndex].Get(), renderTextures_[0].Get());
+	// swap chain をレンダーターゲットに設定（深度なし）
+	commandList_->OMSetRenderTargets(1, &rtvHandles_[backBufferIndex], false, nullptr);
+
+	// ポストエフェクトのフルスクリーン描画
+	PostEffect::GetInstance()->Draw(renderTextures_[0].Get(), renderTextureSrvIndex_);
 
 	// swapChain -> PRESENT に戻す
 	D3D12_RESOURCE_BARRIER barrierBackToPresent = {};
@@ -157,19 +161,11 @@ void DirectXCommon::PostDraw()
 	barrierBackToPresent.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	barrierBackToPresent.Transition.pResource = swapChainResources_[backBufferIndex].Get();
 	barrierBackToPresent.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrierBackToPresent.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+	barrierBackToPresent.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	barrierBackToPresent.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 	commandList_->ResourceBarrier(1, &barrierBackToPresent);
 
-	// renderTextures_[0] を SRV 相当に戻す
-	D3D12_RESOURCE_BARRIER barrierRTtoSRV = {};
-	barrierRTtoSRV.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrierRTtoSRV.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrierRTtoSRV.Transition.pResource = renderTextures_[0].Get();
-	barrierRTtoSRV.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrierRTtoSRV.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
-	barrierRTtoSRV.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	commandList_->ResourceBarrier(1, &barrierRTtoSRV);
+	// renderTextures_[0] は既に PIXEL_SHADER_RESOURCE 状態（PreDraw が期待する状態）
 
 	HRESULT hr = commandList_->Close();
 	assert(SUCCEEDED(hr));
@@ -691,4 +687,22 @@ void DirectXCommon::CreateRenderTargetTextures()
 
         device_->CreateRenderTargetView(renderTextures_[i].Get(), &rtvDesc, renderTextureRtvHandles_[i]);
     }
+}
+
+void DirectXCommon::SetupRenderTextureSRV(SrvManager* srvManager) {
+	// renderTextures_[0] の SRV を SrvManager に登録
+	renderTextureSrvIndex_ = srvManager->Allocate();
+
+	// SRV を作成
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+	srvDesc.Format = rtvFormat_;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+
+	device_->CreateShaderResourceView(
+		renderTextures_[0].Get(),
+		&srvDesc,
+		srvManager->GetCPUDescriptorHandle(renderTextureSrvIndex_)
+	);
 }

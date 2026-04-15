@@ -3,6 +3,8 @@
 #include <dxgi1_6.h>
 #include <wrl.h>
 #include"../../engine/base/WinApp.h"
+
+class SrvManager;
 #include <array>
 #include <dxcapi.h>
 #pragma comment(lib, "dxcompiler.lib")
@@ -68,6 +70,12 @@ public:
 	HANDLE GetFenceEvent() { return fenceEvent_; }
 	ID3D12Fence* GetFence() { return fence_.Get(); }
 	D3D12_RECT GetScissorRect() { return scissorRect_; }
+	D3D12_VIEWPORT GetViewport() { return viewport_; }
+	ID3D12Resource* GetRenderTexture(uint32_t index = 0) { return renderTextures_[index].Get(); }
+	uint32_t GetRenderTextureSrvIndex() const { return renderTextureSrvIndex_; }
+
+	/// renderTextures_[0] の SRV を SrvManager に登録する
+	void SetupRenderTextureSRV(SrvManager* srvManager);
 
 
 	//セッター
@@ -131,6 +139,7 @@ private:
 	static const uint32_t kRenderTextureCount_ = kRtvHeapDescriptorNum_ - kSwapChainBufferCount_;
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kRenderTextureCount_> renderTextures_;
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kRenderTextureCount_> renderTextureRtvHandles_;
+	uint32_t renderTextureSrvIndex_ = 0; // renderTextures_[0] の SRV インデックス
 
 	DXGI_FORMAT rtvFormat_;
 
