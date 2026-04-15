@@ -32,9 +32,6 @@ void Object3dCommon::Initialize(DirectXCommon* dxCommon)
 	pointLightData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	pointLightData->position = { 0.0f, 2.0f, 0.0f };
 	pointLightData->intensity = 1.0f;
-#include <cmath>
-
-// ...
 
 	pointLightData->radius = 10.0f;
 	pointLightData->decay = 1.0f;
