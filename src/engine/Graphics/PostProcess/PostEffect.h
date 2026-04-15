@@ -9,9 +9,10 @@ class SrvManager;
 
 /// ポストエフェクトの種類
 enum class PostEffectType : uint32_t {
-	kNone = 0,      // エフェクトなし（そのままコピー）
+	kNone = 0,      // エフェクトなし
 	kGrayScale,     // グレースケール
-	kCountOf
+	kVignette,      // ビネット
+	kCountOfPostEffects, // エフェクトの種類
 };
 
 /// フルスクリーンポストエフェクトを管理するシングルトンクラス
@@ -51,7 +52,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
 
 	// エフェクトごとの PSO
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineStates_[static_cast<size_t>(PostEffectType::kCountOf)];
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineStates_[static_cast<size_t>(PostEffectType::kCountOfPostEffects)];
 
 	// 現在のエフェクト種類
 	PostEffectType currentEffect_ = PostEffectType::kNone;

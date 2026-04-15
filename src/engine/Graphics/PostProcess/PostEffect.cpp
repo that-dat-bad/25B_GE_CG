@@ -73,10 +73,12 @@ void PostEffect::CreateGraphicsPipelines() {
 	// エフェクトごとのピクセルシェーダー
 	Microsoft::WRL::ComPtr<IDxcBlob> psNone = dxCommon_->CompileShader(L"./assets/shaders/CopyImage.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psGray = dxCommon_->CompileShader(L"./assets/shaders/GrayScale.PS.hlsl", L"ps_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> psVignette = dxCommon_->CompileShader(L"./assets/shaders/Vignette.PS.hlsl", L"ps_6_0");
 
-	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaders[static_cast<size_t>(PostEffectType::kCountOf)];
+	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaders[static_cast<size_t>(PostEffectType::kCountOfPostEffects)];
 	pixelShaders[static_cast<size_t>(PostEffectType::kNone)] = psNone;
 	pixelShaders[static_cast<size_t>(PostEffectType::kGrayScale)] = psGray;
+	pixelShaders[static_cast<size_t>(PostEffectType::kVignette)] = psVignette;
 
 	// PSO のベース設定
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
@@ -110,7 +112,7 @@ void PostEffect::CreateGraphicsPipelines() {
 	psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
 	// 各エフェクト用の PSO を生成
-	for (size_t i = 0; i < static_cast<size_t>(PostEffectType::kCountOf); ++i) {
+	for (size_t i = 0; i < static_cast<size_t>(PostEffectType::kCountOfPostEffects); ++i) {
 		psoDesc.PS = { pixelShaders[i]->GetBufferPointer(), pixelShaders[i]->GetBufferSize() };
 		HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStates_[i]));
 		assert(SUCCEEDED(hr));

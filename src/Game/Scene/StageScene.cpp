@@ -139,11 +139,10 @@ void StageScene::Update() {
 	bool changed = false;
 	changed |= ImGui::Checkbox("Skybox Visible", &isSkyboxVisible_);
 
-	static bool isGrayScale = false;
-	if (ImGui::Checkbox("GrayScale", &isGrayScale)) {
-		PostEffect::GetInstance()->SetEffectType(
-			isGrayScale ? PostEffectType::kGrayScale : PostEffectType::kNone
-		);
+	static int currentEffect = 0;
+	const char* effectItems[] = { "None", "GrayScale", "Vignette" };
+	if (ImGui::Combo("Post Effect", &currentEffect, effectItems, IM_ARRAYSIZE(effectItems))) {
+		PostEffect::GetInstance()->SetEffectType(static_cast<PostEffectType>(currentEffect));
 	}
 
 	changed |= ImGui::Checkbox("Enable Directional Light", &enableDirectional);
