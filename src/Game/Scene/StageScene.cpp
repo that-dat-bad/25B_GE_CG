@@ -48,7 +48,12 @@ void StageScene::Initialize() {
 	skybox_ = std::make_unique<Skybox>();
 	skybox_->Initialize(SkyboxCommon::GetInstance());
 	skybox_->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
-	skybox_->SetTextureIndex(TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/cedar_bridge_sunset_1_2k.dds"));
+	
+	uint32_t skyboxTexIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/cedar_bridge_sunset_1_2k.dds");
+	skybox_->SetTextureIndex(skyboxTexIndex);
+	
+	// 環境マップの全体設定
+	Object3dCommon::GetInstance()->SetDefaultEnvTextureIndex(skyboxTexIndex);
 }
 
 void StageScene::Update() {
@@ -199,6 +204,11 @@ void StageScene::Update() {
 		float shininess = sphereObject->GetModel()->GetShininess();
 		if (ImGui::DragFloat("Shininess", &shininess, 1.0f, 1.0f, 256.0f)) {
 			sphereObject->GetModel()->SetShininess(shininess);
+		}
+
+		float envCoef = sphereObject->GetModel()->GetEnvironmentCoefficient();
+		if (ImGui::DragFloat("Env Coefficient", &envCoef, 0.01f, 0.0f, 1.0f)) {
+			sphereObject->GetModel()->SetEnvironmentCoefficient(envCoef);
 		}
 	}
 

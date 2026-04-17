@@ -106,7 +106,9 @@ void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypat
 	materialData_->color = modelData_.material.baseColor;
 	materialData_->enableLighting = true;
 	materialData_->shininess = modelData_.material.shininess;
+	materialData_->environmentCoefficient = modelData_.material.environmentCoefficient;
 	materialData_->uvTransform = Identity4x4();
+	materialData_->environmentCoefficient = 0.0f;
 
 	// 6. テクスチャ読み込み
 

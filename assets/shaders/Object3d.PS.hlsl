@@ -1,5 +1,4 @@
-// Object3D.PS.hlsl
-// ピクセルシェーダー
+
 
 struct PixelShaderOutput
 {
@@ -12,7 +11,8 @@ struct Material
     float32_t4 color;
     int enableLighting;
     float shininess;
-    float32_t2 padding;
+    float environmentCoefficient;
+    float padding;
     matrix uvTransform;
 };
 
@@ -65,6 +65,7 @@ ConstantBuffer<PointLight> gPointLight : register(b4);
 ConstantBuffer<SpotLight> gSpotLight : register(b5);
 
 Texture2D<float32_t4> gTexture : register(t0);
+TextureCube<float32_t4> gEnvTexture : register(t1); // 環境マップ用テクスチャキューブ
 SamplerState gSampler : register(s0);
 
 // 頂点シェーダーからの入力
@@ -246,8 +247,30 @@ PixelShaderOutput main(PixelInput input)
              totalSpecular += spotSpecular;
         }
 
+        // 環境マップ (Environment Mapping) の計算
+        float32_t3 envColor = float32_t3(0.0f, 0.0f, 0.0f);
+        if (gMaterial.environmentCoefficient > 0.0f)
+        {
+            float32_t3 reflectVector = reflect(-toEye, N); // 視線からサーフェスへのベクトルの反射
+            envColor = gEnvTexture.Sample(gSampler, reflectVector).rgb * gMaterial.environmentCoefficient;
+
+            // 暗い場所（影）で光って見える現象をごまかすハック
+            // 主光源（平行光源）の当たり具合を利用して、光が当たりにくい面の反射を暗くする
+            if (gLightingSettings.lightType & 1)
+            {
+                float32_t3 dirLightL = normalize(-gDirectionalLight.direction);
+                float NdotL = dot(N, dirLightL);
+                
+                // 完全に光の裏側であっても少しは反射させるため、0.2程度の下限を設ける
+                float shadowFactor = saturate(NdotL * 0.5f + 0.5f);
+                shadowFactor = max(shadowFactor, 0.2f); 
+                
+                envColor *= shadowFactor;
+            }
+        }
+
         // Combine
-        output.color.rgb = totalDiffuse + totalSpecular;
+        output.color.rgb = totalDiffuse + totalSpecular + envColor;
         output.color.a = gMaterial.color.a * texColor.a;
     }
     else

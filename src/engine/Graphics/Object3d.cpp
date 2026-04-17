@@ -72,6 +72,19 @@ void Object3d::Draw() {
 
 	commandList->SetGraphicsRootConstantBufferView(6, object3dCommon_->GetSpotLightResource()->GetGPUVirtualAddress());
 
+	// 環境マップテクスチャの設定 (RootParameter Index: 8)
+	uint32_t useEnvTexIndex = (envTextureOverride_ != 0) ? envTextureOverride_ : object3dCommon_->GetDefaultEnvTextureIndex();
+	if (useEnvTexIndex != 0) {
+		commandList->SetGraphicsRootDescriptorTable(8, TextureManager::GetInstance()->GetSrvHandleGPU(useEnvTexIndex));
+	} else {
+		// 0だとバインドできずD3D12のエラーになる可能性があるため、ダミーやuvCheckerなどの安全なテクスチャをバインドする。
+		// ここではuvChecker（インデックス未指定時のTextureManagerのデフォルトなどにフォールバック）をダミーとして利用。
+		uint32_t dummyIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/uvChecker.png");
+		if (dummyIndex != 0) {
+			commandList->SetGraphicsRootDescriptorTable(8, TextureManager::GetInstance()->GetSrvHandleGPU(dummyIndex));
+		}
+	}
+
 	if (model_) {
 		model_->Draw();
 	}

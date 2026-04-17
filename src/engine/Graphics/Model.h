@@ -14,12 +14,15 @@ class Model {
 public:
 	void Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename);
 	void Draw();
-	
+
 	// デバッグ用: スケルトンの描画
 	void DebugDrawSkeleton(const Matrix4x4& objectWorldMatrix, Camera* camera, const Vector4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
 
 	void SetShininess(float shininess) { materialData_->shininess = shininess; }
 	float GetShininess() const { return materialData_->shininess; }
+
+	void SetEnvironmentCoefficient(float coefficient) { materialData_->environmentCoefficient = coefficient; }
+	float GetEnvironmentCoefficient() const { return materialData_->environmentCoefficient; }
 
 	struct VertexData {
 		Vector4 position;
@@ -32,7 +35,8 @@ public:
 		Vector4 color;
 		int32_t enableLighting;
 		float shininess;
-		float padding[2];
+		float environmentCoefficient;
+		float padding;
 		Matrix4x4 uvTransform; // UV変換行列
 	};
 
@@ -44,6 +48,7 @@ public:
 		uint32_t textureIndex = 0;
 		Vector4 baseColor = { 1.0f, 1.0f, 1.0f, 1.0f }; //デフォルトは白
 		float shininess = 50.0f;
+		float environmentCoefficient = 0.0f; //環境マップの反射度合い
 	};
 	struct Node {
 		Matrix4x4 localMatrix = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
@@ -83,7 +88,7 @@ public:
 
 	static ModelData LoadModelFile(const std::string& directoryPath, const std::string& filename);
 	static Animation LoadAnimationFile(const std::string& directoryPath, const std::string& filename, const std::string& animationName);
-	static std::vector<std::string> LoadAnimationNames(const std::string& directoryPath, const std::string& filename,const std::string& animationName="");
+	static std::vector<std::string> LoadAnimationNames(const std::string& directoryPath, const std::string& filename, const std::string& animationName = "");
 	ModelData GetModelData() const { return modelData_; }
 
 	// アニメーションを再生スタートする関数

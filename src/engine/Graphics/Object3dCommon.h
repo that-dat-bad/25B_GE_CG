@@ -82,6 +82,10 @@ public:
 	DirectionalLight* GetDirectionalLightData() { return directionalLightData; }
 	PointLight* GetPointLightData() { return pointLightData; }
 	SpotLight* GetSpotLightData() { return spotLightData; }
+	
+	void SetDefaultEnvTextureIndex(uint32_t index) { defaultEnvTextureIndex_ = index; }
+	uint32_t GetDefaultEnvTextureIndex() const { return defaultEnvTextureIndex_; }
+
 	~Object3dCommon() = default;
 private:
 	Object3dCommon() = default;
@@ -104,6 +108,9 @@ private:
 	PointLight* pointLightData = nullptr;
 	SpotLight* spotLightData = nullptr;
 	LightingSettings* lightingSettingsData = nullptr;
+	
+	uint32_t defaultEnvTextureIndex_ = 0;
+
 	//ルートシグネチャの作成
 	void CreateRootSignature(DirectXCommon* dxCommon);
 

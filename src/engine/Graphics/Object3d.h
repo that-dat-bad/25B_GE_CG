@@ -46,6 +46,7 @@ public: // メンバ関数
 	void SetModel(const std::string& filePath);
 	void SetCamera(Camera* camera) { camera_ = camera; }
 	void SetBlendMode(BlendMode mode) { blendMode_ = mode; }
+	void SetEnvTextureOverride(uint32_t textureIndex) { envTextureOverride_ = textureIndex; }
 
 	// ゲッター
 	Vector3 GetScale() const { return transform_.scale; }
@@ -68,4 +69,6 @@ private:
 	TransformationMatrix* transformationMatrixData_ = nullptr;
 
 	BlendMode blendMode_ = BlendMode::kNormal;
+	
+	uint32_t envTextureOverride_ = 0;
 };
