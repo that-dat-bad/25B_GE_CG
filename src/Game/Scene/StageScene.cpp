@@ -39,6 +39,7 @@ void StageScene::Initialize() {
 
 	// テクスチャ読み込み
 	TextureManager::GetInstance()->LoadTexture("assets/textures/white1x1.png");
+	TextureManager::GetInstance()->LoadTexture("assets/textures/circle2.png");
 
 
 
@@ -122,10 +123,14 @@ void StageScene::Update() {
 	// エフェクトマネージャーの更新
 	EffectManager::GetInstance()->Update();
 
-	// デバッグ用: Spaceキーでエフェクト発生
+	// デバッグ用: Spaceキーでエフェクト複数発生
 	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
-		// スフィアの位置でエフェクトを発生させる
+		// スフィアの位置で全エフェクトを発生させる
 		EffectManager::GetInstance()->EmitHitEffect(sphereObject->GetTranslate());
+	}
+	// デバッグ用: VキーでPlane（板ポリ）のみのエフェクト発生
+	if (Input::GetInstance()->TriggerKey(DIK_V)) {
+		EffectManager::GetInstance()->EmitHitPlaneEffect(sphereObject->GetTranslate());
 	}
 
 
@@ -137,7 +142,8 @@ void StageScene::Update() {
 		ImGui::Text("Arrows : Rotate Camera");
 		ImGui::Text("R-Click + Drag : Rotate Camera");
 		ImGui::Text("R : Reset Camera");
-		ImGui::Text("SPACE : Emit Hit Effect");
+		ImGui::Text("SPACE : Emit Full Hit Effect");
+		ImGui::Text("V : Emit Hit Plane Effect Only");
 		ImGui::Separator();
 	}
 

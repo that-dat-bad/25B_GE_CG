@@ -2,7 +2,7 @@
 #include <memory>
 #include <string>
 #include <list>
-#include "../../base/Math/MyMath.h"
+#include "../base/Math/MyMath.h"
 #include "BlendMode.h"
 #include "PrimitiveModel.h"
 #include "ParticleManager.h"
@@ -97,12 +97,14 @@ public:
 
 	void AddEffect(IEffect* effect);
 
-	// 複数のエフェクトを組み合わせた便利関数
+	// 複数のエフェクトを組み合わせた関数
 	void EmitHitEffect(const Vector3& position);
+	// planeのみ
+	void EmitHitPlaneEffect(const Vector3& position);
 
+	~EffectManager() = default;
 private:
 	EffectManager() = default;
-	~EffectManager() = default;
 	EffectManager(const EffectManager&) = delete;
 	EffectManager& operator=(const EffectManager&) = delete;
 

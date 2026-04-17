@@ -75,11 +75,16 @@ HitRotPlaneEffect::HitRotPlaneEffect(const Vector3& pos, const Vector4& color, f
 	lifeTime_ = lifeTime;
 	currentTime_ = 0.0f;
 	targetSize_ = size;
-	textureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/white1x1.png");
+	textureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/circle2.png");
 
 	// ランダムな初期角度と回転速度の決定
 	rotationEulers_ = { (float)(rand() % 314) / 100.0f, (float)(rand() % 314) / 100.0f, (float)(rand() % 314) / 100.0f };
-	rotationSpeed_ = { 0.1f, 0.05f, 0.2f };
+	// 回転速度もランダムに
+	rotationSpeed_ = { 
+		((float)(rand() % 100) / 1000.0f) - 0.05f, 
+		((float)(rand() % 100) / 1000.0f) - 0.05f, 
+		((float)(rand() % 100) / 1000.0f) - 0.05f 
+	};
 }
 
 void HitRotPlaneEffect::Update() {
@@ -94,9 +99,10 @@ void HitRotPlaneEffect::Update() {
 	rotationEulers_.y += rotationSpeed_.y;
 	rotationEulers_.z += rotationSpeed_.z;
 
-	scale_.x = targetSize_ * (1.0f - t);
-	scale_.y = targetSize_ * (1.0f - t);
-	scale_.z = targetSize_ * (1.0f - t);
+
+	scale_.x = targetSize_ * 1.5f * (1.0f - t);  // 大幅に伸ばす
+	scale_.y = targetSize_ * 0.15f * (1.0f - t); // 細くする
+	scale_.z = targetSize_ * 0.15f * (1.0f - t); // 細くする
 	color_.w = (1.0f - t);
 }
 
@@ -176,9 +182,22 @@ void EffectManager::EmitHitEffect(const Vector3& position) {
 	AddEffect(new CylinderEffect(position, color, 0.4f, 8.0f, 1.5f));
 
 	// 3. 回転Planeエフェクト（空間を斬るようなエフェクト）
-	AddEffect(new HitRotPlaneEffect(position, color, 0.3f, 3.0f));
+	// 白色でランダムな方向に3つ発生させる
+	Vector4 planeColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+	for (int i = 0; i < 3; i++) {
+		AddEffect(new HitRotPlaneEffect(position, planeColor, 0.3f, 3.0f));
+	}
 
 	// 4. Billboard Particle エフェクト（火花）
-	// (事前に "HitSpark" のようなグループがParticleManagerに作られている前提)
 	AddEffect(new BillboardParticleEffect(position, "HitSpark", 20));
+}
+
+void EffectManager::EmitHitPlaneEffect(const Vector3& position) {
+	// Plane（板ポリ）のみのヒットエフェクト
+	Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; // 白色へ変更
+	
+	// ランダムな角度で3つ発生させる
+	for (int i = 0; i < 3; i++) {
+		AddEffect(new HitRotPlaneEffect(position, color, 0.3f, 3.0f));
+	}
 }

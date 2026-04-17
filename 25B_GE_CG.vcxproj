@@ -238,6 +238,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\Debug\ImguiManager.h" />
     <ClInclude Include="src\engine\Graphics\ParticleEmitter.h" />
     <ClInclude Include="src\engine\Graphics\ParticleManager.h" />
+    <ClInclude Include="src\engine\Graphics\EffectManager.h" />
     <ClInclude Include="src\engine\Graphics\Camera.h" />
     <ClInclude Include="src\engine\Graphics\CameraManager.h" />
     <ClInclude Include="src\engine\Graphics\ModelManager.h" />
@@ -291,6 +292,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\engine\Debug\ImguiManager.cpp" />
     <ClCompile Include="src\engine\Graphics\ParticleEmitter.cpp" />
     <ClCompile Include="src\engine\Graphics\ParticleManager.cpp" />
+    <ClCompile Include="src\engine\Graphics\EffectManager.cpp" />
     <ClCompile Include="src\engine\Graphics\Camera.cpp" />
     <ClCompile Include="src\engine\Graphics\CameraManager.cpp" />
     <ClCompile Include="src\engine\Graphics\ModelManager.cpp" />
