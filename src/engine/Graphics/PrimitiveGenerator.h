@@ -11,4 +11,7 @@ public:
 	// 円柱（シリンダー）の頂点データを生成
 	// segments: 分割数, height: 高さ（原点から上下の長さ）, radius: 半径
 	static std::vector<PrimitiveModel::VertexData> CreateCylinder(int segments, float height, float radius);
+
+	// プレーン（四角形）の頂点データを生成
+	static std::vector<PrimitiveModel::VertexData> CreatePlane(float size);
 };

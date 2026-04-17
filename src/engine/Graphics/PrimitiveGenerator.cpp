@@ -59,3 +59,25 @@ std::vector<PrimitiveModel::VertexData> PrimitiveGenerator::CreateCylinder(int s
 
 	return vertices;
 }
+
+std::vector<PrimitiveModel::VertexData> PrimitiveGenerator::CreatePlane(float size) {
+	std::vector<PrimitiveModel::VertexData> vertices;
+	float half = size * 0.5f;
+
+	Vector4 p1 = { -half, 0.0f, -half, 1.0f };
+	Vector4 p2 = { -half, 0.0f,  half, 1.0f };
+	Vector4 p3 = {  half, 0.0f, -half, 1.0f };
+	Vector4 p4 = {  half, 0.0f,  half, 1.0f };
+
+	Vector3 n = { 0.0f, 1.0f, 0.0f };
+
+	vertices.push_back({ p1, {0.0f, 1.0f}, n });
+	vertices.push_back({ p2, {0.0f, 0.0f}, n });
+	vertices.push_back({ p3, {1.0f, 1.0f}, n });
+
+	vertices.push_back({ p3, {1.0f, 1.0f}, n });
+	vertices.push_back({ p2, {0.0f, 0.0f}, n });
+	vertices.push_back({ p4, {1.0f, 0.0f}, n });
+
+	return vertices;
+}

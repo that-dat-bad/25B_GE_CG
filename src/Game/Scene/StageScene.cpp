@@ -12,6 +12,8 @@
 #include <cmath>
 #include <ModelManager.h>
 #include "../../engine/Graphics/PostProcess/PostEffect.h"
+#include "../../engine/Graphics/EffectManager.h"
+#include "../../engine/Graphics/ParticleManager.h"
 
 void StageScene::Initialize() {
 	sceneID = SCENE::STAGE;
@@ -54,6 +56,11 @@ void StageScene::Initialize() {
 	
 	// 環境マップの全体設定
 	Object3dCommon::GetInstance()->SetDefaultEnvTextureIndex(skyboxTexIndex);
+
+	// エフェクトマネージャーの初期化
+	EffectManager::GetInstance()->Initialize();
+	// ヒットエフェクト用ビルボードのパーティクルグループ作成
+	ParticleManager::GetInstance()->CreateParticleGroup("HitSpark", "assets/textures/white1x1.png");
 }
 
 void StageScene::Update() {
@@ -112,6 +119,14 @@ void StageScene::Update() {
 		skybox_->Update();
 	}
 
+	// エフェクトマネージャーの更新
+	EffectManager::GetInstance()->Update();
+
+	// デバッグ用: Spaceキーでエフェクト発生
+	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
+		// スフィアの位置でエフェクトを発生させる
+		EffectManager::GetInstance()->EmitHitEffect(sphereObject->GetTranslate());
+	}
 
 
 #ifdef USE_IMGUI
@@ -122,6 +137,7 @@ void StageScene::Update() {
 		ImGui::Text("Arrows : Rotate Camera");
 		ImGui::Text("R-Click + Drag : Rotate Camera");
 		ImGui::Text("R : Reset Camera");
+		ImGui::Text("SPACE : Emit Hit Effect");
 		ImGui::Separator();
 	}
 
@@ -271,7 +287,10 @@ void StageScene::Draw() {
 	Vector4 cylColor = { 1.0f, 0.3f, 0.3f, 0.8f }; // 半透明の赤
 	PrimitiveModel::GetInstance()->DrawCylinder(cylScale, cylRotate, cylTranslate, cylColor, whiteTex, CameraManager::GetInstance()->GetActiveCamera(), BlendMode::kAdd);
 
+	// 統合エフェクトシステムの描画
+	EffectManager::GetInstance()->Draw(CameraManager::GetInstance()->GetActiveCamera());
 }
 
 void StageScene::Finalize() {
+	EffectManager::GetInstance()->Finalize();
 }

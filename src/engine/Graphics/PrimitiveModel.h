@@ -27,6 +27,9 @@ public:
 	// エフェクト描画関数 (Cylinder)
 	void DrawCylinder(const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode = BlendMode::kNormal);
 
+	// エフェクト描画関数 (Plane)
+	void DrawPlane(const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode = BlendMode::kNormal);
+
 	// 3D直線描画関数 (デバッグ用などに使用)
 	void DrawLine3D(const Vector3& p1, const Vector3& p2, const Vector4& color, Camera* camera);
 
@@ -62,6 +65,11 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> cylinderVertexBuffer_;
 	D3D12_VERTEX_BUFFER_VIEW cylinderVertexBufferView_{};
 	uint32_t cylinderVertexCount_ = 0;
+
+	// プレーンのバッファ
+	Microsoft::WRL::ComPtr<ID3D12Resource> planeVertexBuffer_;
+	D3D12_VERTEX_BUFFER_VIEW planeVertexBufferView_{};
+	uint32_t planeVertexCount_ = 0;
 
 	// ラインのバッファ
 	Microsoft::WRL::ComPtr<ID3D12Resource> lineVertexBuffer_;

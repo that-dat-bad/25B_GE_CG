@@ -60,6 +60,10 @@ void PrimitiveModel::DrawCylinder(const Vector3& scale, const Vector3& rotate, c
 	CallDrawCommand(cylinderVertexBufferView_, cylinderVertexCount_, scale, rotate, translate, color, textureIndex, camera, blendMode);
 }
 
+void PrimitiveModel::DrawPlane(const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode) {
+	CallDrawCommand(planeVertexBufferView_, planeVertexCount_, scale, rotate, translate, color, textureIndex, camera, blendMode);
+}
+
 void PrimitiveModel::DrawLine3D(const Vector3& p1, const Vector3& p2, const Vector4& color, Camera* camera) {
 	if (currentDrawCount_ >= kMaxDrawCount) return;
 	if (!camera) return;
@@ -297,6 +301,22 @@ void PrimitiveModel::CreatePrimitiveBuffers() {
 	cylinderVertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&cylMapped));
 	std::memcpy(cylMapped, cylinderVertices.data(), cylinderVertexBufferView_.SizeInBytes);
 	cylinderVertexBuffer_->Unmap(0, nullptr);
+
+	// ===================================
+	// プレーンの頂点データ生成
+	// ===================================
+	std::vector<VertexData> planeVertices = PrimitiveGenerator::CreatePlane(2.0f);
+
+	planeVertexCount_ = static_cast<uint32_t>(planeVertices.size());
+	planeVertexBuffer_ = dxCommon_->CreateBufferResource(sizeof(VertexData) * planeVertexCount_);
+	planeVertexBufferView_.BufferLocation = planeVertexBuffer_->GetGPUVirtualAddress();
+	planeVertexBufferView_.SizeInBytes = sizeof(VertexData) * planeVertexCount_;
+	planeVertexBufferView_.StrideInBytes = sizeof(VertexData);
+	
+	VertexData* planeMapped = nullptr;
+	planeVertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&planeMapped));
+	std::memcpy(planeMapped, planeVertices.data(), planeVertexBufferView_.SizeInBytes);
+	planeVertexBuffer_->Unmap(0, nullptr);
 
 	// ===================================
 	// ラインの頂点データ生成 (0,0,0) -> (1,0,0)
