@@ -6,7 +6,7 @@
 #include "Skybox.h"
 #include <memory>
 
-/// @brief エンジン機能テスト用のデバッグシーン
+/// エンジン機能テスト用のデバッグシーン
 class DebugScene : public IScene {
 public:
 	void Initialize() override;

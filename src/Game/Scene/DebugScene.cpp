@@ -167,9 +167,16 @@ void DebugScene::Update() {
 	changed |= ImGui::Checkbox("Skybox Visible", &isSkyboxVisible_);
 
 	static int currentEffect = 0;
-	const char* effectItems[] = { "None", "GrayScale", "Vignette" };
+	const char* effectItems[] = { "None", "GrayScale", "Vignette", "BoxFilter" };
 	if (ImGui::Combo("Post Effect", &currentEffect, effectItems, IM_ARRAYSIZE(effectItems))) {
 		PostEffect::GetInstance()->SetEffectType(static_cast<PostEffectType>(currentEffect));
+	}
+
+	if (currentEffect == static_cast<int>(PostEffectType::kBoxFilter)) {
+		int kernelSize = PostEffect::GetInstance()->GetBoxFilterKernelSize();
+		if (ImGui::SliderInt("BoxFilter Kernel Size", &kernelSize, 1, 31)) {
+			PostEffect::GetInstance()->SetBoxFilterKernelSize(kernelSize);
+		}
 	}
 
 	changed |= ImGui::Checkbox("Enable Directional Light", &enableDirectional);

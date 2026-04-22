@@ -18,6 +18,11 @@ void PostEffect::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager) {
 
 	CreateRootSignature();
 	CreateGraphicsPipelines();
+
+	boxFilterParamsBuffer_ = dxCommon_->CreateBufferResource((sizeof(BoxFilterParams) + 0xff) & ~0xff);
+	HRESULT hr = boxFilterParamsBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedBoxFilterParams_));
+	assert(SUCCEEDED(hr));
+	mappedBoxFilterParams_->kernelSize = boxFilterKernelSize_;
 }
 
 void PostEffect::Finalize() {
@@ -32,11 +37,15 @@ void PostEffect::CreateRootSignature() {
 	descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_ROOT_PARAMETER rootParameters[1] = {};
+	D3D12_ROOT_PARAMETER rootParameters[2] = {};
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[0].DescriptorTable.pDescriptorRanges = descriptorRange;
 	rootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
+
+	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameters[1].Descriptor.ShaderRegister = 0; // b0
 
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
 	staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -74,11 +83,13 @@ void PostEffect::CreateGraphicsPipelines() {
 	Microsoft::WRL::ComPtr<IDxcBlob> psNone = dxCommon_->CompileShader(L"./assets/shaders/CopyImage.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psGray = dxCommon_->CompileShader(L"./assets/shaders/GrayScale.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psVignette = dxCommon_->CompileShader(L"./assets/shaders/Vignette.PS.hlsl", L"ps_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> psBoxFilter = dxCommon_->CompileShader(L"./assets/shaders/BoxFilter.PS.hlsl", L"ps_6_0");
 
 	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaders[static_cast<size_t>(PostEffectType::kCountOfPostEffects)];
 	pixelShaders[static_cast<size_t>(PostEffectType::kNone)] = psNone;
 	pixelShaders[static_cast<size_t>(PostEffectType::kGrayScale)] = psGray;
 	pixelShaders[static_cast<size_t>(PostEffectType::kVignette)] = psVignette;
+	pixelShaders[static_cast<size_t>(PostEffectType::kBoxFilter)] = psBoxFilter;
 
 	// PSO のベース設定
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
@@ -133,6 +144,10 @@ void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderText
 
 	// t0 にレンダーテクスチャの SRV を設定
 	commandList->SetGraphicsRootDescriptorTable(0, srvManager_->GetGPUDescriptorHandle(renderTextureSrvIndex));
+
+	// b0 にボックスフィルタ用定数バッファを設定
+	mappedBoxFilterParams_->kernelSize = boxFilterKernelSize_;
+	commandList->SetGraphicsRootConstantBufferView(1, boxFilterParamsBuffer_->GetGPUVirtualAddress());
 
 	// ビューポートとシザー矩形を設定
 	D3D12_VIEWPORT viewport = dxCommon_->GetViewport();

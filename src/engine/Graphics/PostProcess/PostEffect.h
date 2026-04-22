@@ -12,7 +12,13 @@ enum class PostEffectType : uint32_t {
 	kNone = 0,      // エフェクトなし
 	kGrayScale,     // グレースケール
 	kVignette,      // ビネット
+	kBoxFilter,     // ボックスフィルタ
 	kCountOfPostEffects, // エフェクトの種類
+};
+
+struct BoxFilterParams {
+	int32_t kernelSize;
+	float padding[3];
 };
 
 /// フルスクリーンポストエフェクトを管理するシングルトンクラス
@@ -36,6 +42,9 @@ public:
 	/// 現在のエフェクトを取得
 	PostEffectType GetEffectType() const { return currentEffect_; }
 
+	void SetBoxFilterKernelSize(int32_t size) { boxFilterKernelSize_ = size; }
+	int32_t GetBoxFilterKernelSize() const { return boxFilterKernelSize_; }
+
 	~PostEffect() = default;
 
 private:
@@ -56,6 +65,10 @@ private:
 
 	// 現在のエフェクト種類
 	PostEffectType currentEffect_ = PostEffectType::kNone;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> boxFilterParamsBuffer_;
+	BoxFilterParams* mappedBoxFilterParams_ = nullptr;
+	int32_t boxFilterKernelSize_ = 3;
 
 	void CreateRootSignature();
 	void CreateGraphicsPipelines();
