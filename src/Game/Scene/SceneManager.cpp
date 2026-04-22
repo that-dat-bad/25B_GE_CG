@@ -2,13 +2,14 @@
 #include "TitleScene.h"
 #include "StageScene.h"
 #include "ClearScene.h"
+#include "DebugScene.h"
 #include "IScene.h"
 
 SceneManager::SceneManager() {
-	// 初期シーン生成
-	currentScene = std::make_unique<StageScene>();
+	// 初期シーン生成 (開発中は DebugScene から起動)
+	currentScene = std::make_unique<DebugScene>();
 	currentScene->Initialize();
-	currentSceneID = SCENE::STAGE;
+	currentSceneID = SCENE::DEBUG;
 }
 
 SceneManager::~SceneManager() {
@@ -34,6 +35,9 @@ void SceneManager::Update() {
 			break;
 		case SCENE::CLEAR:
 			currentScene = std::make_unique<ClearScene>();
+			break;
+		case SCENE::DEBUG:
+			currentScene = std::make_unique<DebugScene>();
 			break;
 		default:
 			currentScene = nullptr;

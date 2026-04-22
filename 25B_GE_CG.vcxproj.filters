@@ -33,6 +33,7 @@
     <FxCompile Include="assets\shaders\FullScreen.VS.hlsl" />
     <FxCompile Include="assets\shaders\GrayScale.PS.hlsl" />
     <FxCompile Include="assets\shaders\Vignette.PS.hlsl" />
+    <FxCompile Include="assets\shaders\BoxFilter.PS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="assets\sounds\Alarm01.wav">

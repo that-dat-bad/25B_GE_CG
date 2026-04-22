@@ -5,6 +5,7 @@ enum SCENE {
 	TITLE,
 	STAGE,
 	CLEAR,
+	DEBUG,
 };
 
 class IScene {

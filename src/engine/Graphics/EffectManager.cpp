@@ -79,7 +79,7 @@ HitRotPlaneEffect::HitRotPlaneEffect(const Vector3& pos, const Vector4& color, f
 
 	// ランダムな初期角度と回転速度の決定
 	rotationEulers_ = { (float)(rand() % 314) / 100.0f, (float)(rand() % 314) / 100.0f, (float)(rand() % 314) / 100.0f };
-	// 回転速度もランダムに
+	// 回転速度もランダムに（少し遅めにして斬撃っぽくする）
 	rotationSpeed_ = { 
 		((float)(rand() % 100) / 1000.0f) - 0.05f, 
 		((float)(rand() % 100) / 1000.0f) - 0.05f, 
@@ -99,10 +99,10 @@ void HitRotPlaneEffect::Update() {
 	rotationEulers_.y += rotationSpeed_.y;
 	rotationEulers_.z += rotationSpeed_.z;
 
-
-	scale_.x = targetSize_ * 1.5f * (1.0f - t);  // 大幅に伸ばす
-	scale_.y = targetSize_ * 0.15f * (1.0f - t); // 細くする
-	scale_.z = targetSize_ * 0.15f * (1.0f - t); // 細くする
+	// 縦長にするため、XとZを細くし、Yを長くする
+	scale_.x = targetSize_ * 0.15f * (1.0f - t);
+	scale_.y = targetSize_ * 1.5f * (1.0f - t);
+	scale_.z = targetSize_ * 0.15f * (1.0f - t);
 	color_.w = (1.0f - t);
 }
 
@@ -194,7 +194,7 @@ void EffectManager::EmitHitEffect(const Vector3& position) {
 
 void EffectManager::EmitHitPlaneEffect(const Vector3& position) {
 	// Plane（板ポリ）のみのヒットエフェクト
-	Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f }; // 白色へ変更
+	Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	
 	// ランダムな角度で3つ発生させる
 	for (int i = 0; i < 3; i++) {
