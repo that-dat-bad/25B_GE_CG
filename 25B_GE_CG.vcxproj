@@ -235,6 +235,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Image Include="assets\textures\uvChecker.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Game\FlightModel\IPayloads.h" />
+    <ClInclude Include="src\Game\FlightModel\Engine.h" />
+    <ClInclude Include="src\Game\FlightModel\AirFrame.h" />
+    <ClInclude Include="src\Game\FlightModel\FlightModel.h" />
+    <ClInclude Include="src\Game\Player\Player.h" />
     <ClInclude Include="src\engine\Debug\Dump.h" />
     <ClInclude Include="src\engine\Graphics\PrimitiveGenerator.h" />
     <ClInclude Include="src\engine\Graphics\PrimitiveModel.h" />
@@ -290,6 +295,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\Graphics\PostProcess\PostEffect.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Game\FlightModel\IPayloads.cpp" />
+    <ClCompile Include="src\Game\FlightModel\Engine.cpp" />
+    <ClCompile Include="src\Game\FlightModel\AirFrame.cpp" />
+    <ClCompile Include="src\Game\FlightModel\FlightModel.cpp" />
+    <ClCompile Include="src\Game\Player\Player.cpp" />
     <ClCompile Include="src\engine\Debug\Dump.cpp" />
     <ClCompile Include="src\engine\Graphics\PrimitiveGenerator.cpp" />
     <ClCompile Include="src\engine\Graphics\PrimitiveModel.cpp" />

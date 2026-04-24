@@ -51,7 +51,7 @@ void WinApp::Initialize() {
 
 	hwnd_ = CreateWindow(
 		wc_.lpszClassName,
-		L"GE3",
+		L"戦雷",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
