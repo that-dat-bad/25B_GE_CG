@@ -235,7 +235,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Image Include="assets\textures\uvChecker.png" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Game\FlightModel\IPayload.h">
+    <ClInclude Include="src\Game\FlightModel\Payload\Gunpod.h" />
+    <ClInclude Include="src\Game\FlightModel\Payload\IPayload.h">
       <DeploymentContent>true</DeploymentContent>
     </ClInclude>
     <ClInclude Include="src\Game\FlightModel\IPayloads.h" />
@@ -298,7 +299,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\Graphics\PostProcess\PostEffect.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Game\FlightModel\IPayload.cpp">
+    <ClCompile Include="src\Game\FlightModel\Payload\Gunpod.cpp" />
+    <ClCompile Include="src\Game\FlightModel\Payload\IPayload.cpp">
       <DeploymentContent>true</DeploymentContent>
     </ClCompile>
     <ClCompile Include="src\Game\FlightModel\IPayloads.cpp" />

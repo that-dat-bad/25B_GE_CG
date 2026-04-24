@@ -226,7 +226,10 @@
     <ClInclude Include="src\Game\FlightModel\IPayloads.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\FlightModel\IPayload.h">
+    <ClInclude Include="src\Game\FlightModel\Payload\IPayload.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\FlightModel\Payload\Gunpod.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -396,7 +399,10 @@
     <ClCompile Include="src\Game\FlightModel\IPayloads.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\FlightModel\IPayload.cpp">
+    <ClCompile Include="src\Game\FlightModel\Payload\IPayload.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\FlightModel\Payload\Gunpod.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
