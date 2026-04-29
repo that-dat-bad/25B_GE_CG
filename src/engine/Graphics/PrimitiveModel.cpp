@@ -103,7 +103,6 @@ void PrimitiveModel::DrawLine3D(const Vector3& p1, const Vector3& p2, const Vect
 
 	// ダミーテクスチャをセット
 	uint32_t texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/uvChecker.png");
-	if (texIndex == 0) texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/models/uvChecker.png");
 	if (texIndex != 0) {
 		commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(texIndex));
 	}
@@ -156,7 +155,6 @@ void PrimitiveModel::CallDrawCommand(D3D12_VERTEX_BUFFER_VIEW& vbView, uint32_t 
 	// RootParameter 2: Texture (t0) fallback
 	uint32_t texIndex = textureIndex;
 	if (texIndex == 0) texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/uvChecker.png");
-	if (texIndex == 0) texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/models/uvChecker.png");
 	if (texIndex != 0) {
 		commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(texIndex));
 	}

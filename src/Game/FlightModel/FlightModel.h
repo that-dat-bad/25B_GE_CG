@@ -44,6 +44,12 @@ public:
 	void SetPosition(const MyMath::Vector3& pos) { position_ = pos; }
 	void SetOrientation(const MyMath::Quaternion& ori) { orientation_ = ori; }
 
+	// 方向ベクトルの取得（クォータニオンから計算）
+	MyMath::Vector3 GetForwardDirection() const;
+	MyMath::Vector3 GetUpDirection() const;
+	MyMath::Vector3 GetRightDirection() const;
+
+
 private:
 	// コンポーネント
 	Airframe airframe_;
@@ -69,8 +75,6 @@ private:
 
 	// ヘルパー関数
 	MyMath::Vector3 CalculateTotalForce(float deltaTime);
-	MyMath::Vector3 GetForwardDirection() const;
-	MyMath::Vector3 GetUpDirection() const;
-	MyMath::Vector3 GetRightDirection() const;
 	void UpdateOrientation(float deltaTime);
+
 };

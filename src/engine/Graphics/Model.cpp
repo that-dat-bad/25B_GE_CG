@@ -144,14 +144,9 @@ void Model::Draw() {
 	// テクスチャ (DescriptorTable) の設定 (RootParameter Index: 2)
 	uint32_t useTextureIndex = modelData_.material.textureIndex;
 	if (useTextureIndex == 0) {
-		// UV Checker などのデフォルトを読み込んでそれをセットする
+		// デフォルトテクスチャを読み込む
 		TextureManager::GetInstance()->LoadTexture("assets/textures/uvChecker.png");
 		useTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/uvChecker.png");
-		if (useTextureIndex == 0) {
-			// fallback check
-			TextureManager::GetInstance()->LoadTexture("assets/models/uvChecker.png");
-			useTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/models/uvChecker.png");
-		}
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle = TextureManager::GetInstance()->GetSrvHandleGPU(useTextureIndex);
@@ -380,11 +375,23 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 			// 外部ファイル読み込み (今までの処理)
 			else {
 				// パス結合
+				std::string texPath;
 				if (!baseDirectory.empty()) {
-					modelData.material.textureFilePath = baseDirectory + "/" + textureFilePath.C_Str();
+					texPath = baseDirectory + "/" + textureFilePath.C_Str();
 				} else {
-					modelData.material.textureFilePath = textureFilePath.C_Str();
+					texPath = textureFilePath.C_Str();
 				}
+
+				// ファイルが存在しなければ assets/textures/ にフォールバック
+				if (!std::filesystem::exists(texPath)) {
+					std::string texName = std::filesystem::path(textureFilePath.C_Str()).filename().string();
+					std::string fallback = "assets/textures/" + texName;
+					if (std::filesystem::exists(fallback)) {
+						texPath = fallback;
+					}
+				}
+
+				modelData.material.textureFilePath = texPath;
 			}
 		}
 

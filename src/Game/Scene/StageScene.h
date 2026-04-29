@@ -1,5 +1,9 @@
 #pragma once
 #include "IScene.h"
+#include <memory>
+#include "Object3d.h"
+#include "Skybox.h"
+#include "FlightModel/FlightModel.h"
 
 /// @brief ゲーム本編のステージシーン
 class StageScene : public IScene {
@@ -8,4 +12,41 @@ public:
 	void Update() override;
 	void Draw() override;
 	void Finalize() override;
+
+private:
+	// フライトモデル（物理）
+	FlightModel flightModel_;
+
+	// 描画用 3Dオブジェクト（機体の見た目）
+	std::unique_ptr<Object3d> aircraftObject_ = nullptr;
+
+	// 地面テクスチャ
+	uint32_t groundTextureIndex_ = 0;
+
+	// 地面グリッド描画
+	void DrawGround();
+
+	// Skybox
+	std::unique_ptr<Skybox> skybox_ = nullptr;
+
+	// ============================
+	// War Thunder風 追従カメラ
+	// ============================
+	MyMath::Vector3 cameraCurrentPos_;   // カメラの現在位置（補間済み）
+	MyMath::Vector3 cameraLookTarget_;   // カメラの注視点（補間済み）
+
+	// カメラパラメータ
+	float cameraDistance_  = 20.0f;   // 機体からの距離
+	float cameraHeight_   = 5.0f;    // 機体の上方向オフセット
+	float cameraPosLag_   = 5.0f;    // 位置の追従速度（大きいほど速い）
+	float cameraLookLag_  = 10.0f;   // 注視点の追従速度
+
+	// カメラ更新
+	void UpdateChaseCamera(float dt);
+
+	// ヘルパー：クォータニオンからオイラー角(XYZ)への変換
+	static MyMath::Vector3 QuaternionToEuler(const MyMath::Quaternion& q);
+
+	// ヘルパー：注視点からカメラの回転(オイラー角)を計算
+	static MyMath::Vector3 LookAtRotation(const MyMath::Vector3& from, const MyMath::Vector3& to);
 };

@@ -6,10 +6,10 @@
 #include "IScene.h"
 
 SceneManager::SceneManager() {
-	// 初期シーン生成 (開発中は DebugScene から起動)
-	currentScene = std::make_unique<DebugScene>();
+	// 初期シーン生成 (FlightModelのテスト飛行)
+	currentScene = std::make_unique<StageScene>();
 	currentScene->Initialize();
-	currentSceneID = SCENE::DEBUG;
+	currentSceneID = SCENE::STAGE;
 }
 
 SceneManager::~SceneManager() {
