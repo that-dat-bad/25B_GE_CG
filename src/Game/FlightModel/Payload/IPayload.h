@@ -1,12 +1,17 @@
 #pragma once
 
-// --- 共通インターフェース ---
+// ペイロード（外部搭載物）のインターフェース
 class IPayload {
 public:
-	virtual ~IPayload() = default;
+    virtual ~IPayload() = default;
 
-	virtual void Update(float dt) = 0;       // 毎フレームの更新
-	virtual float GetAddedMass() const = 0;  // 追加重量を返す
-	virtual float GetAddedDrag() const = 0;  // 追加空気抵抗を返す
-	virtual bool IsAttached() const = 0;     // まだ機体に付いているか？
+    // 毎フレームの更新処理
+    virtual void Update(float deltaTime) = 0;
+
+    // トリガーを引いた時に呼ばれる
+    virtual void Fire() = 0;
+
+    // パラメータ
+    virtual float GetWeight() const = 0;      // 重量（kg）
+    virtual float GetDragCoeff() const = 0;   // 空気抵抗係数
 };

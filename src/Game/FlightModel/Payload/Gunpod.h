@@ -11,25 +11,35 @@ struct GunPodData {
 
 class GunPod : public IPayload {
 public:
-	GunPod() : currentAmmo_(0), cooldownTimer_(0.0f), isAttached_(true) {}
+	GunPod() : baseMass_(0.0f), drag_(0.0f), ammoWeight_(0.0f),
+	           currentAmmo_(0), maxAmmo_(0),
+	           fireInterval_(0.0f), cooldownTimer_(0.0f), isAttached_(true) {}
 	~GunPod() override = default;
 
 	void Initialize(const GunPodData& data);
 
-	// IPayloadのルール（仮想関数）を実装
+	// IPayloadの仮想関数を実装
 	void Update(float dt) override;
-	float GetAddedMass() const override;
-	float GetAddedDrag() const override;
-	bool IsAttached() const override { return isAttached_; }
+	float GetWeight() const override;
+	float GetDragCoeff() const override;
 
 	// トリガーを引いている間に呼ばれる関数
-	void Fire();
+	void Fire() override;
+
+	// --- アクセッサ ---
+	int  GetCurrentAmmo() const { return currentAmmo_; }
+	int  GetMaxAmmo() const { return maxAmmo_; }
+	bool IsAttached() const { return isAttached_; }
+
+	// ペイロードを投棄する
+	void Jettison() { isAttached_ = false; }
 
 private:
 	float baseMass_;
 	float drag_;
 	float ammoWeight_;
 	int currentAmmo_;
+	int maxAmmo_;
 
 	float fireInterval_;  // 1発撃つための間隔（秒）
 	float cooldownTimer_; // 次に撃てるようになるまでのタイマー

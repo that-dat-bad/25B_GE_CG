@@ -6,12 +6,14 @@ struct AirframeData {
 	float maxInternalFuel;  // 内蔵燃料の最大容量 (kg)
 	float baseDrag;         // 基本の空気抵抗係数
 	float liftCoefficient;  // 揚力係数（翼の性能）
+	float wingArea;         // 翼面積 (m^2)
+	float maxHealth;        // 最大耐久値
 };
 
 // --- 機体フレームクラス本体 ---
 class Airframe {
 public:
-	Airframe() : currentInternalFuel_(0.0f) {}
+	Airframe() : currentInternalFuel_(0.0f), currentHealth_(0.0f) {}
 	~Airframe() = default;
 
 	// 初期化（外部データを受け取ってセットアップ）
@@ -20,6 +22,9 @@ public:
 	// 内蔵燃料を消費する処理
 	void ConsumeInternalFuel(float amount);
 
+	// ダメージを受ける処理
+	void TakeDamage(float damage);
+
 	// --- アクセッサ（外部から情報を取得） ---
 	float GetTotalMass() const;
 
@@ -27,6 +32,10 @@ public:
 	float GetMaxInternalFuel() const { return maxInternalFuel_; }
 	float GetBaseDrag() const { return baseDrag_; }
 	float GetLiftCoefficient() const { return liftCoefficient_; }
+	float GetWingArea() const { return wingArea_; }
+	float GetCurrentHealth() const { return currentHealth_; }
+	float GetMaxHealth() const { return maxHealth_; }
+	bool  IsDestroyed() const { return currentHealth_ <= 0.0f; }
 
 private:
 	// --- 物理スペック（不変データ） ---
@@ -34,7 +43,10 @@ private:
 	float maxInternalFuel_;     // 内蔵燃料の最大容量 (kg)
 	float baseDrag_;            // 基本空気抵抗係数
 	float liftCoefficient_;     // 揚力係数
+	float wingArea_;            // 翼面積 (m^2)
+	float maxHealth_;           // 最大耐久値
 
 	// --- 現在の状態（変動データ） ---
 	float currentInternalFuel_; // 現在の内蔵燃料 (kg)
+	float currentHealth_;       // 現在の耐久値
 };

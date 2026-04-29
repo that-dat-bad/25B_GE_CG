@@ -223,9 +223,7 @@
     <ClInclude Include="src\Game\FlightModel\Engine.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\FlightModel\IPayloads.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
+
     <ClInclude Include="src\Game\FlightModel\Payload\IPayload.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -396,9 +394,7 @@
     <ClCompile Include="src\Game\FlightModel\Engine.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\FlightModel\IPayloads.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
+
     <ClCompile Include="src\Game\FlightModel\Payload\IPayload.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
