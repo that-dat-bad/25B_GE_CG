@@ -11,27 +11,27 @@ struct AirframeData {
 	float maxHealth;        // 最大耐久値
 
 	// --- 揚力・失速 ---
-	float criticalAoA;          // 臨界迎え角（rad）。典型: 0.26 (≈15°)
-	float maxLiftCoefficient;   // 臨界AoA時の最大CL。典型: 1.5
-	float stallLiftCoefficient; // 失速後の残留CL。典型: 0.3
+	float criticalAoA;          // 臨界迎え角（rad）
+	float maxLiftCoefficient;   // 臨界AoA時の最大CL
+	float stallLiftCoefficient; // 失速後の残留CL
 
 	// --- 誘導抵抗 ---
-	float aspectRatio;          // 翼アスペクト比。典型: 6.0
-	float oswaldEfficiency;     // オズワルド効率。典型: 0.8
+	float aspectRatio;          // 翼アスペクト比
+	float oswaldEfficiency;     // オズワルド効率
 
 	// --- G制限 ---
-	float positiveGLimit;       // +Gリミット。典型: +9.0
-	float negativeGLimit;       // -Gリミット。典型: -3.0
+	float positiveGLimit;       // +Gリミット
+	float negativeGLimit;       // -Gリミット
 
 	// --- フラップ ---
-	float flapLiftBonus;        // フラップ展開時のCL増加量。典型: 0.5
-	float flapDragBonus;        // フラップ展開時のCd増加量。典型: 0.08
-	float flapMaxSpeed;         // フラップが使用可能な最大速度 (m/s)。典型: 97 (≈350km/h)
-	float flapDeploySpeed;      // フラップ展開/収納速度 (0→1の速度/sec)。典型: 2.0
+	float flapLiftBonus;        // フラップ展開時のCL増加量
+	float flapDragBonus;        // フラップ展開時のCd増加量
+	float flapMaxSpeed;         // フラップが使用可能な最大速度 (m/s)
+	float flapDeploySpeed;      // フラップ展開/収納速度 (0→1の速度/sec)
 
 	// --- エアブレーキ ---
-	float airBrakeDragBonus;    // エアブレーキ展開時のCd増加量。典型: 0.15
-	float airBrakeDeploySpeed;  // エアブレーキ展開/収納速度。典型: 3.0
+	float airBrakeDragBonus;    // エアブレーキ展開時のCd増加量
+	float airBrakeDeploySpeed;  // エアブレーキ展開/収納速度
 };
 
 // --- ダメージ部位 ---

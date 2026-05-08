@@ -27,11 +27,11 @@ void StageScene::Initialize() {
 	airframeData.emptyFrameMass = 3000.0f;   // 3トン
 	airframeData.maxInternalFuel = 800.0f;    // 800kg
 	airframeData.baseDrag = 0.02f;            // 基本空気抵抗
-	airframeData.liftCoefficient = 0.5f;      // 揚力係数
-	airframeData.wingArea = 20.0f;            // 翼面積 20m^2
+	airframeData.liftCoefficient = 0.2f;      // 揚力係数
+	airframeData.wingArea = 40.0f;            // 翼面積 20m^2
 	airframeData.maxHealth = 100.0f;          // 耐久値
 	// 揚力・失速
-	airframeData.criticalAoA = 0.26f;         // 臨界迎え角 ≈15°
+	airframeData.criticalAoA = 0.5f;         // 臨界迎え角
 	airframeData.maxLiftCoefficient = 1.5f;   // 最大CL
 	airframeData.stallLiftCoefficient = 0.3f; // 失速後CL
 	// 誘導抵抗
@@ -70,12 +70,12 @@ void StageScene::Initialize() {
 	// テクスチャのプリロード（モデルのマテリアルが参照するテクスチャを先に読み込む）
 	TextureManager::GetInstance()->LoadTexture("assets/textures/uvChecker.png");
 
-	// 機体（sphereで代用）
-	ModelManager::GetInstance()->LoadModel("models/sphere.obj");
+	// 機体モデル
+	ModelManager::GetInstance()->LoadModel("Resources/planeplane.obj");
 	aircraftObject_ = std::make_unique<Object3d>();
 	aircraftObject_->Initialize(Object3dCommon::GetInstance());
 	aircraftObject_->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
-	aircraftObject_->SetModel("models/sphere.obj");
+	aircraftObject_->SetModel("Resources/planeplane.obj");
 
 	// 地面テクスチャ
 	TextureManager::GetInstance()->LoadTexture("assets/textures/white1x1.png");
@@ -90,6 +90,20 @@ void StageScene::Initialize() {
 	uint32_t skyboxTexIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/cedar_bridge_sunset_1_2k.dds");
 	skybox_->SetTextureIndex(skyboxTexIndex);
 	Object3dCommon::GetInstance()->SetDefaultEnvTextureIndex(skyboxTexIndex);
+
+	// ============================
+	// ライティング設定（太陽光）
+	// ============================
+	DirectionalLight* dirLight = Object3dCommon::GetInstance()->GetDirectionalLightData();
+	if (dirLight) {
+		dirLight->color = { 1.0f, 0.95f, 0.85f, 1.0f };       // やや暖色の太陽光
+		dirLight->direction = { 0.5f, -0.8f, 0.3f };           // 斜め上から
+		dirLight->intensity = 1.2f;
+	}
+	// ライティングモデル設定
+	Object3dCommon::GetInstance()->SetLightType(1);             // Directional Light 有効
+	Object3dCommon::GetInstance()->SetShadingModel(1);          // Half-Lambert
+	Object3dCommon::GetInstance()->SetSpecularModel(2);         // Blinn-Phong
 
 	// ============================
 	// カメラ初期位置（機体の後方）
@@ -135,12 +149,25 @@ void StageScene::Update() {
 
 	if (input->PushKey(DIK_W)) pitchInput -= 1.0f; // W = 機首上げ
 	if (input->PushKey(DIK_S)) pitchInput += 1.0f; // S = 機首下げ
-	if (input->PushKey(DIK_A)) rollInput -= 1.0f;
-	if (input->PushKey(DIK_D)) rollInput += 1.0f;
+	if (input->PushKey(DIK_A)) rollInput += 1.0f;  // A = 左ロール
+	if (input->PushKey(DIK_D)) rollInput -= 1.0f;  // D = 右ロール
 	if (input->PushKey(DIK_Q)) yawInput -= 1.0f;
 	if (input->PushKey(DIK_E)) yawInput += 1.0f;
 
-	flightModel_.SetControlInput(pitchInput, rollInput, yawInput);
+	// --- インストラクター ON/OFF (I キー) ---
+	if (input->TriggerKey(DIK_I)) {
+		flightInstructor_.ToggleEnabled();
+	}
+
+	// インストラクターによる補正（無入力時に自動水平復帰）
+	float correctedPitch, correctedRoll, correctedYaw;
+	flightInstructor_.ApplyCorrection(
+		pitchInput, rollInput, yawInput,
+		flightModel_.GetOrientation(),
+		correctedPitch, correctedRoll, correctedYaw
+	);
+
+	flightModel_.SetControlInput(correctedPitch, correctedRoll, correctedYaw);
 
 	// --- フラップ / エアブレーキ ---
 	flightModel_.SetFlapInput(input->PushKey(DIK_F));
@@ -237,6 +264,7 @@ void StageScene::Update() {
 	ImGui::Text("W/S: Pitch | A/D: Roll | Q/E: Yaw");
 	ImGui::Text("LShift/LCtrl: Throttle");
 	ImGui::Text("F: Flaps | B: AirBrake");
+	ImGui::Text("I: Instructor [%s]", flightInstructor_.IsEnabled() ? "ON" : "OFF");
 
 	ImGui::End();
 #endif

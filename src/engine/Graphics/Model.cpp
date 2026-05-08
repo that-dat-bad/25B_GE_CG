@@ -158,9 +158,9 @@ void Model::Draw() {
 	// テクスチャ (DescriptorTable) の設定 (RootParameter Index: 2)
 	uint32_t useTextureIndex = modelData_.material.textureIndex;
 	if (useTextureIndex == 0) {
-		// デフォルトテクスチャを読み込む
-		TextureManager::GetInstance()->LoadTexture("assets/textures/uvChecker.png");
-		useTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/uvChecker.png");
+		// テクスチャなしマテリアル: 白1x1テクスチャを使い、マテリアルカラーがそのまま出るようにする
+		TextureManager::GetInstance()->LoadTexture("assets/textures/white1x1.png");
+		useTextureIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/white1x1.png");
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandle = TextureManager::GetInstance()->GetSrvHandleGPU(useTextureIndex);
@@ -434,6 +434,14 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 				modelData.material.shininess = 2.0f / powf(roughness, 4.0f) - 2.0f;
 				if (modelData.material.shininess < 1.0f) modelData.material.shininess = 1.0f;
 				if (modelData.material.shininess > 256.0f) modelData.material.shininess = 256.0f;
+			}
+		} else {
+			// OBJ形式のNs値（Shininess直値）へのフォールバック
+			float shininess = 0.0f;
+			if (AI_SUCCESS == material->Get(AI_MATKEY_SHININESS, shininess)) {
+				if (shininess < 1.0f) shininess = 1.0f;
+				if (shininess > 256.0f) shininess = 256.0f;
+				modelData.material.shininess = shininess;
 			}
 		}
 	}

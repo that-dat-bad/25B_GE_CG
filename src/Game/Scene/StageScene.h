@@ -4,6 +4,7 @@
 #include "Object3d.h"
 #include "Skybox.h"
 #include "FlightModel/FlightModel.h"
+#include "FlightModel/FlightInstructor.h"
 
 /// @brief ゲーム本編のステージシーン
 class StageScene : public IScene {
@@ -16,6 +17,9 @@ public:
 private:
 	// フライトモデル（物理）
 	FlightModel flightModel_;
+
+	// フライトインストラクター（自動水平復帰）
+	FlightInstructor flightInstructor_;
 
 	// 描画用 3Dオブジェクト（機体の見た目）
 	std::unique_ptr<Object3d> aircraftObject_ = nullptr;

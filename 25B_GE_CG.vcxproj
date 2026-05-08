@@ -235,11 +235,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Image Include="assets\textures\uvChecker.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Game\FlightModel\FlightInstructor.h" />
     <ClInclude Include="src\Game\FlightModel\Payload\Gunpod.h" />
     <ClInclude Include="src\Game\FlightModel\Payload\IPayload.h">
       <DeploymentContent>true</DeploymentContent>
     </ClInclude>
-
     <ClInclude Include="src\Game\FlightModel\Engine.h" />
     <ClInclude Include="src\Game\FlightModel\AirFrame.h" />
     <ClInclude Include="src\Game\FlightModel\FlightModel.h" />
@@ -299,11 +299,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\Graphics\PostProcess\PostEffect.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Game\FlightModel\FlightInstructor.cpp" />
     <ClCompile Include="src\Game\FlightModel\Payload\Gunpod.cpp" />
     <ClCompile Include="src\Game\FlightModel\Payload\IPayload.cpp">
       <DeploymentContent>true</DeploymentContent>
     </ClCompile>
-
     <ClCompile Include="src\Game\FlightModel\Engine.cpp" />
     <ClCompile Include="src\Game\FlightModel\AirFrame.cpp" />
     <ClCompile Include="src\Game\FlightModel\FlightModel.cpp" />

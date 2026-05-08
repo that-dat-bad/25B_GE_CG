@@ -361,8 +361,49 @@ void FlightModel::UpdateOrientation(float deltaTime)
 	float gPenalty = 1.0f - (std::max)(blackoutFactor_, redoutFactor_) * 0.8f;
 	controlEff *= gPenalty;
 
-	// 各軸の回転角度（入力 × 角速度 × 操舵効率 × dt）
-	float pitchAngle = inputPitch_ * kPitchRate * controlEff * deltaTime;
+	// --- 重心(CG)と圧力中心(CP)の概念に基づくピッチモーメント計算 ---
+	// リアルな航空機では、主翼の揚力が発生する「圧力中心(CP)」と「重心(CG)」の位置関係がピッチを決定します。
+	
+	// 1. 動圧と揚力の計算（概念的トルク用）
+	float airDensity = CalculateAirDensity(position_.y);
+	float dynamicPressure = 0.5f * airDensity * speed * speed;
+	float cl = CalculateLiftCoefficient(currentAoA_);
+	float wingLiftForce = dynamicPressure * airframe_.GetWingArea() * std::fabs(cl);
+
+	// 2. 重心(CG)を基準とした圧力中心(CP)の位置 (Z軸: 機首方向が正、後方が負)
+	// 通常飛行時、CPは安定性のためにCGよりわずかに後方（-0.2m等）に設計されます。
+	const float kNormalCPOffsetZ = -0.2f; 
+	float currentCPOffsetZ = kNormalCPOffsetZ;
+
+	// 失速時、翼上面の気流が剥離することでCPが急激に後方へ移動します。
+	if (isStalling_) {
+		float stallDepth = std::fabs(currentAoA_) - airframe_.GetCriticalAoA();
+		currentCPOffsetZ -= stallDepth * 5.0f; // 失速が深いほどCPが大きく後退
+	}
+
+	// 3. トルクの計算
+	// 主翼トルク: 揚力がCGの後ろを押し上げるため、機首下げ（正のピッチ）モーメントが発生
+	float wingTorque = wingLiftForce * (-currentCPOffsetZ); 
+
+	// 水平尾翼のトリム力: 通常飛行時の機首下げモーメントを打ち消す下向きの力
+	// これにより通常時は手放しで水平飛行が可能（トリムが取れている状態）
+	float tailTrimTorque = -(wingLiftForce * (-kNormalCPOffsetZ)); 
+
+	// 合計ピッチトルク: 失速してCPが後退した分だけ、トリムで打ち消せない強烈な機首下げ力（Stall Break）が発生する
+	float totalPitchTorque = wingTorque + tailTrimTorque;
+
+	// 4. トルクを角加速度（ピッチ角速度）に変換
+	// 機体のピッチ軸の慣性モーメント（Iyy）の逆数を掛ける（ここでは概念的な定数）
+	const float kInverseInertiaY = 0.00005f; 
+	float aerodynamicPitchMoment = totalPitchTorque * kInverseInertiaY;
+
+	// 機体が背面（負のAoA）で失速した場合は、機首上げ（負のピッチ）方向に落ちる
+	if (currentAoA_ < 0.0f) {
+		aerodynamicPitchMoment = -aerodynamicPitchMoment;
+	}
+
+	// 各軸の回転角度（入力 × 角速度 × 操舵効率 × dt + 空力モーメント × dt）
+	float pitchAngle = (inputPitch_ * kPitchRate * controlEff + aerodynamicPitchMoment) * deltaTime;
 	float rollAngle = inputRoll_ * kRollRate * controlEff * deltaTime;
 	float yawAngle = inputYaw_ * kYawRate * controlEff * deltaTime;
 
