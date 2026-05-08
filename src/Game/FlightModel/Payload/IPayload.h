@@ -1,6 +1,6 @@
 #pragma once
 
-// ペイロード（外部搭載物）のインターフェース
+// 搭載武装
 class IPayload {
 public:
     virtual ~IPayload() = default;

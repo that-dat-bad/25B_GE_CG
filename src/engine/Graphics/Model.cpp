@@ -82,7 +82,7 @@ void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypat
 
 	// バッファリソース作成 (サイズは読み込んだ頂点数に合わせる)
 	// 頂点がない場合のガード
-	if (modelData_.vertices.empty()) {
+	if (modelData_.vertices.empty() || modelData_.indices.empty()) {
 		return;
 	}
 
@@ -97,6 +97,18 @@ void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypat
 	vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
 	std::memcpy(vertexData_, modelData_.vertices.data(), sizeof(VertexData) * modelData_.vertices.size());
 	vertexBuffer_->Unmap(0, nullptr);
+
+	// インデックスバッファの初期化
+	indexBuffer_ = dxCommon->CreateBufferResource(sizeof(uint32_t) * modelData_.indices.size());
+
+	indexBufferView_.BufferLocation = indexBuffer_->GetGPUVirtualAddress();
+	indexBufferView_.SizeInBytes = UINT(sizeof(uint32_t) * modelData_.indices.size());
+	indexBufferView_.Format = DXGI_FORMAT_R32_UINT;
+
+	uint32_t* indexMap = nullptr;
+	indexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&indexMap));
+	std::memcpy(indexMap, modelData_.indices.data(), sizeof(uint32_t) * modelData_.indices.size());
+	indexBuffer_->Unmap(0, nullptr);
 
 	// 3. マテリアルの初期化
 
@@ -136,6 +148,8 @@ void Model::Draw() {
 
 	// 頂点バッファの設定
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
+	// インデックスバッファの設定
+	commandList->IASetIndexBuffer(&indexBufferView_);
 
 	// マテリアルCBufferの設定 (RootParameter Index: 0)
 	commandList->SetGraphicsRootConstantBufferView(0, materialResource_->GetGPUVirtualAddress());
@@ -154,7 +168,7 @@ void Model::Draw() {
 
 	commandList->SetGraphicsRootConstantBufferView(7, boneResource_->GetGPUVirtualAddress());
 	// 描画コマンド発行
-	commandList->DrawInstanced(UINT(modelData_.vertices.size()), 1, 0, 0);
+	commandList->DrawIndexedInstanced(UINT(modelData_.indices.size()), 1, 0, 0, 0);
 
 }
 
@@ -192,7 +206,7 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 	std::string absolutePath = std::filesystem::absolute(filePath).string();
 
 	const aiScene* scene = importer.ReadFile(absolutePath.c_str(),
-		aiProcess_FlipWindingOrder | aiProcess_FlipUVs | aiProcess_Triangulate | aiProcess_GenSmoothNormals);
+		aiProcess_FlipWindingOrder | aiProcess_FlipUVs | aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices);
 	if (!scene || !scene->HasMeshes()) {
 		return modelData;
 	}
@@ -244,58 +258,64 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 			}
 			// =================================================================
 
-			// 面（三角形）の展開
+			uint32_t indexOffset = static_cast<uint32_t>(modelData.vertices.size());
+
+			// 頂点の抽出
+			for (uint32_t vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex) {
+				aiVector3D position = mesh->mVertices[vertexIndex];
+
+				// Apply absolute node transformation
+				//position *= globalTransform;
+
+				VertexData vertex;
+				vertex.position = { position.x, position.y, position.z, 1.0f };
+
+				if (hasNormals) {
+					aiVector3D normal = mesh->mNormals[vertexIndex];
+					aiMatrix3x3 normalMatrix = aiMatrix3x3(globalTransform);
+					//normal *= normalMatrix;
+					normal.Normalize();
+					vertex.normal = { normal.x, normal.y, normal.z };
+				} else {
+					vertex.normal = { 0.0f, 1.0f, 0.0f };
+				}
+
+				if (hasTexCoords) {
+					aiVector3D& texcoord = mesh->mTextureCoords[0][vertexIndex];
+					vertex.texcoord = { texcoord.x, texcoord.y };
+				} else {
+					vertex.texcoord = { 0.0f, 0.0f };
+				}
+
+				// RH -> LH
+				vertex.position.x *= -1.0f;
+				vertex.normal.x *= -1.0f;
+
+				// アニメーション関連初期化 (ゼロクリア)
+				vertex.weight = { 1.0f, 0.0f, 0.0f, 0.0f };
+				vertex.indices[0] = 0;
+				vertex.indices[1] = 0;
+				vertex.indices[2] = 0;
+				vertex.indices[3] = 0;
+
+				auto& weights = vertexWeightMap[vertexIndex];
+				for (size_t w = 0; w < weights.size(); ++w) {
+					if (w >= 4) break; // 最大4つまで
+
+					if (w == 0) { vertex.weight.x = weights[w].second; vertex.indices[0] = weights[w].first; } else if (w == 1) { vertex.weight.y = weights[w].second; vertex.indices[1] = weights[w].first; } else if (w == 2) { vertex.weight.z = weights[w].second; vertex.indices[2] = weights[w].first; } else if (w == 3) { vertex.weight.w = weights[w].second; vertex.indices[3] = weights[w].first; }
+				}
+				// =================================================================
+
+				modelData.vertices.push_back(vertex);
+			}
+
+			// 面（三角形）の展開 (インデックス抽出)
 			for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
 				aiFace& face = mesh->mFaces[faceIndex];
 				if (face.mNumIndices != 3) { continue; } // 三角形以外はスキップ
 
 				for (uint32_t element = 0; element < face.mNumIndices; ++element) {
-					uint32_t vertexIndex = face.mIndices[element];
-					aiVector3D position = mesh->mVertices[vertexIndex];
-
-					// Apply absolute node transformation
-					//position *= globalTransform;
-
-					VertexData vertex;
-					vertex.position = { position.x, position.y, position.z, 1.0f };
-
-					if (hasNormals) {
-						aiVector3D normal = mesh->mNormals[vertexIndex];
-						aiMatrix3x3 normalMatrix = aiMatrix3x3(globalTransform);
-						//normal *= normalMatrix;
-						normal.Normalize();
-						vertex.normal = { normal.x, normal.y, normal.z };
-					} else {
-						vertex.normal = { 0.0f, 1.0f, 0.0f };
-					}
-
-					if (hasTexCoords) {
-						aiVector3D& texcoord = mesh->mTextureCoords[0][vertexIndex];
-						vertex.texcoord = { texcoord.x, texcoord.y };
-					} else {
-						vertex.texcoord = { 0.0f, 0.0f };
-					}
-
-					// RH -> LH
-					vertex.position.x *= -1.0f;
-					vertex.normal.x *= -1.0f;
-
-					// アニメーション関連初期化 (ゼロクリア)
-					vertex.weight = { 1.0f, 0.0f, 0.0f, 0.0f };
-					vertex.indices[0] = 0;
-					vertex.indices[1] = 0;
-					vertex.indices[2] = 0;
-					vertex.indices[3] = 0;
-
-					auto& weights = vertexWeightMap[vertexIndex];
-					for (size_t w = 0; w < weights.size(); ++w) {
-						if (w >= 4) break; // 最大4つまで
-
-						if (w == 0) { vertex.weight.x = weights[w].second; vertex.indices[0] = weights[w].first; } else if (w == 1) { vertex.weight.y = weights[w].second; vertex.indices[1] = weights[w].first; } else if (w == 2) { vertex.weight.z = weights[w].second; vertex.indices[2] = weights[w].first; } else if (w == 3) { vertex.weight.w = weights[w].second; vertex.indices[3] = weights[w].first; }
-					}
-					// =================================================================
-
-					modelData.vertices.push_back(vertex);
+					modelData.indices.push_back(face.mIndices[element] + indexOffset);
 				}
 			}
 		}

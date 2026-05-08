@@ -57,6 +57,7 @@ public:
 	};
 	struct ModelData {
 		std::vector<VertexData> vertices;
+		std::vector<uint32_t> indices;
 		MaterialData material;
 		Node rootNode;
 		struct BoneData {
@@ -110,6 +111,10 @@ private:
 	VertexData* vertexData_ = nullptr;
 	// バッファビュー
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
+
+	//--インデックスデータ--//
+	Microsoft::WRL::ComPtr<ID3D12Resource> indexBuffer_ = nullptr;
+	D3D12_INDEX_BUFFER_VIEW indexBufferView_{};
 
 	//--マテリアル--//
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource_ = nullptr;
