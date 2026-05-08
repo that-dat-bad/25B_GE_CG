@@ -8,12 +8,13 @@ struct EngineData {
 	float wepThrottleLimit;     // WEP時のスロットル上限k
 	float physicalSpoolSpeed;   // エンジンの物理的な反応速度
 	float baseFuelFlowRate;     // 定格推力時(1.0)の燃料消費量
+	float altitudeThrottleFactor; // 高度による推力低下率。典型: 0.00004
 };
 
 // --- エンジンクラス本体 ---
 class Engine {
 public:
-	Engine() : currentThrottle_(0.0f) {}
+	Engine() : currentThrottle_(0.0f), altitudeThrottleFactor_(0.0f) {}
 	~Engine() = default;
 
 	// 初期化（外部データを受け取ってセットアップ）
@@ -25,6 +26,7 @@ public:
 	// --- アクセッサ（外部から情報を取得） ---
 	float GetMass() const { return mass_; }
 	float GetCurrentThrust() const { return baseThrust_ * currentThrottle_; }
+	float GetThrustAtAltitude(float altitude, float engineDamageFactor) const;
 	float GetFuelConsumptionRate() const { return baseFuelFlowRate_ * currentThrottle_; }
 	float GetCurrentThrottle() const { return currentThrottle_; }
 
@@ -36,6 +38,7 @@ private:
 	float wepThrottleLimit_;            // WEP時スロットル上限（例: 1.1）
 	float enginePhysicalSpoolSpeed_;    // エンジンの物理的な反応速度
 	float baseFuelFlowRate_;            // 定格推力時(1.0)の燃料消費率
+	float altitudeThrottleFactor_;      // 高度による推力低下率
 
 	// --- 現在の状態（変動データ） ---
 	float currentThrottle_;             // 現在の実際のエンジン出力（0.0 ～ WEP上限）

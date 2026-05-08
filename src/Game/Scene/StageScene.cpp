@@ -30,6 +30,24 @@ void StageScene::Initialize() {
 	airframeData.liftCoefficient = 0.5f;      // 揚力係数
 	airframeData.wingArea = 20.0f;            // 翼面積 20m^2
 	airframeData.maxHealth = 100.0f;          // 耐久値
+	// 揚力・失速
+	airframeData.criticalAoA = 0.26f;         // 臨界迎え角 ≈15°
+	airframeData.maxLiftCoefficient = 1.5f;   // 最大CL
+	airframeData.stallLiftCoefficient = 0.3f; // 失速後CL
+	// 誘導抵抗
+	airframeData.aspectRatio = 6.0f;
+	airframeData.oswaldEfficiency = 0.8f;
+	// G制限
+	airframeData.positiveGLimit = 9.0f;
+	airframeData.negativeGLimit = -3.0f;
+	// フラップ
+	airframeData.flapLiftBonus = 0.5f;
+	airframeData.flapDragBonus = 0.08f;
+	airframeData.flapMaxSpeed = 97.0f;        // ≈350 km/h
+	airframeData.flapDeploySpeed = 2.0f;
+	// エアブレーキ
+	airframeData.airBrakeDragBonus = 0.15f;
+	airframeData.airBrakeDeploySpeed = 3.0f;
 
 	EngineData engineData{};
 	engineData.mass = 500.0f;                 // エンジン 500kg
@@ -38,6 +56,7 @@ void StageScene::Initialize() {
 	engineData.wepThrottleLimit = 1.1f;       // WEPで110%
 	engineData.physicalSpoolSpeed = 0.5f;     // スプール速度
 	engineData.baseFuelFlowRate = 2.0f;       // 燃料消費率 2kg/s @ 100%
+	engineData.altitudeThrottleFactor = 0.00004f; // 高度推力低下率
 
 	flightModel_.Initialize(airframeData, engineData);
 
@@ -123,6 +142,10 @@ void StageScene::Update() {
 
 	flightModel_.SetControlInput(pitchInput, rollInput, yawInput);
 
+	// --- フラップ / エアブレーキ ---
+	flightModel_.SetFlapInput(input->PushKey(DIK_F));
+	flightModel_.SetAirBrakeInput(input->PushKey(DIK_B));
+
 	// ============================
 	// FlightModel 物理更新
 	// ============================
@@ -165,10 +188,38 @@ void StageScene::Update() {
 	ImGui::Text("Altitude: %.1f m", pos.y);
 
 	ImGui::Separator();
+	ImGui::Text("=== Flight Data ===");
+	ImGui::Text("AoA: %.1f deg", flightModel_.GetCurrentAoA() * 57.2958f);
+	ImGui::Text("G-Force: %.1f G", flightModel_.GetCurrentG());
+	if (flightModel_.IsStalling()) {
+		ImGui::TextColored(ImVec4(1, 0, 0, 1), "*** STALL ***");
+	}
+	if (flightModel_.GetBlackoutFactor() > 0.01f) {
+		ImGui::TextColored(ImVec4(0.3f, 0.3f, 0.3f, 1), "Blackout: %.0f%%", flightModel_.GetBlackoutFactor() * 100.0f);
+	}
+	if (flightModel_.GetRedoutFactor() > 0.01f) {
+		ImGui::TextColored(ImVec4(1, 0.2f, 0.2f, 1), "Redout: %.0f%%", flightModel_.GetRedoutFactor() * 100.0f);
+	}
+
+	ImGui::Separator();
 	ImGui::Text("=== Engine ===");
 	ImGui::Text("Throttle: %.0f%%", throttle * 100.0f);
 	ImGui::Text("Engine Output: %.0f%%", flightModel_.GetCurrentThrottle() * 100.0f);
 	ImGui::Text("Fuel: %.1f kg", flightModel_.GetCurrentFuel());
+
+	ImGui::Separator();
+	ImGui::Text("=== Aero Devices ===");
+	ImGui::Text("Flap: %.0f%%", flightModel_.GetFlapPosition() * 100.0f);
+	ImGui::Text("AirBrake: %.0f%%", flightModel_.GetAirBrakePosition() * 100.0f);
+
+	ImGui::Separator();
+	ImGui::Text("=== Damage ===");
+	const auto& af = flightModel_.GetAirframe();
+	ImGui::Text("Engine:    %.0f%%", af.GetDamageState(DamageZone::Engine) * 100.0f);
+	ImGui::Text("L.Wing:    %.0f%%", af.GetDamageState(DamageZone::LeftWing) * 100.0f);
+	ImGui::Text("R.Wing:    %.0f%%", af.GetDamageState(DamageZone::RightWing) * 100.0f);
+	ImGui::Text("Tail:      %.0f%%", af.GetDamageState(DamageZone::Tail) * 100.0f);
+	ImGui::Text("FuelTank:  %.0f%%", af.GetDamageState(DamageZone::FuelTank) * 100.0f);
 
 	ImGui::Separator();
 	ImGui::Text("=== Mass ===");
@@ -184,7 +235,8 @@ void StageScene::Update() {
 	ImGui::Separator();
 	ImGui::Text("=== Controls ===");
 	ImGui::Text("W/S: Pitch | A/D: Roll | Q/E: Yaw");
-	ImGui::Text("LShift: Throttle Up | LCtrl: Throttle Down");
+	ImGui::Text("LShift/LCtrl: Throttle");
+	ImGui::Text("F: Flaps | B: AirBrake");
 
 	ImGui::End();
 #endif

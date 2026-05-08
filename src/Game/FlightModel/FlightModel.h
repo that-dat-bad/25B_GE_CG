@@ -29,9 +29,11 @@ public:
 	// ---setter --
 	void SetThrottleInput(float throttle) { targetThrottle_ = throttle; }                      // 0.0f(停止) ~ 1.0f(全開)
 	void SetControlInput(float pitch, float roll, float yaw) { inputPitch_ = pitch; inputRoll_ = roll; inputYaw_ = yaw; }   // 各軸 -1.0f ~ 1.0f
+	void SetFlapInput(bool deploy) { airframe_.SetFlapDesired(deploy); }
+	void SetAirBrakeInput(bool deploy) { airframe_.SetAirBrakeDesired(deploy); }
 
 
-	// -- getter --
+	// -- getter（既存） --
 	MyMath::Vector3 GetPosition() const { return position_; }
 	MyMath::Vector3 GetVelocity() const { return velocity_; }
 	MyMath::Quaternion GetOrientation() const { return orientation_; }
@@ -39,6 +41,20 @@ public:
 	float GetTotalMass() const;
 	float GetCurrentThrottle() const { return engine_.GetCurrentThrottle(); }
 	float GetCurrentFuel() const { return airframe_.GetCurrentInternalFuel(); }
+
+	// -- getter（新規） --
+	float GetCurrentAoA() const { return currentAoA_; }
+	float GetCurrentG() const { return currentG_; }
+	float GetAltitude() const { return position_.y; }
+	bool  IsStalling() const { return isStalling_; }
+	float GetFlapPosition() const { return airframe_.GetFlapPosition(); }
+	float GetAirBrakePosition() const { return airframe_.GetAirBrakePosition(); }
+	float GetBlackoutFactor() const { return blackoutFactor_; }   // 0.0(正常)～1.0(ブラックアウト)
+	float GetRedoutFactor() const { return redoutFactor_; }       // 0.0(正常)～1.0(レッドアウト)
+
+	// ダメージ連動
+	Airframe& GetAirframe() { return airframe_; }
+	const Airframe& GetAirframe() const { return airframe_; }
 
 	// 外部から位置・姿勢をセットする（スポーン時など）
 	void SetPosition(const MyMath::Vector3& pos) { position_ = pos; }
@@ -65,6 +81,12 @@ private:
 	MyMath::Vector3 acceleration_;  // 加速度
 	MyMath::Quaternion orientation_; // 姿勢（回転）
 
+	// フライトモデル拡張状態
+	float currentAoA_;        // 現在の迎え角 (rad)
+	float currentG_;          // 現在のG
+	bool  isStalling_;        // 失速中フラグ
+	float blackoutFactor_;    // ブラックアウト度合い (+G)
+	float redoutFactor_;      // レッドアウト度合い (-G)
 
 	// プレイヤーからの入力状態
 	float targetThrottle_;  // 目標スロットル
@@ -76,5 +98,10 @@ private:
 	// ヘルパー関数
 	MyMath::Vector3 CalculateTotalForce(float deltaTime);
 	void UpdateOrientation(float deltaTime);
+	float CalculateAirDensity(float altitude) const;
+	float CalculateAoA() const;
+	float CalculateLiftCoefficient(float aoa) const;
+	float CalculateControlEfficiency(float speed) const;
+	void  UpdateGEffects(float deltaTime);
 
 };

@@ -1,4 +1,6 @@
 #include "Engine.h"
+#include <algorithm>
+#include <cmath>
 
 // --- 初期化処理（外部のDTOデータを受け取って自分の変数に入れる） ---
 void Engine::Initialize(const EngineData& data) {
@@ -8,6 +10,7 @@ void Engine::Initialize(const EngineData& data) {
 	wepThrottleLimit_ = data.wepThrottleLimit;
 	enginePhysicalSpoolSpeed_ = data.physicalSpoolSpeed;
 	baseFuelFlowRate_ = data.baseFuelFlowRate;
+	altitudeThrottleFactor_ = data.altitudeThrottleFactor;
 
 	currentThrottle_ = 0.0f; // エンジン停止状態でスタート
 }
@@ -37,4 +40,17 @@ void Engine::Update(float dt, float targetThrottle) {
 			currentThrottle_ = targetThrottle;
 		}
 	}
+}
+
+// --- 高度とエンジンダメージを考慮した推力 ---
+float Engine::GetThrustAtAltitude(float altitude, float engineDamageFactor) const {
+	// 高度補正: 高度が上がるほど推力低下（指数関数的）
+	float altFactor = 1.0f - altitudeThrottleFactor_ * altitude;
+	altFactor = (std::max)(altFactor, 0.1f); // 最低10%は維持
+
+	// エンジンダメージで推力低下（完全破壊で90%推力喪失）
+	float damageFactor = 1.0f - engineDamageFactor * 0.9f;
+	damageFactor = (std::max)(damageFactor, 0.1f);
+
+	return baseThrust_ * currentThrottle_ * altFactor * damageFactor;
 }
