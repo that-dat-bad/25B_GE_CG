@@ -167,7 +167,7 @@ void DebugScene::Update() {
 	changed |= ImGui::Checkbox("Skybox Visible", &isSkyboxVisible_);
 
 	static int currentEffect = 0;
-	const char* effectItems[] = { "None", "GrayScale", "Vignette", "BoxFilter", "GaussBlur" };
+	const char* effectItems[] = { "None", "GrayScale", "Vignette", "BoxFilter", "GaussBlur", "KawaseBlur" };
 	if (ImGui::Combo("Post Effect", &currentEffect, effectItems, IM_ARRAYSIZE(effectItems))) {
 		PostEffect::GetInstance()->SetEffectType(static_cast<PostEffectType>(currentEffect));
 	}
@@ -185,6 +185,11 @@ void DebugScene::Update() {
 		float intensity = PostEffect::GetInstance()->GetIntensity();
 		if (ImGui::SliderFloat("GaussBlur Sigma", &intensity, 0.1f, 10.0f)) {
 			PostEffect::GetInstance()->SetIntensity(intensity);
+		}
+	} else if (currentEffect == static_cast<int>(PostEffectType::kKawaseBlur)) {
+		int passes = PostEffect::GetInstance()->GetKernelSize();
+		if (ImGui::SliderInt("Kawase Blur Passes", &passes, 1, 10)) {
+			PostEffect::GetInstance()->SetKernelSize(passes);
 		}
 	}
 

@@ -19,11 +19,10 @@ void PostEffect::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager) {
 	CreateRootSignature();
 	CreateGraphicsPipelines();
 
-	postEffectParamsBuffer_ = dxCommon_->CreateBufferResource((sizeof(PostEffectParams) + 0xff) & ~0xff);
+	size_t cbAlignedSize = (sizeof(PostEffectParams) + 0xff) & ~0xff;
+	postEffectParamsBuffer_ = dxCommon_->CreateBufferResource(cbAlignedSize * 10); // max 10 passes
 	HRESULT hr = postEffectParamsBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedPostEffectParams_));
 	assert(SUCCEEDED(hr));
-	mappedPostEffectParams_->kernelSize = kernelSize_;
-	mappedPostEffectParams_->intensity = intensity_;
 }
 
 void PostEffect::Finalize() {
@@ -86,6 +85,7 @@ void PostEffect::CreateGraphicsPipelines() {
 	Microsoft::WRL::ComPtr<IDxcBlob> psVignette = dxCommon_->CompileShader(L"./assets/shaders/Vignette.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psBoxFilter = dxCommon_->CompileShader(L"./assets/shaders/BoxFilter.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psGaussBlur = dxCommon_->CompileShader(L"./assets/shaders/GaussBlur.PS.hlsl", L"ps_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> psKawaseBlur = dxCommon_->CompileShader(L"./assets/shaders/KawaseBlur.PS.hlsl", L"ps_6_0");
 
 	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaders[static_cast<size_t>(PostEffectType::kCountOfPostEffects)];
 	pixelShaders[static_cast<size_t>(PostEffectType::kNone)] = psNone;
@@ -93,6 +93,7 @@ void PostEffect::CreateGraphicsPipelines() {
 	pixelShaders[static_cast<size_t>(PostEffectType::kVignette)] = psVignette;
 	pixelShaders[static_cast<size_t>(PostEffectType::kBoxFilter)] = psBoxFilter;
 	pixelShaders[static_cast<size_t>(PostEffectType::kGaussBlur)] = psGaussBlur;
+	pixelShaders[static_cast<size_t>(PostEffectType::kKawaseBlur)] = psKawaseBlur;
 
 	// PSO のベース設定
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
@@ -145,14 +146,6 @@ void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderText
 	ID3D12DescriptorHeap* heaps[] = { srvManager_->descriptorHeap_.Get() };
 	commandList->SetDescriptorHeaps(1, heaps);
 
-	// t0 にレンダーテクスチャの SRV を設定
-	commandList->SetGraphicsRootDescriptorTable(0, srvManager_->GetGPUDescriptorHandle(renderTextureSrvIndex));
-
-	// b0 にポストエフェクト用定数バッファを設定
-	mappedPostEffectParams_->kernelSize = kernelSize_;
-	mappedPostEffectParams_->intensity = intensity_;
-	commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress());
-
 	// ビューポートとシザー矩形を設定
 	D3D12_VIEWPORT viewport = dxCommon_->GetViewport();
 	commandList->RSSetViewports(1, &viewport);
@@ -160,7 +153,122 @@ void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderText
 	D3D12_RECT scissor = dxCommon_->GetScissorRect();
 	commandList->RSSetScissorRects(1, &scissor);
 
-	// フルスクリーン三角形を描画（頂点3つ、SV_VertexID で位置を生成）
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	commandList->DrawInstanced(3, 1, 0, 0);
+
+	size_t cbAlignedSize = (sizeof(PostEffectParams) + 0xff) & ~0xff;
+
+	if (currentEffect_ == PostEffectType::kGaussBlur) {
+		// --- パス1: 横方向ブラー (renderTextures_[0] -> renderTextures_[1]) ---
+		D3D12_RESOURCE_BARRIER barrierRT = {};
+		barrierRT.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrierRT.Transition.pResource = dxCommon_->GetRenderTexture(1);
+		barrierRT.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrierRT.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		barrierRT.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		commandList->ResourceBarrier(1, &barrierRT);
+
+		D3D12_CPU_DESCRIPTOR_HANDLE rtv1 = dxCommon_->GetRenderTextureRTVHandle(1);
+		commandList->OMSetRenderTargets(1, &rtv1, false, nullptr);
+
+		commandList->SetGraphicsRootDescriptorTable(0, srvManager_->GetGPUDescriptorHandle(renderTextureSrvIndex));
+
+		PostEffectParams* param0 = reinterpret_cast<PostEffectParams*>(reinterpret_cast<uint8_t*>(mappedPostEffectParams_) + 0);
+		param0->kernelSize = kernelSize_;
+		param0->intensity = intensity_;
+		param0->dirX = 1.0f;
+		param0->dirY = 0.0f;
+		commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress());
+
+		commandList->DrawInstanced(3, 1, 0, 0);
+
+		// --- パス2: 縦方向ブラー (renderTextures_[1] -> backBuffer) ---
+		D3D12_RESOURCE_BARRIER barrierSRV = {};
+		barrierSRV.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrierSRV.Transition.pResource = dxCommon_->GetRenderTexture(1);
+		barrierSRV.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrierSRV.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		barrierSRV.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		commandList->ResourceBarrier(1, &barrierSRV);
+
+		D3D12_CPU_DESCRIPTOR_HANDLE destRtv = dxCommon_->GetCurrentRTVHandle();
+		commandList->OMSetRenderTargets(1, &destRtv, false, nullptr);
+
+		commandList->SetGraphicsRootDescriptorTable(0, srvManager_->GetGPUDescriptorHandle(dxCommon_->GetRenderTextureSrvIndex(1)));
+
+		PostEffectParams* param1 = reinterpret_cast<PostEffectParams*>(reinterpret_cast<uint8_t*>(mappedPostEffectParams_) + cbAlignedSize);
+		param1->kernelSize = kernelSize_;
+		param1->intensity = intensity_;
+		param1->dirX = 0.0f;
+		param1->dirY = 1.0f;
+		commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress() + cbAlignedSize);
+
+		commandList->DrawInstanced(3, 1, 0, 0);
+	}
+	else if (currentEffect_ == PostEffectType::kKawaseBlur) {
+		int passes = kernelSize_;
+		if (passes < 1) passes = 1;
+		if (passes > 10) passes = 10;
+
+		for (int i = 0; i < passes; ++i) {
+			bool isLastPass = (i == passes - 1);
+			int srcIndex = (i % 2 == 0) ? 0 : 1;
+			int dstIndex = (i % 2 == 0) ? 1 : 0;
+
+			// Set Render Target
+			if (!isLastPass) {
+				D3D12_RESOURCE_BARRIER barrierRT = {};
+				barrierRT.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+				barrierRT.Transition.pResource = dxCommon_->GetRenderTexture(dstIndex);
+				barrierRT.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+				barrierRT.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+				barrierRT.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+				commandList->ResourceBarrier(1, &barrierRT);
+
+				D3D12_CPU_DESCRIPTOR_HANDLE rtv = dxCommon_->GetRenderTextureRTVHandle(dstIndex);
+				commandList->OMSetRenderTargets(1, &rtv, false, nullptr);
+			} else {
+				D3D12_CPU_DESCRIPTOR_HANDLE destRtv = dxCommon_->GetCurrentRTVHandle();
+				commandList->OMSetRenderTargets(1, &destRtv, false, nullptr);
+			}
+
+			// Set SRV Input
+			uint32_t srvIndex = dxCommon_->GetRenderTextureSrvIndex(srcIndex);
+			commandList->SetGraphicsRootDescriptorTable(0, srvManager_->GetGPUDescriptorHandle(srvIndex));
+
+			// Set Parameters
+			size_t offset = cbAlignedSize * i;
+			PostEffectParams* param = reinterpret_cast<PostEffectParams*>(reinterpret_cast<uint8_t*>(mappedPostEffectParams_) + offset);
+			param->kernelSize = kernelSize_;
+			param->intensity = (float)i + 0.5f; // Kawase offset increases per pass
+			param->dirX = 0.0f;
+			param->dirY = 0.0f;
+			commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress() + offset);
+
+			commandList->DrawInstanced(3, 1, 0, 0);
+
+			// Revert Render Target back to SRV if not last pass
+			if (!isLastPass) {
+				D3D12_RESOURCE_BARRIER barrierSRV = {};
+				barrierSRV.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+				barrierSRV.Transition.pResource = dxCommon_->GetRenderTexture(dstIndex);
+				barrierSRV.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+				barrierSRV.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+				barrierSRV.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+				commandList->ResourceBarrier(1, &barrierSRV);
+			}
+		}
+	}
+	else {
+		// 通常の1パス描画
+		commandList->SetGraphicsRootDescriptorTable(0, srvManager_->GetGPUDescriptorHandle(renderTextureSrvIndex));
+
+		PostEffectParams* param0 = reinterpret_cast<PostEffectParams*>(reinterpret_cast<uint8_t*>(mappedPostEffectParams_) + 0);
+		param0->kernelSize = kernelSize_;
+		param0->intensity = intensity_;
+		param0->dirX = 1.0f;
+		param0->dirY = 1.0f;
+		commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress());
+
+		commandList->DrawInstanced(3, 1, 0, 0);
+	}
 }

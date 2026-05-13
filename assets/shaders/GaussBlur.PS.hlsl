@@ -9,7 +9,8 @@ cbuffer PostEffectParams : register(b0)
 {
     int32_t kernelSize;
     float intensity; // sigma
-    float2 padding;
+    float dirX;
+    float dirY;
 };
 float gauss(float x, float y, float sigma)
 {
@@ -36,17 +37,14 @@ PixelShaderOutput main(VertexShaderOutput input)
     int32_t startOffset = -halfSize;
     int32_t endOffset = kernelSize % 2 == 0 ? halfSize - 1 : halfSize;
 
-    for (int32_t y = startOffset; y <= endOffset; ++y)
+    for (int32_t i = startOffset; i <= endOffset; ++i)
     {
-        for (int32_t x = startOffset; x <= endOffset; ++x)
-        {
-            float w = gauss(float(x), float(y), intensity);
-            weight += w;
-            
-            float32_t2 texcoord = input.texcoord + float32_t2(x, y) * uvStepSize;
-            float32_t3 fetchColor = gTexture.Sample(gSampler, texcoord).rgb;
-            color.rgb += fetchColor * w;
-        }
+        float w = gauss(float(i), 0.0f, intensity);
+        weight += w;
+        
+        float32_t2 texcoord = input.texcoord + float32_t2(float(i) * dirX, float(i) * dirY) * uvStepSize;
+        float32_t3 fetchColor = gTexture.Sample(gSampler, texcoord).rgb;
+        color.rgb += fetchColor * w;
     }
     
     PixelShaderOutput output;

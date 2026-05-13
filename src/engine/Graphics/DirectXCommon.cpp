@@ -705,4 +705,12 @@ void DirectXCommon::SetupRenderTextureSRV(SrvManager* srvManager) {
 		&srvDesc,
 		srvManager->GetCPUDescriptorHandle(renderTextureSrvIndex_)
 	);
+
+	// renderTextures_[1] の SRV も登録 (2パス用)
+	renderTextureSrvIndex1_ = srvManager->Allocate();
+	device_->CreateShaderResourceView(
+		renderTextures_[1].Get(),
+		&srvDesc,
+		srvManager->GetCPUDescriptorHandle(renderTextureSrvIndex1_)
+	);
 }

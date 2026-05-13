@@ -14,13 +14,15 @@ enum class PostEffectType : uint32_t {
 	kVignette,      // ビネット
 	kBoxFilter,     // ボックスフィルタ
 	kGaussBlur,     // ガウスブラー
+	kKawaseBlur,    // 川瀬式ブラー
 	kCountOfPostEffects, // エフェクトの種類
 };
 
 struct PostEffectParams {
 	int32_t kernelSize;
 	float intensity;
-	float padding[2];
+	float dirX;
+	float dirY;
 };
 
 /// フルスクリーンポストエフェクトを管理するシングルトンクラス
