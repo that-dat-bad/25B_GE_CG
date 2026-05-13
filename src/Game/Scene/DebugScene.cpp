@@ -167,15 +167,24 @@ void DebugScene::Update() {
 	changed |= ImGui::Checkbox("Skybox Visible", &isSkyboxVisible_);
 
 	static int currentEffect = 0;
-	const char* effectItems[] = { "None", "GrayScale", "Vignette", "BoxFilter" };
+	const char* effectItems[] = { "None", "GrayScale", "Vignette", "BoxFilter", "GaussBlur" };
 	if (ImGui::Combo("Post Effect", &currentEffect, effectItems, IM_ARRAYSIZE(effectItems))) {
 		PostEffect::GetInstance()->SetEffectType(static_cast<PostEffectType>(currentEffect));
 	}
 
 	if (currentEffect == static_cast<int>(PostEffectType::kBoxFilter)) {
-		int kernelSize = PostEffect::GetInstance()->GetBoxFilterKernelSize();
+		int kernelSize = PostEffect::GetInstance()->GetKernelSize();
 		if (ImGui::SliderInt("BoxFilter Kernel Size", &kernelSize, 1, 31)) {
-			PostEffect::GetInstance()->SetBoxFilterKernelSize(kernelSize);
+			PostEffect::GetInstance()->SetKernelSize(kernelSize);
+		}
+	} else if (currentEffect == static_cast<int>(PostEffectType::kGaussBlur)) {
+		int kernelSize = PostEffect::GetInstance()->GetKernelSize();
+		if (ImGui::SliderInt("GaussBlur Kernel Size", &kernelSize, 1, 31)) {
+			PostEffect::GetInstance()->SetKernelSize(kernelSize);
+		}
+		float intensity = PostEffect::GetInstance()->GetIntensity();
+		if (ImGui::SliderFloat("GaussBlur Sigma", &intensity, 0.1f, 10.0f)) {
+			PostEffect::GetInstance()->SetIntensity(intensity);
 		}
 	}
 

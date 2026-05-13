@@ -19,10 +19,11 @@ void PostEffect::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager) {
 	CreateRootSignature();
 	CreateGraphicsPipelines();
 
-	boxFilterParamsBuffer_ = dxCommon_->CreateBufferResource((sizeof(BoxFilterParams) + 0xff) & ~0xff);
-	HRESULT hr = boxFilterParamsBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedBoxFilterParams_));
+	postEffectParamsBuffer_ = dxCommon_->CreateBufferResource((sizeof(PostEffectParams) + 0xff) & ~0xff);
+	HRESULT hr = postEffectParamsBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedPostEffectParams_));
 	assert(SUCCEEDED(hr));
-	mappedBoxFilterParams_->kernelSize = boxFilterKernelSize_;
+	mappedPostEffectParams_->kernelSize = kernelSize_;
+	mappedPostEffectParams_->intensity = intensity_;
 }
 
 void PostEffect::Finalize() {
@@ -84,12 +85,14 @@ void PostEffect::CreateGraphicsPipelines() {
 	Microsoft::WRL::ComPtr<IDxcBlob> psGray = dxCommon_->CompileShader(L"./assets/shaders/GrayScale.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psVignette = dxCommon_->CompileShader(L"./assets/shaders/Vignette.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psBoxFilter = dxCommon_->CompileShader(L"./assets/shaders/BoxFilter.PS.hlsl", L"ps_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> psGaussBlur = dxCommon_->CompileShader(L"./assets/shaders/GaussBlur.PS.hlsl", L"ps_6_0");
 
 	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaders[static_cast<size_t>(PostEffectType::kCountOfPostEffects)];
 	pixelShaders[static_cast<size_t>(PostEffectType::kNone)] = psNone;
 	pixelShaders[static_cast<size_t>(PostEffectType::kGrayScale)] = psGray;
 	pixelShaders[static_cast<size_t>(PostEffectType::kVignette)] = psVignette;
 	pixelShaders[static_cast<size_t>(PostEffectType::kBoxFilter)] = psBoxFilter;
+	pixelShaders[static_cast<size_t>(PostEffectType::kGaussBlur)] = psGaussBlur;
 
 	// PSO のベース設定
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
@@ -145,9 +148,10 @@ void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderText
 	// t0 にレンダーテクスチャの SRV を設定
 	commandList->SetGraphicsRootDescriptorTable(0, srvManager_->GetGPUDescriptorHandle(renderTextureSrvIndex));
 
-	// b0 にボックスフィルタ用定数バッファを設定
-	mappedBoxFilterParams_->kernelSize = boxFilterKernelSize_;
-	commandList->SetGraphicsRootConstantBufferView(1, boxFilterParamsBuffer_->GetGPUVirtualAddress());
+	// b0 にポストエフェクト用定数バッファを設定
+	mappedPostEffectParams_->kernelSize = kernelSize_;
+	mappedPostEffectParams_->intensity = intensity_;
+	commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress());
 
 	// ビューポートとシザー矩形を設定
 	D3D12_VIEWPORT viewport = dxCommon_->GetViewport();

@@ -13,12 +13,14 @@ enum class PostEffectType : uint32_t {
 	kGrayScale,     // グレースケール
 	kVignette,      // ビネット
 	kBoxFilter,     // ボックスフィルタ
+	kGaussBlur,     // ガウスブラー
 	kCountOfPostEffects, // エフェクトの種類
 };
 
-struct BoxFilterParams {
+struct PostEffectParams {
 	int32_t kernelSize;
-	float padding[3];
+	float intensity;
+	float padding[2];
 };
 
 /// フルスクリーンポストエフェクトを管理するシングルトンクラス
@@ -42,8 +44,11 @@ public:
 	/// 現在のエフェクトを取得
 	PostEffectType GetEffectType() const { return currentEffect_; }
 
-	void SetBoxFilterKernelSize(int32_t size) { boxFilterKernelSize_ = size; }
-	int32_t GetBoxFilterKernelSize() const { return boxFilterKernelSize_; }
+	void SetKernelSize(int32_t size) { kernelSize_ = size; }
+	int32_t GetKernelSize() const { return kernelSize_; }
+
+	void SetIntensity(float intensity) { intensity_ = intensity; }
+	float GetIntensity() const { return intensity_; }
 
 	~PostEffect() = default;
 
@@ -66,9 +71,10 @@ private:
 	// 現在のエフェクト種類
 	PostEffectType currentEffect_ = PostEffectType::kNone;
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> boxFilterParamsBuffer_;
-	BoxFilterParams* mappedBoxFilterParams_ = nullptr;
-	int32_t boxFilterKernelSize_ = 3;
+	Microsoft::WRL::ComPtr<ID3D12Resource> postEffectParamsBuffer_;
+	PostEffectParams* mappedPostEffectParams_ = nullptr;
+	int32_t kernelSize_ = 3;
+	float intensity_ = 1.0f;
 
 	void CreateRootSignature();
 	void CreateGraphicsPipelines();
