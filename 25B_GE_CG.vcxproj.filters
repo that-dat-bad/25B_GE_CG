@@ -35,6 +35,7 @@
     <FxCompile Include="assets\shaders\Vignette.PS.hlsl" />
     <FxCompile Include="assets\shaders\BoxFilter.PS.hlsl" />
     <FxCompile Include="assets\shaders\GaussBlur.PS.hlsl" />
+    <FxCompile Include="assets\shaders\RadialBlur.PS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="assets\sounds\Alarm01.wav">
