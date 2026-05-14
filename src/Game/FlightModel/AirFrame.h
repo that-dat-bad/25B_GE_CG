@@ -9,6 +9,7 @@ struct AirframeData {
 	float liftCoefficient;  // 揚力係数（翼の性能）
 	float wingArea;         // 翼面積 (m^2)
 	float maxHealth;        // 最大耐久値
+	float centerOfGravityZ; // 重心のZ位置 (正: 機首側, 負: 尾翼側)
 
 	// --- 揚力・失速 ---
 	float criticalAoA;          // 臨界迎え角（rad）
@@ -99,6 +100,7 @@ public:
 	float GetWingArea() const { return wingArea_; }
 	float GetCurrentHealth() const { return currentHealth_; }
 	float GetMaxHealth() const { return maxHealth_; }
+	float GetCenterOfGravityZ() const { return centerOfGravityZ_; }
 	bool  IsDestroyed() const { return currentHealth_ <= 0.0f; }
 
 	// 揚力・失速
@@ -122,6 +124,7 @@ private:
 	float liftCoefficient_;     // 揚力係数
 	float wingArea_;            // 翼面積 (m^2)
 	float maxHealth_;           // 最大耐久値
+	float centerOfGravityZ_;    // 重心位置
 
 	// 揚力・失速
 	float criticalAoA_;

@@ -10,6 +10,7 @@ void Airframe::Initialize(const AirframeData& data) {
 	liftCoefficient_ = data.liftCoefficient;
 	wingArea_ = data.wingArea;
 	maxHealth_ = data.maxHealth;
+	centerOfGravityZ_ = data.centerOfGravityZ;
 
 	// --- 揚力・失速 ---
 	criticalAoA_ = data.criticalAoA;

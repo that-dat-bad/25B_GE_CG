@@ -375,10 +375,19 @@ void FlightModel::UpdateOrientation(float deltaTime)
 	const float kNormalCPOffsetZ = -0.2f; 
 	float currentCPOffsetZ = kNormalCPOffsetZ;
 
-	// 失速時、翼上面の気流が剥離することでCPが急激に後方へ移動します。
+	float stallDepth = 0.0f;
+	// 失速時、気流の剥離によりCPが急激に移動します。
 	if (isStalling_) {
-		float stallDepth = std::fabs(currentAoA_) - airframe_.GetCriticalAoA();
-		currentCPOffsetZ -= stallDepth * 5.0f; // 失速が深いほどCPが大きく後退
+		stallDepth = std::fabs(currentAoA_) - airframe_.GetCriticalAoA();
+		// ユーザー要望: 重心の位置によって頭の落ちる方向を変える
+		// 重心が前（cgZ >= 0）ならCPは後方へ下がり、機首下げ（正のピッチ）になる。
+		// 重心が後ろ（cgZ < 0）ならCPは前方へ移動し、機首上げ（負のピッチ）になる。
+		float cgZ = airframe_.GetCenterOfGravityZ();
+		if (cgZ >= 0.0f) {
+			currentCPOffsetZ -= stallDepth * 5.0f;
+		} else {
+			currentCPOffsetZ += stallDepth * 5.0f;
+		}
 	}
 
 	// 3. トルクの計算
@@ -396,6 +405,15 @@ void FlightModel::UpdateOrientation(float deltaTime)
 	// 機体のピッチ軸の慣性モーメント（Iyy）の逆数を掛ける（ここでは概念的な定数）
 	const float kInverseInertiaY = 0.00005f; 
 	float aerodynamicPitchMoment = totalPitchTorque * kInverseInertiaY;
+
+	// オーバーシュートによる振動（がくがく）を防止
+	if (isStalling_ && deltaTime > 0.0001f) {
+		// 1フレームで補正する角度が stallDepth の半分を超えないように制限する
+		float maxMoment = (stallDepth * 0.5f) / deltaTime;
+		if (aerodynamicPitchMoment > maxMoment) {
+			aerodynamicPitchMoment = maxMoment;
+		}
+	}
 
 	// 機体が背面（負のAoA）で失速した場合は、機首上げ（負のピッチ）方向に落ちる
 	if (currentAoA_ < 0.0f) {
