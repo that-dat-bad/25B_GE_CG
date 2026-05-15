@@ -158,6 +158,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <None Include="assets\shaders\Skybox.hlsli" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="assets\shaders\Dissolve.PS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="assets\shaders\RadialBlur.PS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -240,6 +245,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <Media Include="assets\sounds\Alarm01.wav" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="assets\masks\noise0.png" />
+    <Image Include="assets\masks\noise1.png" />
     <Image Include="assets\textures\checkerBoard.png" />
     <Image Include="assets\textures\monsterBall.png" />
     <Image Include="assets\textures\uvChecker.png" />

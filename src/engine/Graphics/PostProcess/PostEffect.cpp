@@ -1,6 +1,7 @@
 #include "PostEffect.h"
 #include "../DirectXCommon.h"
 #include "../SrvManager.h"
+#include "../TextureManager.h"
 #include <cassert>
 
 std::unique_ptr<PostEffect> PostEffect::instance_ = nullptr;
@@ -17,6 +18,8 @@ void PostEffect::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager) {
 	srvManager_ = srvManager;
 
 	CreateRootSignature();
+	CreateDissolveRootSignature();
+	LoadDissolveMasks();
 	CreateGraphicsPipelines();
 
 	size_t cbAlignedSize = (sizeof(PostEffectParams) + 0xff) & ~0xff;
@@ -75,6 +78,77 @@ void PostEffect::CreateRootSignature() {
 	assert(SUCCEEDED(hr));
 }
 
+void PostEffect::CreateDissolveRootSignature() {
+	// Dissolve用: t0(シーンテクスチャ) + t1(マスクテクスチャ) + b0(パラメータ)
+	D3D12_DESCRIPTOR_RANGE descriptorRange0[1] = {};
+	descriptorRange0[0].BaseShaderRegister = 0; // t0
+	descriptorRange0[0].NumDescriptors = 1;
+	descriptorRange0[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	descriptorRange0[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	D3D12_DESCRIPTOR_RANGE descriptorRange1[1] = {};
+	descriptorRange1[0].BaseShaderRegister = 1; // t1
+	descriptorRange1[0].NumDescriptors = 1;
+	descriptorRange1[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	descriptorRange1[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	D3D12_ROOT_PARAMETER rootParameters[3] = {};
+	// Root 0: t0 scene texture
+	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameters[0].DescriptorTable.pDescriptorRanges = descriptorRange0;
+	rootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
+	// Root 1: b0 cbuffer
+	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameters[1].Descriptor.ShaderRegister = 0; // b0
+	// Root 2: t1 mask texture
+	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange1;
+	rootParameters[2].DescriptorTable.NumDescriptorRanges = 1;
+
+	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
+	staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	staticSamplers[0].MaxLOD = D3D12_FLOAT32_MAX;
+	staticSamplers[0].ShaderRegister = 0; // s0
+	staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	D3D12_ROOT_SIGNATURE_DESC desc{};
+	desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	desc.pParameters = rootParameters;
+	desc.NumParameters = _countof(rootParameters);
+	desc.pStaticSamplers = staticSamplers;
+	desc.NumStaticSamplers = _countof(staticSamplers);
+
+	Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob;
+	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
+	HRESULT hr = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
+	assert(SUCCEEDED(hr));
+
+	hr = dxCommon_->GetDevice()->CreateRootSignature(
+		0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(),
+		IID_PPV_ARGS(&dissolveRootSignature_));
+	assert(SUCCEEDED(hr));
+}
+
+void PostEffect::LoadDissolveMasks() {
+	// ノイズマスクテクスチャを読み込み
+	const std::string maskPaths[] = {
+		"assets/masks/noise0.png",
+		"assets/masks/noise1.png",
+	};
+	for (const auto& path : maskPaths) {
+		TextureManager::GetInstance()->LoadTexture(path);
+		uint32_t srvIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath(path);
+		dissolveMaskSrvIndices_.push_back(srvIndex);
+	}
+}
+
 void PostEffect::CreateGraphicsPipelines() {
 	// 共通の頂点シェーダー（フルスクリーン三角形）
 	Microsoft::WRL::ComPtr<IDxcBlob> vsBlob = dxCommon_->CompileShader(L"./assets/shaders/FullScreen.VS.hlsl", L"vs_6_0");
@@ -87,6 +161,7 @@ void PostEffect::CreateGraphicsPipelines() {
 	Microsoft::WRL::ComPtr<IDxcBlob> psGaussBlur = dxCommon_->CompileShader(L"./assets/shaders/GaussBlur.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psKawaseBlur = dxCommon_->CompileShader(L"./assets/shaders/KawaseBlur.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psRadialBlur = dxCommon_->CompileShader(L"./assets/shaders/RadialBlur.PS.hlsl", L"ps_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> psDissolve = dxCommon_->CompileShader(L"./assets/shaders/Dissolve.PS.hlsl", L"ps_6_0");
 
 	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaders[static_cast<size_t>(PostEffectType::kCountOfPostEffects)];
 	pixelShaders[static_cast<size_t>(PostEffectType::kNone)] = psNone;
@@ -96,6 +171,7 @@ void PostEffect::CreateGraphicsPipelines() {
 	pixelShaders[static_cast<size_t>(PostEffectType::kGaussBlur)] = psGaussBlur;
 	pixelShaders[static_cast<size_t>(PostEffectType::kKawaseBlur)] = psKawaseBlur;
 	pixelShaders[static_cast<size_t>(PostEffectType::kRadialBlur)] = psRadialBlur;
+	pixelShaders[static_cast<size_t>(PostEffectType::kDissolve)] = psDissolve;  // placeholder for loop
 
 	// PSO のベース設定
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
@@ -128,21 +204,30 @@ void PostEffect::CreateGraphicsPipelines() {
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	// 各エフェクト用の PSO を生成
+	// 各エフェクト用の PSO を生成 (Dissolveは別root signatureなのでスキップ)
 	for (size_t i = 0; i < static_cast<size_t>(PostEffectType::kCountOfPostEffects); ++i) {
+		if (i == static_cast<size_t>(PostEffectType::kDissolve)) continue;
 		psoDesc.PS = { pixelShaders[i]->GetBufferPointer(), pixelShaders[i]->GetBufferSize() };
 		HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStates_[i]));
 		assert(SUCCEEDED(hr));
 	}
+
+	// Dissolve PSO (別のルートシグネチャを使用)
+	psoDesc.pRootSignature = dissolveRootSignature_.Get();
+	psoDesc.PS = { psDissolve->GetBufferPointer(), psDissolve->GetBufferSize() };
+	HRESULT hrDissolve = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&dissolvePSO_));
+	assert(SUCCEEDED(hrDissolve));
 }
 
 void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderTextureSrvIndex) {
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 
-	// PSO とルートシグネチャをセット
+	// PSO とルートシグネチャをセット (Dissolveは別処理)
 	size_t effectIndex = static_cast<size_t>(currentEffect_);
-	commandList->SetGraphicsRootSignature(rootSignature_.Get());
-	commandList->SetPipelineState(pipelineStates_[effectIndex].Get());
+	if (currentEffect_ != PostEffectType::kDissolve) {
+		commandList->SetGraphicsRootSignature(rootSignature_.Get());
+		commandList->SetPipelineState(pipelineStates_[effectIndex].Get());
+	}
 
 	// SRV ヒープを設定（SrvManager が管理するヒープ）
 	ID3D12DescriptorHeap* heaps[] = { srvManager_->descriptorHeap_.Get() };
@@ -259,6 +344,29 @@ void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderText
 				commandList->ResourceBarrier(1, &barrierSRV);
 			}
 		}
+	}
+	else if (currentEffect_ == PostEffectType::kDissolve) {
+		// Dissolve: 別のルートシグネチャとPSOを使用
+		commandList->SetGraphicsRootSignature(dissolveRootSignature_.Get());
+		commandList->SetPipelineState(dissolvePSO_.Get());
+
+		// Root 0: t0 scene texture
+		commandList->SetGraphicsRootDescriptorTable(0, srvManager_->GetGPUDescriptorHandle(renderTextureSrvIndex));
+
+		// Root 1: b0 params
+		PostEffectParams* param0 = reinterpret_cast<PostEffectParams*>(reinterpret_cast<uint8_t*>(mappedPostEffectParams_) + 0);
+		param0->kernelSize = 0; // unused
+		param0->intensity = dissolveThreshold_;
+		param0->dirX = dissolveEdgeWidth_;
+		param0->dirY = 0.0f;
+		commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress());
+
+		// Root 2: t1 mask texture
+		int maskIdx = dissolveMaskIndex_;
+		if (maskIdx < 0 || maskIdx >= static_cast<int>(dissolveMaskSrvIndices_.size())) maskIdx = 0;
+		commandList->SetGraphicsRootDescriptorTable(2, srvManager_->GetGPUDescriptorHandle(dissolveMaskSrvIndices_[maskIdx]));
+
+		commandList->DrawInstanced(3, 1, 0, 0);
 	}
 	else {
 		// 通常の1パス描画

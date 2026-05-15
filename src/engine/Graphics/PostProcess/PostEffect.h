@@ -3,6 +3,8 @@
 #include <wrl/client.h>
 #include <cstdint>
 #include <memory>
+#include <vector>
+#include <string>
 
 class DirectXCommon;
 class SrvManager;
@@ -16,6 +18,7 @@ enum class PostEffectType : uint32_t {
 	kGaussBlur,     // ガウスブラー
 	kKawaseBlur,    // 川瀬式ブラー
 	kRadialBlur,    // ラジアルブラー
+	kDissolve,      // ディゾルブ
 	kCountOfPostEffects, // エフェクトの種類
 };
 
@@ -53,6 +56,17 @@ public:
 	void SetIntensity(float intensity) { intensity_ = intensity; }
 	float GetIntensity() const { return intensity_; }
 
+	// Dissolve パラメータ
+	void SetDissolveThreshold(float t) { dissolveThreshold_ = t; }
+	float GetDissolveThreshold() const { return dissolveThreshold_; }
+
+	void SetDissolveEdgeWidth(float w) { dissolveEdgeWidth_ = w; }
+	float GetDissolveEdgeWidth() const { return dissolveEdgeWidth_; }
+
+	void SetDissolveMaskIndex(int idx) { dissolveMaskIndex_ = idx; }
+	int GetDissolveMaskIndex() const { return dissolveMaskIndex_; }
+	int GetDissolveMaskCount() const { return static_cast<int>(dissolveMaskSrvIndices_.size()); }
+
 	~PostEffect() = default;
 
 private:
@@ -79,6 +93,16 @@ private:
 	int32_t kernelSize_ = 3;
 	float intensity_ = 1.0f;
 
+	// Dissolve 用
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> dissolveRootSignature_;
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> dissolvePSO_;
+	std::vector<uint32_t> dissolveMaskSrvIndices_; // noise texture SRV indices
+	float dissolveThreshold_ = 0.5f;
+	float dissolveEdgeWidth_ = 0.05f;
+	int dissolveMaskIndex_ = 0; // 0=noise0, 1=noise1
+
 	void CreateRootSignature();
+	void CreateDissolveRootSignature();
 	void CreateGraphicsPipelines();
+	void LoadDissolveMasks();
 };
