@@ -167,7 +167,7 @@ void DebugScene::Update() {
 	changed |= ImGui::Checkbox("Skybox Visible", &isSkyboxVisible_);
 
 	static int currentEffect = 0;
-	const char* effectItems[] = { "None", "GrayScale", "Vignette", "BoxFilter", "GaussBlur", "KawaseBlur" };
+	const char* effectItems[] = { "None", "GrayScale", "Vignette", "BoxFilter", "GaussBlur", "KawaseBlur", "RadialBlur" };
 	if (ImGui::Combo("Post Effect", &currentEffect, effectItems, IM_ARRAYSIZE(effectItems))) {
 		PostEffect::GetInstance()->SetEffectType(static_cast<PostEffectType>(currentEffect));
 	}
@@ -190,6 +190,15 @@ void DebugScene::Update() {
 		int passes = PostEffect::GetInstance()->GetKernelSize();
 		if (ImGui::SliderInt("Kawase Blur Passes", &passes, 1, 10)) {
 			PostEffect::GetInstance()->SetKernelSize(passes);
+		}
+	} else if (currentEffect == static_cast<int>(PostEffectType::kRadialBlur)) {
+		int samples = PostEffect::GetInstance()->GetKernelSize();
+		if (ImGui::SliderInt("RadialBlur Samples", &samples, 1, 64)) {
+			PostEffect::GetInstance()->SetKernelSize(samples);
+		}
+		float width = PostEffect::GetInstance()->GetIntensity();
+		if (ImGui::SliderFloat("RadialBlur Width", &width, 0.0f, 1.0f)) {
+			PostEffect::GetInstance()->SetIntensity(width);
 		}
 	}
 

@@ -15,6 +15,7 @@ enum class PostEffectType : uint32_t {
 	kBoxFilter,     // ボックスフィルタ
 	kGaussBlur,     // ガウスブラー
 	kKawaseBlur,    // 川瀬式ブラー
+	kRadialBlur,    // ラジアルブラー
 	kCountOfPostEffects, // エフェクトの種類
 };
 
