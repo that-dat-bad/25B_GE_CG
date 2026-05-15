@@ -155,6 +155,14 @@ void DirectXCommon::PostDraw()
 	// ポストエフェクトのフルスクリーン描画
 	PostEffect::GetInstance()->Draw(renderTextures_[0].Get(), renderTextureSrvIndex_);
 
+	// renderTextures_[0] は既に PIXEL_SHADER_RESOURCE 状態（PreDraw が期待する状態）
+	// バックバッファは RENDER_TARGET のまま — ImGui がここに描画できる
+}
+
+void DirectXCommon::EndFrame()
+{
+	UINT backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
+
 	// swapChain -> PRESENT に戻す
 	D3D12_RESOURCE_BARRIER barrierBackToPresent = {};
 	barrierBackToPresent.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -164,8 +172,6 @@ void DirectXCommon::PostDraw()
 	barrierBackToPresent.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	barrierBackToPresent.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 	commandList_->ResourceBarrier(1, &barrierBackToPresent);
-
-	// renderTextures_[0] は既に PIXEL_SHADER_RESOURCE 状態（PreDraw が期待する状態）
 
 	HRESULT hr = commandList_->Close();
 	assert(SUCCEEDED(hr));

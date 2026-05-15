@@ -93,11 +93,14 @@ void Game::Draw() {
 	sceneManager->Draw();
 	ParticleManager::GetInstance()->Draw();
 
-	// ImGui描画
+	// 描画後処理（ポストエフェクト適用、バックバッファに描画）
+	DirectXCommon::GetInstance()->PostDraw();
+
+	// ImGui描画（ポストエフェクトの影響を受けないようバックバッファに直接描画）
 	imguiManager->End();
 
-	// 描画後処理
-	DirectXCommon::GetInstance()->PostDraw();
+	// フレーム終了処理（PRESENTに遷移、submit、present）
+	DirectXCommon::GetInstance()->EndFrame();
 }
 
 void Game::Run() {

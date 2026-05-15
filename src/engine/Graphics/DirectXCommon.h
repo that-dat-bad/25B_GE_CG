@@ -39,8 +39,11 @@ public:
 	//描画前処理
 	void PreDraw();
 
-	//描画後処理
+	//描画後処理（ポストエフェクト適用、バックバッファをRTのまま残す）
 	void PostDraw();
+
+	//フレーム終了処理（バックバッファをPRESENTに戻してsubmit）
+	void EndFrame();
 
 	Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(const std::wstring& filePath, const wchar_t* profile);
 
