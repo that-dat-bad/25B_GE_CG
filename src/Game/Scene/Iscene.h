@@ -5,6 +5,7 @@ enum SCENE {
 	TITLE,
 	STAGE,
 	CLEAR,
+	RESULT,
 	DEBUG,
 };
 
@@ -23,5 +24,6 @@ public:
 	static bool IsKeyTriggered(BYTE keyNumber);
 	static bool IsKeyPressed(BYTE keyNumber);
 
+	static void SetSceneID(int id);
 	int GetSceneID();
 };

@@ -173,6 +173,10 @@ void StageScene::Update() {
 	flightModel_.SetFlapInput(input->PushKey(DIK_F));
 	flightModel_.SetAirBrakeInput(input->PushKey(DIK_B));
 
+	if (input->TriggerKey(DIK_V)) {
+		sceneID = SCENE::RESULT;
+	}
+
 	// ============================
 	// FlightModel 物理更新
 	// ============================

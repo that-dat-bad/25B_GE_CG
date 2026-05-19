@@ -289,6 +289,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\engine\Graphics\TextureManager.h" />
     <ClInclude Include="src\engine\Graphics\SrvManager.h" />
     <ClInclude Include="src\Game\Scene\ClearScene.h" />
+    <ClInclude Include="src\Game\Scene\ResultScene.h" />
     <ClInclude Include="src\Game\Scene\DebugScene.h" />
     <ClInclude Include="src\Game\Scene\Iscene.h" />
     <ClInclude Include="src\Game\Scene\SceneManager.h" />
@@ -374,6 +375,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\engine\Graphics\SrvManager.cpp" />
     <ClCompile Include="src\engine\Graphics\PostProcess\PostEffect.cpp" />
     <ClCompile Include="src\Game\Scene\ClearScene.cpp" />
+    <ClCompile Include="src\Game\Scene\ResultScene.cpp" />
     <ClCompile Include="src\Game\Scene\DebugScene.cpp" />
     <ClCompile Include="src\Game\Scene\IScene.cpp" />
     <ClCompile Include="src\Game\Scene\SceneManager.cpp" />

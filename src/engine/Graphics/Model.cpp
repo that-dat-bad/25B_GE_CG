@@ -358,8 +358,13 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 
 	// Material Analysis
 	if (scene->HasMaterials()) {
-		// とりあえず最初のマテリアル(index: 0)から取得する
-		aiMaterial* material = scene->mMaterials[0];
+		// 最初のメッシュが使用しているマテリアルを取得する
+		aiMaterial* material = nullptr;
+		if (scene->HasMeshes() && scene->mNumMeshes > 0) {
+			material = scene->mMaterials[scene->mMeshes[0]->mMaterialIndex];
+		} else {
+			material = scene->mMaterials[0];
+		}
 
 		//テクスチャパスの取得（元の処理そのまま）
 // ① テクスチャパスの取得と埋め込みテクスチャの処理

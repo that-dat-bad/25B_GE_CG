@@ -174,7 +174,9 @@ void ParticleManager::Finalize() {
 
 void ParticleManager::CreateParticleGroup(const std::string& name, const std::string& textureFilePath) {
 	// 登録済みの名前かチェック
-	assert(particleGroups_.contains(name) == false);
+	if (particleGroups_.contains(name)) {
+		return;
+	}
 
 	// 新たなグループを作成
 	ParticleGroup& group = particleGroups_[name];
