@@ -34,6 +34,9 @@
     <FxCompile Include="assets\shaders\GrayScale.PS.hlsl" />
     <FxCompile Include="assets\shaders\Vignette.PS.hlsl" />
     <FxCompile Include="assets\shaders\BoxFilter.PS.hlsl" />
+    <FxCompile Include="assets\shaders\GaussBlur.PS.hlsl" />
+    <FxCompile Include="assets\shaders\RadialBlur.PS.hlsl" />
+    <FxCompile Include="assets\shaders\Dissolve.PS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="assets\sounds\Alarm01.wav">
@@ -48,6 +51,12 @@
       <Filter>リソース ファイル</Filter>
     </Image>
     <Image Include="assets\textures\uvChecker.png">
+      <Filter>リソース ファイル</Filter>
+    </Image>
+    <Image Include="assets\masks\noise0.png">
+      <Filter>リソース ファイル</Filter>
+    </Image>
+    <Image Include="assets\masks\noise1.png">
       <Filter>リソース ファイル</Filter>
     </Image>
   </ItemGroup>

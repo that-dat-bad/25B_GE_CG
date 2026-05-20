@@ -167,15 +167,55 @@ void DebugScene::Update() {
 	changed |= ImGui::Checkbox("Skybox Visible", &isSkyboxVisible_);
 
 	static int currentEffect = 0;
-	const char* effectItems[] = { "None", "GrayScale", "Vignette", "BoxFilter" };
+	const char* effectItems[] = { "None", "GrayScale", "Vignette", "BoxFilter", "GaussBlur", "KawaseBlur", "RadialBlur", "Dissolve" };
 	if (ImGui::Combo("Post Effect", &currentEffect, effectItems, IM_ARRAYSIZE(effectItems))) {
 		PostEffect::GetInstance()->SetEffectType(static_cast<PostEffectType>(currentEffect));
 	}
 
 	if (currentEffect == static_cast<int>(PostEffectType::kBoxFilter)) {
-		int kernelSize = PostEffect::GetInstance()->GetBoxFilterKernelSize();
+		int kernelSize = PostEffect::GetInstance()->GetKernelSize();
 		if (ImGui::SliderInt("BoxFilter Kernel Size", &kernelSize, 1, 31)) {
-			PostEffect::GetInstance()->SetBoxFilterKernelSize(kernelSize);
+			PostEffect::GetInstance()->SetKernelSize(kernelSize);
+		}
+	} else if (currentEffect == static_cast<int>(PostEffectType::kGaussBlur)) {
+		int kernelSize = PostEffect::GetInstance()->GetKernelSize();
+		if (ImGui::SliderInt("GaussBlur Kernel Size", &kernelSize, 1, 31)) {
+			PostEffect::GetInstance()->SetKernelSize(kernelSize);
+		}
+		float intensity = PostEffect::GetInstance()->GetIntensity();
+		if (ImGui::SliderFloat("GaussBlur Sigma", &intensity, 0.1f, 10.0f)) {
+			PostEffect::GetInstance()->SetIntensity(intensity);
+		}
+	} else if (currentEffect == static_cast<int>(PostEffectType::kKawaseBlur)) {
+		int passes = PostEffect::GetInstance()->GetKernelSize();
+		if (ImGui::SliderInt("Kawase Blur Passes", &passes, 1, 10)) {
+			PostEffect::GetInstance()->SetKernelSize(passes);
+		}
+	} else if (currentEffect == static_cast<int>(PostEffectType::kRadialBlur)) {
+		int samples = PostEffect::GetInstance()->GetKernelSize();
+		if (ImGui::SliderInt("RadialBlur Samples", &samples, 1, 64)) {
+			PostEffect::GetInstance()->SetKernelSize(samples);
+		}
+		float width = PostEffect::GetInstance()->GetIntensity();
+		if (ImGui::SliderFloat("RadialBlur Width", &width, 0.0f, 1.0f)) {
+			PostEffect::GetInstance()->SetIntensity(width);
+		}
+	} else if (currentEffect == static_cast<int>(PostEffectType::kDissolve)) {
+		float threshold = PostEffect::GetInstance()->GetDissolveThreshold();
+		if (ImGui::SliderFloat("Dissolve Threshold", &threshold, 0.0f, 1.0f)) {
+			PostEffect::GetInstance()->SetDissolveThreshold(threshold);
+		}
+		float edgeWidth = PostEffect::GetInstance()->GetDissolveEdgeWidth();
+		if (ImGui::SliderFloat("Dissolve Edge Width", &edgeWidth, 0.0f, 0.3f)) {
+			PostEffect::GetInstance()->SetDissolveEdgeWidth(edgeWidth);
+		}
+		int maskIdx = PostEffect::GetInstance()->GetDissolveMaskIndex();
+		const char* maskItems[] = { "noise0", "noise1" };
+		int maskCount = PostEffect::GetInstance()->GetDissolveMaskCount();
+		if (maskCount > 0) {
+			if (ImGui::Combo("Mask Texture", &maskIdx, maskItems, maskCount)) {
+				PostEffect::GetInstance()->SetDissolveMaskIndex(maskIdx);
+			}
 		}
 	}
 

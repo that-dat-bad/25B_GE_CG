@@ -39,8 +39,11 @@ public:
 	//描画前処理
 	void PreDraw();
 
-	//描画後処理
+	//描画後処理（ポストエフェクト適用、バックバッファをRTのまま残す）
 	void PostDraw();
+
+	//フレーム終了処理（バックバッファをPRESENTに戻してsubmit）
+	void EndFrame();
 
 	Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(const std::wstring& filePath, const wchar_t* profile);
 
@@ -72,7 +75,8 @@ public:
 	D3D12_RECT GetScissorRect() { return scissorRect_; }
 	D3D12_VIEWPORT GetViewport() { return viewport_; }
 	ID3D12Resource* GetRenderTexture(uint32_t index = 0) { return renderTextures_[index].Get(); }
-	uint32_t GetRenderTextureSrvIndex() const { return renderTextureSrvIndex_; }
+	uint32_t GetRenderTextureSrvIndex(uint32_t index = 0) const { return index == 0 ? renderTextureSrvIndex_ : renderTextureSrvIndex1_; }
+	D3D12_CPU_DESCRIPTOR_HANDLE GetRenderTextureRTVHandle(uint32_t index = 0) const { return renderTextureRtvHandles_[index]; }
 
 	/// renderTextures_[0] の SRV を SrvManager に登録する
 	void SetupRenderTextureSRV(SrvManager* srvManager);
@@ -140,6 +144,7 @@ private:
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kRenderTextureCount_> renderTextures_;
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kRenderTextureCount_> renderTextureRtvHandles_;
 	uint32_t renderTextureSrvIndex_ = 0; // renderTextures_[0] の SRV インデックス
+	uint32_t renderTextureSrvIndex1_ = 0; // renderTextures_[1] の SRV インデックス
 
 	DXGI_FORMAT rtvFormat_;
 
