@@ -5,7 +5,6 @@ class FlightModel;
 
 /// フライトインストラクター
 /// 操作がないときに機体を自動で水平に戻す補助システム。
-/// FlightModel とは独立しており、任意の機体に付け替え可能。
 class FlightInstructor {
 public:
 	FlightInstructor() = default;

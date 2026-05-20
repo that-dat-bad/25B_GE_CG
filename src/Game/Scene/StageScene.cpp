@@ -199,7 +199,7 @@ void StageScene::Update() {
 	}
 
 	// ============================
-	// War Thunder風 追従カメラ
+	// 追従カメラ
 	// ============================
 	UpdateChaseCamera(kDeltaTime);
 
@@ -300,10 +300,7 @@ void StageScene::Finalize() {
 // ===========================================================
 // 地面描画（タイル式グリッド）
 // ===========================================================
-// 機体の周囲に大きなタイルを敷き詰めて描画する。
-// 上空からでも地面が見えるようにタイルサイズを大きくし、
-// グリッドラインで位置と方角がわかるようにする。
-//
+
 void StageScene::DrawGround() {
 	Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
 	if (!camera) return;
