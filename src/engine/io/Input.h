@@ -26,6 +26,13 @@ public:
 	};
 	MouseMove GetMouseMove();
 	bool PushMouse(int buttonNumber);
+
+	// スクリーン座標でのマウス位置取得（クライアント領域基準）
+	struct MousePosition {
+		long x;
+		long y;
+	};
+	MousePosition GetMouseScreenPosition(HWND hwnd);
 	~Input() = default;
 
 private:

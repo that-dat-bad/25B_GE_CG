@@ -5,6 +5,7 @@
 #include "Skybox.h"
 #include "FlightModel/FlightModel.h"
 #include "FlightModel/FlightInstructor.h"
+#include "FlightModel/MouseAimController.h"
 
 /// @brief ゲーム本編のステージシーン
 class StageScene : public IScene {
@@ -53,4 +54,14 @@ private:
 
 	// ヘルパー：注視点からカメラの回転(オイラー角)を計算
 	static MyMath::Vector3 LookAtRotation(const MyMath::Vector3& from, const MyMath::Vector3& to);
+
+	// ============================
+	// マウスエイム操縦
+	// ============================
+	MouseAimController mouseAimController_;
+	bool mouseAimEnabled_ = true;    // マウスエイムモード ON/OFF
+
+	// カメラの回転角キャッシュ（マウスエイムの目標方向計算に使用）
+	float cachedCameraYaw_ = 0.0f;
+	float cachedCameraPitch_ = 0.0f;
 };

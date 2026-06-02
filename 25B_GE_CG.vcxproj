@@ -253,6 +253,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Game\FlightModel\FlightInstructor.h" />
+    <ClInclude Include="src\Game\FlightModel\MouseAimController.h" />
     <ClInclude Include="src\Game\FlightModel\Payload\Gunpod.h" />
     <ClInclude Include="src\Game\FlightModel\Payload\IPayload.h">
       <DeploymentContent>true</DeploymentContent>
@@ -318,6 +319,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Game\FlightModel\FlightInstructor.cpp" />
+    <ClCompile Include="src\Game\FlightModel\MouseAimController.cpp" />
     <ClCompile Include="src\Game\FlightModel\Payload\Gunpod.cpp" />
     <ClCompile Include="src\Game\FlightModel\Payload\IPayload.cpp">
       <DeploymentContent>true</DeploymentContent>

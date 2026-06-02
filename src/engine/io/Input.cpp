@@ -84,6 +84,14 @@ bool Input::PushMouse(int buttonNumber)
 	return false;
 }
 
+Input::MousePosition Input::GetMouseScreenPosition(HWND hwnd)
+{
+	POINT pt;
+	::GetCursorPos(&pt);
+	::ScreenToClient(hwnd, &pt);
+	return { pt.x, pt.y };
+}
+
 bool Input::PushKey(BYTE keyNumber)
 {
 	if (keys_[keyNumber])

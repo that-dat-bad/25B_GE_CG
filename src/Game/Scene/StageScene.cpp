@@ -5,6 +5,7 @@
 #include "TextureManager.h"
 #include "ModelManager.h"
 #include "PrimitiveModel.h"
+#include "WinApp.h"
 #include <cmath>
 
 #ifdef USE_IMGUI
@@ -121,6 +122,20 @@ void StageScene::Initialize() {
 		camera->SetRotate(LookAtRotation(cameraCurrentPos_, cameraLookTarget_));
 	}
 	CameraManager::GetInstance()->Update();
+
+	// ============================
+	// マウスエイムコントローラの初期化
+	// ============================
+	mouseAimController_.Initialize(
+		static_cast<float>(WinApp::kClientWidth),
+		static_cast<float>(WinApp::kClientHeight)
+	);
+	mouseAimEnabled_ = true;
+
+	// カメラの初期回転角をキャッシュ
+	Vector3 camRot = LookAtRotation(cameraCurrentPos_, cameraLookTarget_);
+	cachedCameraYaw_ = camRot.y;
+	cachedCameraPitch_ = camRot.x;
 }
 
 
@@ -142,32 +157,67 @@ void StageScene::Update() {
 	if (throttle > 1.0f) throttle = 1.0f;
 	flightModel_.SetThrottleInput(throttle);
 
-	// --- 操縦入力 ---
-	float pitchInput = 0.0f;
-	float rollInput = 0.0f;
-	float yawInput = 0.0f;
-
-	if (input->PushKey(DIK_W)) pitchInput -= 1.0f; // W = 機首上げ
-	if (input->PushKey(DIK_S)) pitchInput += 1.0f; // S = 機首下げ
-	if (input->PushKey(DIK_A)) rollInput += 1.0f;  // A = 左ロール
-	if (input->PushKey(DIK_D)) rollInput -= 1.0f;  // D = 右ロール
-	if (input->PushKey(DIK_Q)) yawInput -= 1.0f;
-	if (input->PushKey(DIK_E)) yawInput += 1.0f;
-
-	// --- インストラクター ON/OFF (I キー) ---
-	if (input->TriggerKey(DIK_I)) {
-		flightInstructor_.ToggleEnabled();
+	// --- マウスエイム ON/OFF トグル (M キー) ---
+	if (input->TriggerKey(DIK_M)) {
+		mouseAimEnabled_ = !mouseAimEnabled_;
+		mouseAimController_.SetEnabled(mouseAimEnabled_);
+		if (mouseAimEnabled_) {
+			// ON に切り替えた時、カーソルを画面中央にリセット
+			mouseAimController_.ResetCursor();
+		}
 	}
 
-	// インストラクターによる補正（無入力時に自動水平復帰）
-	float correctedPitch, correctedRoll, correctedYaw;
-	flightInstructor_.ApplyCorrection(
-		pitchInput, rollInput, yawInput,
-		flightModel_.GetOrientation(),
-		correctedPitch, correctedRoll, correctedYaw
-	);
+	// --- WASD 手動操縦入力 ---
+	float manualPitch = 0.0f;
+	float manualRoll = 0.0f;
+	float manualYaw = 0.0f;
 
-	flightModel_.SetControlInput(correctedPitch, correctedRoll, correctedYaw);
+	if (input->PushKey(DIK_W)) manualPitch -= 1.0f; // W = 機首上げ
+	if (input->PushKey(DIK_S)) manualPitch += 1.0f; // S = 機首下げ
+	if (input->PushKey(DIK_A)) manualRoll += 1.0f;  // A = 左ロール
+	if (input->PushKey(DIK_D)) manualRoll -= 1.0f;  // D = 右ロール
+	if (input->PushKey(DIK_Q)) manualYaw -= 1.0f;
+	if (input->PushKey(DIK_E)) manualYaw += 1.0f;
+
+	bool hasManualInput = (std::fabs(manualPitch) > 0.01f ||
+	                       std::fabs(manualRoll) > 0.01f ||
+	                       std::fabs(manualYaw) > 0.01f);
+
+	// --- 操舵入力の決定 ---
+	float finalPitch = 0.0f;
+	float finalRoll = 0.0f;
+	float finalYaw = 0.0f;
+
+	if (mouseAimEnabled_ && !hasManualInput) {
+		// === マウスエイムモード ===
+		// マウスの相対移動量で仮想カーソルを更新
+		Input::MouseMove mouseMove = input->GetMouseMove();
+		mouseAimController_.UpdateCursorPosition(mouseMove.lX, mouseMove.lY);
+
+		// マウスエイムコントローラーがPID制御で操舵入力を生成
+		mouseAimController_.CalculateSteeringInput(
+			flightModel_.GetOrientation(),
+			cachedCameraYaw_, cachedCameraPitch_,
+			kDeltaTime,
+			finalPitch, finalRoll, finalYaw
+		);
+	} else {
+		// === 手動操縦モード（WASDオーバーライド or マウスエイムOFF）===
+
+		// インストラクター ON/OFF (I キー)
+		if (input->TriggerKey(DIK_I)) {
+			flightInstructor_.ToggleEnabled();
+		}
+
+		// インストラクターによる補正（無入力時に自動水平復帰）
+		flightInstructor_.ApplyCorrection(
+			manualPitch, manualRoll, manualYaw,
+			flightModel_.GetOrientation(),
+			finalPitch, finalRoll, finalYaw
+		);
+	}
+
+	flightModel_.SetControlInput(finalPitch, finalRoll, finalYaw);
 
 	// --- フラップ / エアブレーキ ---
 	flightModel_.SetFlapInput(input->PushKey(DIK_F));
@@ -264,13 +314,72 @@ void StageScene::Update() {
 	ImGui::DragFloat("Look Lag", &cameraLookLag_, 0.1f, 0.5f, 30.0f);
 
 	ImGui::Separator();
+	ImGui::Text("=== Mouse Aim ===");
+	ImGui::Text("Mode: %s", mouseAimEnabled_ ? "MOUSE AIM (PID)" : "MANUAL");
+	if (mouseAimEnabled_) {
+		ImGui::Text("Cursor: (%.0f, %.0f)", mouseAimController_.GetCursorX(), mouseAimController_.GetCursorY());
+		Vector3 tDir = mouseAimController_.GetTargetDirection();
+		ImGui::Text("Target Dir: (%.2f, %.2f, %.2f)", tDir.x, tDir.y, tDir.z);
+
+		// PIDチューニングUI
+		if (ImGui::TreeNode("PID Tuning")) {
+			auto pidSliders = [](const char* label, PIDController& pid) {
+				if (ImGui::TreeNode(label)) {
+					ImGui::SliderFloat("P", &pid.kP, 0.0f, 5.0f);
+					ImGui::SliderFloat("I", &pid.kI, 0.0f, 2.0f);
+					ImGui::SliderFloat("D", &pid.kD, 0.0f, 3.0f);
+					ImGui::Text("Integral: %.3f", pid.integral);
+					ImGui::TreePop();
+				}
+			};
+			pidSliders("Pitch PID", mouseAimController_.GetPitchPID());
+			pidSliders("Roll PID", mouseAimController_.GetRollPID());
+			pidSliders("Yaw PID", mouseAimController_.GetYawPID());
+			pidSliders("Bank Level PID", mouseAimController_.GetBankPID());
+			ImGui::TreePop();
+		}
+	}
+	ImGui::Text("Steering: P=%.2f R=%.2f Y=%.2f", finalPitch, finalRoll, finalYaw);
+
+	ImGui::Separator();
 	ImGui::Text("=== Controls ===");
-	ImGui::Text("W/S: Pitch | A/D: Roll | Q/E: Yaw");
+	ImGui::Text("Mouse: Aim direction (PID)");
+	ImGui::Text("W/S: Pitch | A/D: Roll | Q/E: Yaw (override)");
 	ImGui::Text("LShift/LCtrl: Throttle");
 	ImGui::Text("F: Flaps | B: AirBrake");
+	ImGui::Text("M: Mouse Aim [%s]", mouseAimEnabled_ ? "ON" : "OFF");
 	ImGui::Text("I: Instructor [%s]", flightInstructor_.IsEnabled() ? "ON" : "OFF");
 
 	ImGui::End();
+
+	// === 照準カーソル（レティクル）の描画 ===
+	if (mouseAimEnabled_) {
+		ImDrawList* drawList = ImGui::GetForegroundDrawList();
+		float cx = mouseAimController_.GetCursorX();
+		float cy = mouseAimController_.GetCursorY();
+		float crossSize = 15.0f;
+		float dotRadius = 3.0f;
+		ImU32 reticleColor = IM_COL32(0, 255, 100, 220);
+		ImU32 reticleColorDark = IM_COL32(0, 180, 70, 150);
+
+		// 十字線
+		drawList->AddLine(ImVec2(cx - crossSize, cy), ImVec2(cx - 5.0f, cy), reticleColor, 2.0f);
+		drawList->AddLine(ImVec2(cx + 5.0f, cy), ImVec2(cx + crossSize, cy), reticleColor, 2.0f);
+		drawList->AddLine(ImVec2(cx, cy - crossSize), ImVec2(cx, cy - 5.0f), reticleColor, 2.0f);
+		drawList->AddLine(ImVec2(cx, cy + 5.0f), ImVec2(cx, cy + crossSize), reticleColor, 2.0f);
+
+		// 中心の円
+		drawList->AddCircle(ImVec2(cx, cy), dotRadius, reticleColor, 12, 2.0f);
+
+		// 外枠の円
+		drawList->AddCircle(ImVec2(cx, cy), crossSize + 5.0f, reticleColorDark, 24, 1.0f);
+
+		// 画面中央にも固定レティクル（機体の実際の前方方向を示す）
+		float screenCenterX = static_cast<float>(WinApp::kClientWidth) * 0.5f;
+		float screenCenterY = static_cast<float>(WinApp::kClientHeight) * 0.5f;
+		ImU32 centerColor = IM_COL32(255, 255, 255, 100);
+		drawList->AddCircle(ImVec2(screenCenterX, screenCenterY), 4.0f, centerColor, 12, 1.0f);
+	}
 #endif
 }
 
@@ -403,6 +512,10 @@ void StageScene::UpdateChaseCamera(float dt) {
 
 	// --- カメラの回転を LookAt で計算 ---
 	Vector3 cameraRotation = LookAtRotation(cameraCurrentPos_, cameraLookTarget_);
+
+	// カメラの回転角をキャッシュ（マウスエイムの目標方向計算に使用）
+	cachedCameraPitch_ = cameraRotation.x;
+	cachedCameraYaw_ = cameraRotation.y;
 
 	// --- カメラに反映 ---
 	Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
