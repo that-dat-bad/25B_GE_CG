@@ -126,11 +126,11 @@ void StageScene::Initialize() {
 	// ============================
 	// マウスエイムコントローラの初期化
 	// ============================
-	mouseAimController_.Initialize(
-		static_cast<float>(WinApp::kClientWidth),
-		static_cast<float>(WinApp::kClientHeight)
-	);
+	mouseAimController_.Initialize();
 	mouseAimEnabled_ = true;
+
+	// マウスエイム開始時はOSカーソルを非表示＆ロック
+	Input::GetInstance()->LockCursor();
 
 	// カメラの初期回転角をキャッシュ
 	Vector3 camRot = LookAtRotation(cameraCurrentPos_, cameraLookTarget_);
@@ -162,8 +162,22 @@ void StageScene::Update() {
 		mouseAimEnabled_ = !mouseAimEnabled_;
 		mouseAimController_.SetEnabled(mouseAimEnabled_);
 		if (mouseAimEnabled_) {
-			// ON に切り替えた時、カーソルを画面中央にリセット
-			mouseAimController_.ResetCursor();
+			// ON に切り替えた時、目標方向を現在の機首方向にリセット & ロック
+			mouseAimController_.ResetToDirection(flightModel_.GetForwardDirection());
+			input->LockCursor();
+		} else {
+			// OFF に切り替えた時、カーソルを再表示
+			input->UnlockCursor();
+		}
+	}
+
+	// --- カーソルロック ON/OFF トグル (P キー) ---
+	// ImGui操作用: エイムを一時停止してカーソルを解放
+	if (input->TriggerKey(DIK_P)) {
+		if (input->IsCursorLocked()) {
+			input->UnlockCursor();
+		} else {
+			input->LockCursor();
 		}
 	}
 
@@ -190,14 +204,21 @@ void StageScene::Update() {
 
 	if (mouseAimEnabled_ && !hasManualInput) {
 		// === マウスエイムモード ===
-		// マウスの相対移動量で仮想カーソルを更新
-		Input::MouseMove mouseMove = input->GetMouseMove();
-		mouseAimController_.UpdateCursorPosition(mouseMove.lX, mouseMove.lY);
+		// カーソルロック中のみマウス入力で目標方向を更新
+		if (input->IsCursorLocked()) {
+			Input::MouseMove mouseMove = input->GetMouseMove();
+			Camera* cam = CameraManager::GetInstance()->GetActiveCamera();
+			if (cam) {
+				const Matrix4x4& mat = cam->GetWorldMatrix();
+				Vector3 camRight = { mat.m[0][0], mat.m[0][1], mat.m[0][2] };
+				Vector3 camUp = { mat.m[1][0], mat.m[1][1], mat.m[1][2] };
+				mouseAimController_.UpdateTargetDirection(mouseMove.lX, mouseMove.lY, camRight, camUp);
+			}
+		}
 
 		// マウスエイムコントローラーがPID制御で操舵入力を生成
 		mouseAimController_.CalculateSteeringInput(
 			flightModel_.GetOrientation(),
-			cachedCameraYaw_, cachedCameraPitch_,
 			kDeltaTime,
 			finalPitch, finalRoll, finalYaw
 		);
@@ -317,7 +338,11 @@ void StageScene::Update() {
 	ImGui::Text("=== Mouse Aim ===");
 	ImGui::Text("Mode: %s", mouseAimEnabled_ ? "MOUSE AIM (PID)" : "MANUAL");
 	if (mouseAimEnabled_) {
-		ImGui::Text("Cursor: (%.0f, %.0f)", mouseAimController_.GetCursorX(), mouseAimController_.GetCursorY());
+		// マウス感度調整スライダー
+		float sens = mouseAimController_.GetSensitivity();
+		if (ImGui::SliderFloat("Sensitivity", &sens, 0.01f, 1.0f, "%.3f")) {
+			mouseAimController_.SetSensitivity(sens);
+		}
 		Vector3 tDir = mouseAimController_.GetTargetDirection();
 		ImGui::Text("Target Dir: (%.2f, %.2f, %.2f)", tDir.x, tDir.y, tDir.z);
 
@@ -349,36 +374,65 @@ void StageScene::Update() {
 	ImGui::Text("F: Flaps | B: AirBrake");
 	ImGui::Text("M: Mouse Aim [%s]", mouseAimEnabled_ ? "ON" : "OFF");
 	ImGui::Text("I: Instructor [%s]", flightInstructor_.IsEnabled() ? "ON" : "OFF");
+	ImGui::Text("P: Cursor Lock [%s]", input->IsCursorLocked() ? "LOCKED" : "FREE");
 
 	ImGui::End();
 
-	// === 照準カーソル（レティクル）の描画 ===
+	// === レティクルの描画（ワールド空間→スクリーン投影）===
 	if (mouseAimEnabled_) {
-		ImDrawList* drawList = ImGui::GetForegroundDrawList();
-		float cx = mouseAimController_.GetCursorX();
-		float cy = mouseAimController_.GetCursorY();
-		float crossSize = 15.0f;
-		float dotRadius = 3.0f;
-		ImU32 reticleColor = IM_COL32(0, 255, 100, 220);
-		ImU32 reticleColorDark = IM_COL32(0, 180, 70, 150);
+		Camera* cam = CameraManager::GetInstance()->GetActiveCamera();
+		if (cam) {
+			ImDrawList* drawList = ImGui::GetForegroundDrawList();
+			const Matrix4x4& vpMat = cam->GetViewProjectionMatrix();
+			float screenW = static_cast<float>(WinApp::kClientWidth);
+			float screenH = static_cast<float>(WinApp::kClientHeight);
+			Vector3 aircraftPos = flightModel_.GetPosition();
 
-		// 十字線
-		drawList->AddLine(ImVec2(cx - crossSize, cy), ImVec2(cx - 5.0f, cy), reticleColor, 2.0f);
-		drawList->AddLine(ImVec2(cx + 5.0f, cy), ImVec2(cx + crossSize, cy), reticleColor, 2.0f);
-		drawList->AddLine(ImVec2(cx, cy - crossSize), ImVec2(cx, cy - 5.0f), reticleColor, 2.0f);
-		drawList->AddLine(ImVec2(cx, cy + 5.0f), ImVec2(cx, cy + crossSize), reticleColor, 2.0f);
+			// --- ワールド方向をスクリーン座標に投影するラムダ ---
+			auto projectToScreen = [&](const Vector3& worldPos, float& outX, float& outY) -> bool {
+				float cX = worldPos.x * vpMat.m[0][0] + worldPos.y * vpMat.m[1][0] + worldPos.z * vpMat.m[2][0] + vpMat.m[3][0];
+				float cY = worldPos.x * vpMat.m[0][1] + worldPos.y * vpMat.m[1][1] + worldPos.z * vpMat.m[2][1] + vpMat.m[3][1];
+				float cW = worldPos.x * vpMat.m[0][3] + worldPos.y * vpMat.m[1][3] + worldPos.z * vpMat.m[2][3] + vpMat.m[3][3];
+				if (cW <= 0.001f) return false;
+				outX = (cX / cW * 0.5f + 0.5f) * screenW;
+				outY = (-cY / cW * 0.5f + 0.5f) * screenH;
+				return true;
+			};
 
-		// 中心の円
-		drawList->AddCircle(ImVec2(cx, cy), dotRadius, reticleColor, 12, 2.0f);
+			// --- マウスエイム目標レティクル（緑の十字線）---
+			Vector3 targetDir = mouseAimController_.GetTargetDirection();
+			Vector3 aimWorldPos = Add(aircraftPos, Multiply(500.0f, targetDir));
+			float cx, cy;
+			if (projectToScreen(aimWorldPos, cx, cy)) {
+				float crossSize = 15.0f;
+				float dotRadius = 3.0f;
+				ImU32 reticleColor = IM_COL32(0, 255, 100, 220);
+				ImU32 reticleColorDark = IM_COL32(0, 180, 70, 150);
 
-		// 外枠の円
-		drawList->AddCircle(ImVec2(cx, cy), crossSize + 5.0f, reticleColorDark, 24, 1.0f);
+				// 十字線
+				drawList->AddLine(ImVec2(cx - crossSize, cy), ImVec2(cx - 5.0f, cy), reticleColor, 2.0f);
+				drawList->AddLine(ImVec2(cx + 5.0f, cy), ImVec2(cx + crossSize, cy), reticleColor, 2.0f);
+				drawList->AddLine(ImVec2(cx, cy - crossSize), ImVec2(cx, cy - 5.0f), reticleColor, 2.0f);
+				drawList->AddLine(ImVec2(cx, cy + 5.0f), ImVec2(cx, cy + crossSize), reticleColor, 2.0f);
+				drawList->AddCircle(ImVec2(cx, cy), dotRadius, reticleColor, 12, 2.0f);
+				drawList->AddCircle(ImVec2(cx, cy), crossSize + 5.0f, reticleColorDark, 24, 1.0f);
 
-		// 画面中央にも固定レティクル（機体の実際の前方方向を示す）
-		float screenCenterX = static_cast<float>(WinApp::kClientWidth) * 0.5f;
-		float screenCenterY = static_cast<float>(WinApp::kClientHeight) * 0.5f;
-		ImU32 centerColor = IM_COL32(255, 255, 255, 100);
-		drawList->AddCircle(ImVec2(screenCenterX, screenCenterY), 4.0f, centerColor, 12, 1.0f);
+				// --- 機首方向マーカー（白い×印）---
+				Vector3 forward = flightModel_.GetForwardDirection();
+				Vector3 noseWorldPos = Add(aircraftPos, Multiply(500.0f, forward));
+				float nx, ny;
+				if (projectToScreen(noseWorldPos, nx, ny)) {
+					float noseSize = 8.0f;
+					ImU32 noseColor = IM_COL32(255, 255, 255, 200);
+					drawList->AddLine(ImVec2(nx - noseSize, ny - noseSize), ImVec2(nx + noseSize, ny + noseSize), noseColor, 2.0f);
+					drawList->AddLine(ImVec2(nx + noseSize, ny - noseSize), ImVec2(nx - noseSize, ny + noseSize), noseColor, 2.0f);
+
+					// 目標と機首をつなぐ薄いライン
+					ImU32 lineColor = IM_COL32(255, 255, 255, 60);
+					drawList->AddLine(ImVec2(cx, cy), ImVec2(nx, ny), lineColor, 1.0f);
+				}
+			}
+		}
 	}
 #endif
 }
@@ -403,6 +457,8 @@ void StageScene::Draw() {
 
 
 void StageScene::Finalize() {
+	// シーン終了時にカーソルを復帰
+	Input::GetInstance()->UnlockCursor();
 }
 
 
@@ -562,22 +618,34 @@ MyMath::Vector3 StageScene::QuaternionToEuler(const MyMath::Quaternion& q) {
 // カメラ位置(from) → 注視点(to) を向くオイラー角を返す
 // Camera::Update は MakeAffineMatrix(scale, rotate, translate) を使うので
 // そのrotateに合致するオイラー角(XYZ順)を逆算する
+// ジンバルロック対策: 真上・真下付近ではヨーを前フレームの値で維持
 // ===========================================================
-MyMath::Vector3 StageScene::LookAtRotation(const MyMath::Vector3& from, const MyMath::Vector3& to) {
+MyMath::Vector3 StageScene::LookAtRotation(const MyMath::Vector3& from, const MyMath::Vector3& to) const {
 	Vector3 dir = Substract(to, from);
 	float len = Length(dir);
 	if (len < 0.0001f) {
-		return { 0.0f, 0.0f, 0.0f };
+		return { cachedCameraPitch_, cachedCameraYaw_, 0.0f };
 	}
 
 	// 正規化
 	dir = Normalize(dir);
 
-	// Y軸回りの回転 (ヨー) : atan2(x, z)
-	float yaw = std::atan2(dir.x, dir.z);
+	// X軸回りの回転 (ピッチ) : -asin(y)
+	// クランプしてasinの定義域を守る
+	float clampedY = std::clamp(dir.y, -0.999f, 0.999f);
+	float pitch = -std::asin(clampedY);
 
-	// X軸回りの回転 (ピッチ) : -asin(y)  — 上を向くときは負のピッチ
-	float pitch = -std::asin(dir.y);
+	// Y軸回りの回転 (ヨー) : atan2(x, z)
+	// dir.yが±1に近い（真上・真下）とき、xとzがほぼ0でatan2が不安定になる
+	// → 水平成分の大きさが閾値以下ならヨーを前フレームの値で維持
+	float horizontalLen = std::sqrt(dir.x * dir.x + dir.z * dir.z);
+	float yaw;
+	if (horizontalLen < 0.05f) {
+		// ジンバルロック領域: 前フレームのヨーを維持
+		yaw = cachedCameraYaw_;
+	} else {
+		yaw = std::atan2(dir.x, dir.z);
+	}
 
 	// ロールは0（水平を維持）
 	return { pitch, yaw, 0.0f };

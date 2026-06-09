@@ -15,6 +15,13 @@ public:
 	static Input* GetInstance();
 
 	void Initialize(HINSTANCE hInstance, HWND hwnd);
+
+	/// マウスカーソルをウィンドウ中央にロック＆非表示にする
+	void LockCursor();
+	/// マウスカーソルのロックを解除＆表示する
+	void UnlockCursor();
+	/// カーソルがロックされているか
+	bool IsCursorLocked() const { return cursorLocked_; }
 	void Update();
 
 	bool PushKey(BYTE keyNumber);
@@ -47,5 +54,8 @@ private:
 	BYTE keys_[256] = {};
 	BYTE preKeys_[256] = {};
 	DIMOUSESTATE2 mouseState_ = {};
+
+	HWND hwnd_ = nullptr;           // ウィンドウハンドル（カーソル制御用）
+	bool cursorLocked_ = false;     // カーソルロック状態
 };
 

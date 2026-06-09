@@ -81,6 +81,9 @@ private:
 	MyMath::Vector3 acceleration_;  // 加速度
 	MyMath::Quaternion orientation_; // 姿勢（回転）
 
+	// 角速度（ローカル軸: x=pitch, y=yaw, z=roll）(rad/s)
+	MyMath::Vector3 angularVelocity_ = { 0.0f, 0.0f, 0.0f };
+
 	// フライトモデル拡張状態
 	float currentAoA_;        // 現在の迎え角 (rad)
 	float currentG_;          // 現在のG

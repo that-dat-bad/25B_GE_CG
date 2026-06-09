@@ -5,68 +5,97 @@
 namespace {
 	constexpr float kPi = 3.14159265358979f;
 
-	// カーソル位置を角度に変換するときの最大角度（ラジアン）
-	constexpr float kMaxYawOffset = 1.2f;    // ≈ 70度
-	constexpr float kMaxPitchOffset = 0.8f;  // ≈ 45度
-
 	// デッドゾーン（この角度以下の差分は無視）
 	constexpr float kDeadZone = 0.005f;      // ≈ 0.3度
 
 	// バンク角の最大値（コーディネートターン時）
 	constexpr float kMaxBankAngle = 1.2f;    // ≈ 70度
+
+	// マウス移動量 → 角度変換のスケール (rad per mouse_delta per sensitivity)
+	constexpr float kAngleScale = 0.02f;
+
+	/// ロドリゲスの回転公式: ベクトルvを軸axisの周りにangle(rad)回転
+	MyMath::Vector3 RotateAroundAxis(const MyMath::Vector3& v, const MyMath::Vector3& axis, float angle) {
+		float cosA = std::cos(angle);
+		float sinA = std::sin(angle);
+		MyMath::Vector3 cross = {
+			axis.y * v.z - axis.z * v.y,
+			axis.z * v.x - axis.x * v.z,
+			axis.x * v.y - axis.y * v.x
+		};
+		float dot = axis.x * v.x + axis.y * v.y + axis.z * v.z;
+		return {
+			v.x * cosA + cross.x * sinA + axis.x * dot * (1.0f - cosA),
+			v.y * cosA + cross.y * sinA + axis.y * dot * (1.0f - cosA),
+			v.z * cosA + cross.z * sinA + axis.z * dot * (1.0f - cosA)
+		};
+	}
 }
 
 
 // ===========================================================
 // 初期化
 // ===========================================================
-void MouseAimController::Initialize(float screenWidth, float screenHeight)
+void MouseAimController::Initialize()
 {
-	screenWidth_ = screenWidth;
-	screenHeight_ = screenHeight;
-	cursorX_ = screenWidth * 0.5f;
-	cursorY_ = screenHeight * 0.5f;
 	targetDirection_ = { 0.0f, 0.0f, 1.0f };
 
 	// --- PIDゲインの初期設定 ---
-	// ピッチPID: やや強めのP、振動抑制のD、定常偏差除去の弱いI
 	pitchPID_.SetGains(2.5f, 0.3f, 0.8f, 0.5f);
-
-	// ロールPID（コーディネートターン時のバンク制御）: 素早い応答のP、安定化のD
 	rollPID_.SetGains(2.0f, 0.1f, 0.6f, 0.3f);
-
-	// ヨーPID（小角度修正用）: 直接的なヨー補正
 	yawPID_.SetGains(2.0f, 0.2f, 0.5f, 0.3f);
-
-	// バンク水平復帰PID: 穏やかに水平へ戻す
 	bankPID_.SetGains(1.0f, 0.1f, 0.4f, 0.3f);
 }
 
 
 // ===========================================================
-// マウス相対移動量でカーソル位置を更新
+// マウス相対移動量でワールド空間の目標方向を回転
 // ===========================================================
-void MouseAimController::UpdateCursorPosition(long deltaX, long deltaY)
+void MouseAimController::UpdateTargetDirection(long deltaX, long deltaY, const MyMath::Vector3& camRight, const MyMath::Vector3& camUp)
 {
 	if (!enabled_) return;
+	if (deltaX == 0 && deltaY == 0) return;
 
-	cursorX_ += static_cast<float>(deltaX) * sensitivity_;
-	cursorY_ += static_cast<float>(deltaY) * sensitivity_;
+	float yawDelta = static_cast<float>(deltaX) * sensitivity_ * kAngleScale;
+	float pitchDelta = static_cast<float>(deltaY) * sensitivity_ * kAngleScale;
 
-	// 画面内にクランプ
-	float margin = screenWidth_ * (1.0f - maxCursorRange_) * 0.5f;
-	cursorX_ = std::clamp(cursorX_, margin, screenWidth_ - margin);
-	cursorY_ = std::clamp(cursorY_, margin, screenHeight_ - margin);
+	// X移動：カメラの「上」軸まわりに回転（ヨー）
+	if (std::fabs(yawDelta) > 0.00001f) {
+		targetDirection_ = RotateAroundAxis(targetDirection_, camUp, yawDelta);
+	}
+
+	// Y移動：カメラの「右」軸まわりに回転（ピッチ）
+	if (std::fabs(pitchDelta) > 0.00001f) {
+		targetDirection_ = RotateAroundAxis(targetDirection_, camRight, pitchDelta);
+	}
+
+	// 正規化（数値誤差の蓄積を防止）
+	float len = std::sqrt(
+		targetDirection_.x * targetDirection_.x +
+		targetDirection_.y * targetDirection_.y +
+		targetDirection_.z * targetDirection_.z
+	);
+	if (len > 0.0001f) {
+		float invLen = 1.0f / len;
+		targetDirection_.x *= invLen;
+		targetDirection_.y *= invLen;
+		targetDirection_.z *= invLen;
+	}
 }
 
 
 // ===========================================================
-// カーソル位置を画面中央にリセット
+// 目標方向を指定の前方ベクトルにリセット
 // ===========================================================
-void MouseAimController::ResetCursor()
+void MouseAimController::ResetToDirection(const MyMath::Vector3& forward)
 {
-	cursorX_ = screenWidth_ * 0.5f;
-	cursorY_ = screenHeight_ * 0.5f;
+	float len = std::sqrt(forward.x * forward.x + forward.y * forward.y + forward.z * forward.z);
+	if (len > 0.0001f) {
+		float invLen = 1.0f / len;
+		targetDirection_ = { forward.x * invLen, forward.y * invLen, forward.z * invLen };
+	} else {
+		targetDirection_ = { 0.0f, 0.0f, 1.0f };
+	}
 
 	// PIDの内部状態もリセット
 	pitchPID_.Reset();
@@ -81,7 +110,6 @@ void MouseAimController::ResetCursor()
 // ===========================================================
 void MouseAimController::CalculateSteeringInput(
 	const MyMath::Quaternion& orientation,
-	float cameraYaw, float cameraPitch,
 	float deltaTime,
 	float& outPitch, float& outRoll, float& outYaw
 )
@@ -93,28 +121,10 @@ void MouseAimController::CalculateSteeringInput(
 		return;
 	}
 
-	// =====================================================
-	// 1. 仮想カーソル位置 → 目標方向ベクトル
-	// =====================================================
-	float normalizedX = (cursorX_ - screenWidth_ * 0.5f) / (screenWidth_ * 0.5f);
-	float normalizedY = (cursorY_ - screenHeight_ * 0.5f) / (screenHeight_ * 0.5f);
-
-	// LookAtRotation の規約: pitch = -asin(dir.y)
-	float yawOffset = normalizedX * kMaxYawOffset;
-	float pitchOffset = normalizedY * kMaxPitchOffset;
-
-	float targetYaw = cameraYaw + yawOffset;
-	float targetPitch = cameraPitch + pitchOffset;
-
-	// LookAtRotation: pitch = -asin(dir.y) → dir.y = -sin(pitch)
-	targetDirection_ = {
-		std::cos(targetPitch) * std::sin(targetYaw),
-		-std::sin(targetPitch),
-		std::cos(targetPitch) * std::cos(targetYaw)
-	};
+	// targetDirection_ はワールド空間で既に計算済み
 
 	// =====================================================
-	// 2. 機体前方方向と目標方向の差分を計算
+	// 機体前方方向と目標方向の差分を計算
 	// =====================================================
 	MyMath::Vector3 forward = GetForwardFromOrientation(orientation);
 	MyMath::Vector3 up = GetUpFromOrientation(orientation);
@@ -139,7 +149,7 @@ void MouseAimController::CalculateSteeringInput(
 	}
 
 	// =====================================================
-	// 3. PID制御による操舵入力生成
+	// PID制御による操舵入力生成
 	// =====================================================
 	float absYawError = std::fabs(yawAngleError);
 
@@ -155,7 +165,6 @@ void MouseAimController::CalculateSteeringInput(
 	}
 
 	// 現在のバンク角の推定
-	// bankIndicator: 正 = 左バンク, 負 = 右バンク（ロール入力と同じ符号規約）
 	MyMath::Vector3 worldUp = { 0.0f, 1.0f, 0.0f };
 	float currentBankIndicator = MyMath::Dot(right, worldUp);
 
@@ -164,24 +173,19 @@ void MouseAimController::CalculateSteeringInput(
 		// コーディネートターン: バンク＆プル
 		// =============================================
 
-		// 目標バンク角: 目標が右(yawError>0) → 右バンク(負)
 		float targetBank = std::clamp(-yawAngleError * 1.5f, -kMaxBankAngle, kMaxBankAngle);
 
-		// バンク誤差をPIDで制御 → ロール入力
 		float bankError = targetBank - currentBankIndicator;
 		float rollOutput = rollPID_.Update(bankError, deltaTime);
 		outRoll = std::clamp(rollOutput, -1.0f, 1.0f);
 
-		// バンク度合いに応じた引き起こし
 		float bankRatio = std::fabs(currentBankIndicator) / kMaxBankAngle;
 		bankRatio = std::clamp(bankRatio, 0.0f, 1.0f);
 
-		// ピッチ: PIDで制御 + バンク時の引き起こし
 		float pitchOutput = pitchPID_.Update(pitchAngleError, deltaTime);
 		float pullUp = bankRatio * 0.8f;
 		outPitch = std::clamp(-(pullUp + pitchOutput * (1.0f - bankRatio * 0.5f)), -1.0f, 1.0f);
 
-		// ヨー: 補助ラダー（PIDの比例項のみ使用、弱め）
 		outYaw = std::clamp(yawAngleError * yawPID_.kP * 0.3f, -1.0f, 1.0f);
 
 	} else {
@@ -189,16 +193,12 @@ void MouseAimController::CalculateSteeringInput(
 		// 小角度修正: 各軸PIDで直接制御
 		// =============================================
 
-		// ピッチ: PID制御
 		float pitchOutput = pitchPID_.Update(pitchAngleError, deltaTime);
 		outPitch = std::clamp(-pitchOutput, -1.0f, 1.0f);
 
-		// ヨー: PID制御
 		float yawOutput = yawPID_.Update(yawAngleError, deltaTime);
 		outYaw = std::clamp(yawOutput, -1.0f, 1.0f);
 
-		// ロール: バンク角を0に戻すPID制御
-		// 誤差 = 0(水平) - 現在のバンク = -currentBankIndicator
 		float levelError = -currentBankIndicator;
 		float bankOutput = bankPID_.Update(levelError, deltaTime);
 		outRoll = std::clamp(bankOutput, -1.0f, 1.0f);

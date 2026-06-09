@@ -55,6 +55,7 @@ void FlightModel::Initialize(const AirframeData& airframeData, const EngineData&
 	velocity_ = { 0.0f, 0.0f, 0.0f };
 	acceleration_ = { 0.0f, 0.0f, 0.0f };
 	orientation_ = { 0.0f, 0.0f, 0.0f, 1.0f };
+	angularVelocity_ = { 0.0f, 0.0f, 0.0f };
 
 	// 拡張状態のリセット
 	currentAoA_ = 0.0f;
@@ -362,26 +363,17 @@ void FlightModel::UpdateOrientation(float deltaTime)
 	controlEff *= gPenalty;
 
 	// --- 重心(CG)と圧力中心(CP)の概念に基づくピッチモーメント計算 ---
-	// リアルな航空機では、主翼の揚力が発生する「圧力中心(CP)」と「重心(CG)」の位置関係がピッチを決定します。
-	
-	// 1. 動圧と揚力の計算（概念的トルク用）
 	float airDensity = CalculateAirDensity(position_.y);
 	float dynamicPressure = 0.5f * airDensity * speed * speed;
 	float cl = CalculateLiftCoefficient(currentAoA_);
 	float wingLiftForce = dynamicPressure * airframe_.GetWingArea() * std::fabs(cl);
 
-	// 2. 重心(CG)を基準とした圧力中心(CP)の位置 (Z軸: 機首方向が正、後方が負)
-	// 通常飛行時、CPは安定性のためにCGよりわずかに後方（-0.2m等）に設計されます。
-	const float kNormalCPOffsetZ = -0.2f; 
+	const float kNormalCPOffsetZ = -0.2f;
 	float currentCPOffsetZ = kNormalCPOffsetZ;
 
 	float stallDepth = 0.0f;
-	// 失速時、気流の剥離によりCPが急激に移動します。
 	if (isStalling_) {
 		stallDepth = std::fabs(currentAoA_) - airframe_.GetCriticalAoA();
-		// ユーザー要望: 重心の位置によって頭の落ちる方向を変える
-		// 重心が前（cgZ >= 0）ならCPは後方へ下がり、機首下げ（正のピッチ）になる。
-		// 重心が後ろ（cgZ < 0）ならCPは前方へ移動し、機首上げ（負のピッチ）になる。
 		float cgZ = airframe_.GetCenterOfGravityZ();
 		if (cgZ >= 0.0f) {
 			currentCPOffsetZ -= stallDepth * 5.0f;
@@ -390,40 +382,59 @@ void FlightModel::UpdateOrientation(float deltaTime)
 		}
 	}
 
-	// 3. トルクの計算
-	// 主翼トルク: 揚力がCGの後ろを押し上げるため、機首下げ（正のピッチ）モーメントが発生
-	float wingTorque = wingLiftForce * (-currentCPOffsetZ); 
-
-	// 水平尾翼のトリム力: 通常飛行時の機首下げモーメントを打ち消す下向きの力
-	// これにより通常時は手放しで水平飛行が可能（トリムが取れている状態）
-	float tailTrimTorque = -(wingLiftForce * (-kNormalCPOffsetZ)); 
-
-	// 合計ピッチトルク: 失速してCPが後退した分だけ、トリムで打ち消せない強烈な機首下げ力（Stall Break）が発生する
+	float wingTorque = wingLiftForce * (-currentCPOffsetZ);
+	float tailTrimTorque = -(wingLiftForce * (-kNormalCPOffsetZ));
 	float totalPitchTorque = wingTorque + tailTrimTorque;
 
-	// 4. トルクを角加速度（ピッチ角速度）に変換
-	// 機体のピッチ軸の慣性モーメント（Iyy）の逆数を掛ける（ここでは概念的な定数）
-	const float kInverseInertiaY = 0.00005f; 
+	const float kInverseInertiaY = 0.00005f;
 	float aerodynamicPitchMoment = totalPitchTorque * kInverseInertiaY;
 
-	// オーバーシュートによる振動（がくがく）を防止
+	// オーバーシュートによる振動防止
 	if (isStalling_ && deltaTime > 0.0001f) {
-		// 1フレームで補正する角度が stallDepth の半分を超えないように制限する
 		float maxMoment = (stallDepth * 0.5f) / deltaTime;
 		if (aerodynamicPitchMoment > maxMoment) {
 			aerodynamicPitchMoment = maxMoment;
 		}
 	}
 
-	// 機体が背面（負のAoA）で失速した場合は、機首上げ（負のピッチ）方向に落ちる
 	if (currentAoA_ < 0.0f) {
 		aerodynamicPitchMoment = -aerodynamicPitchMoment;
 	}
 
-	// 各軸の回転角度（入力 × 角速度 × 操舵効率 × dt + 空力モーメント × dt）
-	float pitchAngle = (inputPitch_ * kPitchRate * controlEff + aerodynamicPitchMoment) * deltaTime;
-	float rollAngle = inputRoll_ * kRollRate * controlEff * deltaTime;
-	float yawAngle = inputYaw_ * kYawRate * controlEff * deltaTime;
+	// =====================================================
+	// 角加速度の計算（操舵入力を角加速度として扱う）
+	// =====================================================
+	// 操舵入力は「目標角速度」への加速度として作用
+	float targetPitchRate = inputPitch_ * kPitchRate * controlEff;
+	float targetRollRate  = inputRoll_  * kRollRate  * controlEff;
+	float targetYawRate   = inputYaw_   * kYawRate   * controlEff;
+
+	// 空力ダンピング係数（速度が高いほどダンピングが強い）
+	// 高い値 = 素早く目標角速度に収束（振動しにくい）
+	float dampingBase = 5.0f;
+	float speedFactor = 1.0f;
+	if (speed > 30.0f) {
+		speedFactor = std::clamp(speed / 150.0f, 0.5f, 2.0f);
+	}
+	float damping = dampingBase * speedFactor;
+
+	// 角速度を目標値に向けて滑らかに追従（指数的スムージング）
+	// angVel = lerp(angVel, target, 1 - e^(-damping * dt))
+	float smoothT = 1.0f - std::exp(-damping * deltaTime);
+
+	angularVelocity_.x += (targetPitchRate - angularVelocity_.x) * smoothT;
+	angularVelocity_.z += (targetRollRate  - angularVelocity_.z) * smoothT;
+	angularVelocity_.y += (targetYawRate   - angularVelocity_.y) * smoothT;
+
+	// 空力ピッチモーメントは角加速度として直接加算
+	angularVelocity_.x += aerodynamicPitchMoment * deltaTime;
+
+	// =====================================================
+	// 角速度から姿勢を更新
+	// =====================================================
+	float pitchAngle = angularVelocity_.x * deltaTime;
+	float rollAngle  = angularVelocity_.z * deltaTime;
+	float yawAngle   = angularVelocity_.y * deltaTime;
 
 	// ローカル軸の取得
 	MyMath::Vector3 right = GetRightDirection();
@@ -431,7 +442,6 @@ void FlightModel::UpdateOrientation(float deltaTime)
 	MyMath::Vector3 forward = GetForwardDirection();
 
 	// 各軸回りの微小回転クォータニオンを生成して合成
-	// q = cos(θ/2) + sin(θ/2) * axis
 	auto makeRotation = [](const MyMath::Vector3& axis, float angle) -> MyMath::Quaternion {
 		float halfAngle = angle * 0.5f;
 		float s = std::sin(halfAngle);
@@ -454,11 +464,10 @@ void FlightModel::UpdateOrientation(float deltaTime)
 	MyMath::Quaternion qYaw = makeRotation(up, yawAngle);
 	MyMath::Quaternion qRoll = makeRotation(forward, rollAngle);
 
-	// 合成: orientation = qRoll * qYaw * qPitch * orientation
 	MyMath::Quaternion combined = qMul(qRoll, qMul(qYaw, qPitch));
 	orientation_ = qMul(combined, orientation_);
 
-	// クォータニオンの正規化（数値誤差の蓄積を防止）
+	// クォータニオンの正規化
 	float len = std::sqrt(
 		orientation_.x * orientation_.x +
 		orientation_.y * orientation_.y +

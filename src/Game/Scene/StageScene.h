@@ -53,7 +53,7 @@ private:
 	static MyMath::Vector3 QuaternionToEuler(const MyMath::Quaternion& q);
 
 	// ヘルパー：注視点からカメラの回転(オイラー角)を計算
-	static MyMath::Vector3 LookAtRotation(const MyMath::Vector3& from, const MyMath::Vector3& to);
+	MyMath::Vector3 LookAtRotation(const MyMath::Vector3& from, const MyMath::Vector3& to) const;
 
 	// ============================
 	// マウスエイム操縦

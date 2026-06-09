@@ -51,6 +51,9 @@ void Input::Initialize(HINSTANCE hInstance,HWND hwnd)
 	//排他制御レベルのセット
 	mouse_->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
 	assert(SUCCEEDED(result));
+
+	// HWND を保存（カーソルロック用）
+	hwnd_ = hwnd;
 }
 
 void Input::Update()
@@ -64,6 +67,17 @@ void Input::Update()
 	keyboard_->GetDeviceState(sizeof(keys_), keys_);
 	
 	mouse_->GetDeviceState(sizeof(mouseState_), &mouseState_);
+
+	// カーソルロック中は毎フレーム、OSカーソルをウィンドウ中央に戻す
+	if (cursorLocked_ && hwnd_) {
+		RECT rect;
+		::GetClientRect(hwnd_, &rect);
+		POINT center;
+		center.x = (rect.right - rect.left) / 2;
+		center.y = (rect.bottom - rect.top) / 2;
+		::ClientToScreen(hwnd_, &center);
+		::SetCursorPos(center.x, center.y);
+	}
 
 }
 
@@ -109,4 +123,21 @@ bool Input::TriggerKey(BYTE keyNumber)
 	}
 
 	return false;
+}
+
+void Input::LockCursor()
+{
+	if (!cursorLocked_) {
+		cursorLocked_ = true;
+		// ShowCursor は内部カウンタ方式: 負で非表示
+		while (::ShowCursor(FALSE) >= 0) {}
+	}
+}
+
+void Input::UnlockCursor()
+{
+	if (cursorLocked_) {
+		cursorLocked_ = false;
+		while (::ShowCursor(TRUE) < 0) {}
+	}
 }

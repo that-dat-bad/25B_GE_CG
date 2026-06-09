@@ -50,33 +50,29 @@ struct PIDController {
 
 
 /// War Thunder風 マウスエイム・コントローラー
-/// マウスカーソル位置 → 目標方向 → PID制御で操舵入力を生成。
+/// マウス入力 → ワールド空間の目標方向を回転 → PID制御で操舵入力を生成。
 class MouseAimController {
 public:
 	MouseAimController() = default;
 	~MouseAimController() = default;
 
-	/// 初期化（スクリーンサイズを設定）
-	void Initialize(float screenWidth, float screenHeight);
+	/// 初期化
+	void Initialize();
 
-	/// マウスの相対移動量を受け取り、仮想カーソル位置を更新
-	void UpdateCursorPosition(long deltaX, long deltaY);
+	/// マウスの相対移動量でワールド空間の目標方向を回転（カメラのローカル軸を使用）
+	void UpdateTargetDirection(long deltaX, long deltaY, const MyMath::Vector3& camRight, const MyMath::Vector3& camUp);
 
-	/// 仮想カーソル位置をリセット（画面中央に戻す）
-	void ResetCursor();
+	/// 目標方向を指定の前方ベクトルにリセット
+	void ResetToDirection(const MyMath::Vector3& forward);
 
-	/// 仮想カーソル位置とカメラ情報から目標方向を計算し、
-	/// PID制御で操舵入力を生成する。
+	/// PID制御で操舵入力を生成
 	/// @param orientation 機体の現在姿勢（クォータニオン）
-	/// @param cameraYaw カメラの現在のヨー角（ラジアン）
-	/// @param cameraPitch カメラの現在のピッチ角（ラジアン）
 	/// @param deltaTime フレーム間の経過時間（秒）
 	/// @param outPitch 生成されたピッチ入力 (-1 ～ 1)
 	/// @param outRoll  生成されたロール入力 (-1 ～ 1)
 	/// @param outYaw   生成されたヨー入力 (-1 ～ 1)
 	void CalculateSteeringInput(
 		const MyMath::Quaternion& orientation,
-		float cameraYaw, float cameraPitch,
 		float deltaTime,
 		float& outPitch, float& outRoll, float& outYaw
 	);
@@ -90,11 +86,7 @@ public:
 	void SetSensitivity(float sensitivity) { sensitivity_ = sensitivity; }
 	float GetSensitivity() const { return sensitivity_; }
 
-	/// 仮想カーソル位置の取得（スクリーン座標）
-	float GetCursorX() const { return cursorX_; }
-	float GetCursorY() const { return cursorY_; }
-
-	/// 目標方向ベクトルの取得（デバッグ用）
+	/// ワールド空間の目標方向ベクトル（レティクル投影用）
 	MyMath::Vector3 GetTargetDirection() const { return targetDirection_; }
 
 	/// PIDコントローラーへのアクセス（ImGuiチューニング用）
@@ -106,21 +98,10 @@ public:
 private:
 	bool enabled_ = true;
 
-	// スクリーンサイズ
-	float screenWidth_ = 1280.0f;
-	float screenHeight_ = 720.0f;
-
-	// 仮想カーソル位置（スクリーン座標）
-	float cursorX_ = 640.0f;   // 画面中央
-	float cursorY_ = 360.0f;
-
-	// マウス感度（ピクセル → 角度の変換係数）
+	// マウス感度
 	float sensitivity_ = 0.15f;
 
-	// 最大カーソル移動範囲（画面端に対する割合）
-	float maxCursorRange_ = 0.85f;
-
-	// 計算済みの目標方向（キャッシュ）
+	// ワールド空間の目標方向（単位ベクトル）
 	MyMath::Vector3 targetDirection_ = { 0.0f, 0.0f, 1.0f };
 
 	// コーディネートターンの閾値（ラジアン）
