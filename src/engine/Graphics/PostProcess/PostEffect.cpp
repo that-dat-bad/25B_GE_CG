@@ -19,6 +19,7 @@ void PostEffect::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager) {
 
 	CreateRootSignature();
 	CreateDissolveRootSignature();
+	CreateOutlineRootSignature();
 	LoadDissolveMasks();
 	CreateGraphicsPipelines();
 
@@ -136,6 +137,73 @@ void PostEffect::CreateDissolveRootSignature() {
 	assert(SUCCEEDED(hr));
 }
 
+void PostEffect::CreateOutlineRootSignature() {
+	// Outline用: t0(シーンテクスチャ) + t1(深度テクスチャ) + b0(パラメータ)
+	D3D12_DESCRIPTOR_RANGE descriptorRange0[1] = {};
+	descriptorRange0[0].BaseShaderRegister = 0; // t0
+	descriptorRange0[0].NumDescriptors = 1;
+	descriptorRange0[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	descriptorRange0[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	D3D12_DESCRIPTOR_RANGE descriptorRange1[1] = {};
+	descriptorRange1[0].BaseShaderRegister = 1; // t1
+	descriptorRange1[0].NumDescriptors = 1;
+	descriptorRange1[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	descriptorRange1[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	D3D12_ROOT_PARAMETER rootParameters[3] = {};
+	// Root 0: t0 scene texture
+	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameters[0].DescriptorTable.pDescriptorRanges = descriptorRange0;
+	rootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
+	// Root 1: b0 cbuffer
+	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameters[1].Descriptor.ShaderRegister = 0; // b0
+	// Root 2: t1 depth texture
+	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange1;
+	rootParameters[2].DescriptorTable.NumDescriptorRanges = 1;
+
+	D3D12_STATIC_SAMPLER_DESC staticSamplers[2] = {};
+	staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	staticSamplers[0].MaxLOD = D3D12_FLOAT32_MAX;
+	staticSamplers[0].ShaderRegister = 0; // s0
+	staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	staticSamplers[1].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+	staticSamplers[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplers[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplers[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	staticSamplers[1].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	staticSamplers[1].MaxLOD = D3D12_FLOAT32_MAX;
+	staticSamplers[1].ShaderRegister = 1; // s1
+	staticSamplers[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	D3D12_ROOT_SIGNATURE_DESC desc{};
+	desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	desc.pParameters = rootParameters;
+	desc.NumParameters = _countof(rootParameters);
+	desc.pStaticSamplers = staticSamplers;
+	desc.NumStaticSamplers = _countof(staticSamplers);
+
+	Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob;
+	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob;
+	HRESULT hr = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
+	assert(SUCCEEDED(hr));
+
+	hr = dxCommon_->GetDevice()->CreateRootSignature(
+		0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(),
+		IID_PPV_ARGS(&outlineRootSignature_));
+	assert(SUCCEEDED(hr));
+}
+
 void PostEffect::LoadDissolveMasks() {
 	// ノイズマスクテクスチャを読み込み
 	const std::string maskPaths[] = {
@@ -162,6 +230,8 @@ void PostEffect::CreateGraphicsPipelines() {
 	Microsoft::WRL::ComPtr<IDxcBlob> psKawaseBlur = dxCommon_->CompileShader(L"./assets/shaders/KawaseBlur.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psRadialBlur = dxCommon_->CompileShader(L"./assets/shaders/RadialBlur.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psDissolve = dxCommon_->CompileShader(L"./assets/shaders/Dissolve.PS.hlsl", L"ps_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> psLuminanceOutline = dxCommon_->CompileShader(L"./assets/shaders/LuminanceBasedOutline.PS.hlsl", L"ps_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> psDepthOutline = dxCommon_->CompileShader(L"./assets/shaders/DepthBasedOutline.PS.hlsl", L"ps_6_0");
 
 	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaders[static_cast<size_t>(PostEffectType::kCountOfPostEffects)];
 	pixelShaders[static_cast<size_t>(PostEffectType::kNone)] = psNone;
@@ -172,6 +242,8 @@ void PostEffect::CreateGraphicsPipelines() {
 	pixelShaders[static_cast<size_t>(PostEffectType::kKawaseBlur)] = psKawaseBlur;
 	pixelShaders[static_cast<size_t>(PostEffectType::kRadialBlur)] = psRadialBlur;
 	pixelShaders[static_cast<size_t>(PostEffectType::kDissolve)] = psDissolve;  // placeholder for loop
+	pixelShaders[static_cast<size_t>(PostEffectType::kLuminanceBasedOutline)] = psLuminanceOutline;
+	pixelShaders[static_cast<size_t>(PostEffectType::kDepthBasedOutline)] = psDepthOutline;
 
 	// PSO のベース設定
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
@@ -204,9 +276,10 @@ void PostEffect::CreateGraphicsPipelines() {
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	// 各エフェクト用の PSO を生成 (Dissolveは別root signatureなのでスキップ)
+	// 各エフェクト用の PSO を生成 (DissolveやOutlineなどは別root signatureを使用)
 	for (size_t i = 0; i < static_cast<size_t>(PostEffectType::kCountOfPostEffects); ++i) {
 		if (i == static_cast<size_t>(PostEffectType::kDissolve)) continue;
+		if (i == static_cast<size_t>(PostEffectType::kLuminanceBasedOutline) || i == static_cast<size_t>(PostEffectType::kDepthBasedOutline)) continue;
 		psoDesc.PS = { pixelShaders[i]->GetBufferPointer(), pixelShaders[i]->GetBufferSize() };
 		HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStates_[i]));
 		assert(SUCCEEDED(hr));
@@ -217,14 +290,29 @@ void PostEffect::CreateGraphicsPipelines() {
 	psoDesc.PS = { psDissolve->GetBufferPointer(), psDissolve->GetBufferSize() };
 	HRESULT hrDissolve = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&dissolvePSO_));
 	assert(SUCCEEDED(hrDissolve));
+
+	// Outline PSO
+	psoDesc.pRootSignature = outlineRootSignature_.Get();
+	psoDesc.PS = { psLuminanceOutline->GetBufferPointer(), psLuminanceOutline->GetBufferSize() };
+	HRESULT hrLuminance = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStates_[static_cast<size_t>(PostEffectType::kLuminanceBasedOutline)]));
+	assert(SUCCEEDED(hrLuminance));
+
+	psoDesc.PS = { psDepthOutline->GetBufferPointer(), psDepthOutline->GetBufferSize() };
+	HRESULT hrDepth = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStates_[static_cast<size_t>(PostEffectType::kDepthBasedOutline)]));
+	assert(SUCCEEDED(hrDepth));
 }
 
 void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderTextureSrvIndex) {
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 
-	// PSO とルートシグネチャをセット (Dissolveは別処理)
+	// PSO とルートシグネチャをセット (一部のエフェクトは別処理)
 	size_t effectIndex = static_cast<size_t>(currentEffect_);
-	if (currentEffect_ != PostEffectType::kDissolve) {
+	if (currentEffect_ == PostEffectType::kDissolve) {
+		// skip
+	} else if (currentEffect_ == PostEffectType::kLuminanceBasedOutline || currentEffect_ == PostEffectType::kDepthBasedOutline) {
+		commandList->SetGraphicsRootSignature(outlineRootSignature_.Get());
+		commandList->SetPipelineState(pipelineStates_[effectIndex].Get());
+	} else {
 		commandList->SetGraphicsRootSignature(rootSignature_.Get());
 		commandList->SetPipelineState(pipelineStates_[effectIndex].Get());
 	}
@@ -290,6 +378,48 @@ void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderText
 		commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress() + cbAlignedSize);
 
 		commandList->DrawInstanced(3, 1, 0, 0);
+	}
+	else if (currentEffect_ == PostEffectType::kLuminanceBasedOutline || currentEffect_ == PostEffectType::kDepthBasedOutline) {
+		bool isDepth = (currentEffect_ == PostEffectType::kDepthBasedOutline);
+
+		if (isDepth) {
+			D3D12_RESOURCE_BARRIER barrierDepth = {};
+			barrierDepth.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			barrierDepth.Transition.pResource = dxCommon_->GetDepthStencilBuffer();
+			barrierDepth.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			barrierDepth.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+			barrierDepth.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			commandList->ResourceBarrier(1, &barrierDepth);
+		}
+
+		// Root 0: t0 scene texture
+		commandList->SetGraphicsRootDescriptorTable(0, srvManager_->GetGPUDescriptorHandle(renderTextureSrvIndex));
+
+		// Root 1: b0 params
+		PostEffectParams* param0 = reinterpret_cast<PostEffectParams*>(reinterpret_cast<uint8_t*>(mappedPostEffectParams_) + 0);
+		param0->kernelSize = kernelSize_;
+		param0->intensity = intensity_;
+		param0->dirX = 0.0f;
+		param0->dirY = 0.0f;
+		param0->projectionInverse = projectionInverse_;
+		commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress());
+
+		// Root 2: t1 depth texture
+		if (isDepth) {
+			commandList->SetGraphicsRootDescriptorTable(2, srvManager_->GetGPUDescriptorHandle(dxCommon_->GetDepthSrvIndex()));
+		}
+
+		commandList->DrawInstanced(3, 1, 0, 0);
+
+		if (isDepth) {
+			D3D12_RESOURCE_BARRIER barrierDepth = {};
+			barrierDepth.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			barrierDepth.Transition.pResource = dxCommon_->GetDepthStencilBuffer();
+			barrierDepth.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			barrierDepth.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			barrierDepth.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+			commandList->ResourceBarrier(1, &barrierDepth);
+		}
 	}
 	else if (currentEffect_ == PostEffectType::kKawaseBlur) {
 		int passes = kernelSize_;

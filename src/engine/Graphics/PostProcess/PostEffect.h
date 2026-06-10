@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include "../../base/Math/MyMath.h"
 
 class DirectXCommon;
 class SrvManager;
@@ -19,6 +20,8 @@ enum class PostEffectType : uint32_t {
 	kKawaseBlur,    // 川瀬式ブラー
 	kRadialBlur,    // ラジアルブラー
 	kDissolve,      // ディゾルブ
+	kLuminanceBasedOutline, // 輝度ベースの輪郭線
+	kDepthBasedOutline,     // 深度ベースの輪郭線
 	kCountOfPostEffects, // エフェクトの種類
 };
 
@@ -27,6 +30,7 @@ struct PostEffectParams {
 	float intensity;
 	float dirX;
 	float dirY;
+	MyMath::Matrix4x4 projectionInverse;
 };
 
 /// フルスクリーンポストエフェクトを管理するシングルトンクラス
@@ -67,6 +71,9 @@ public:
 	int GetDissolveMaskIndex() const { return dissolveMaskIndex_; }
 	int GetDissolveMaskCount() const { return static_cast<int>(dissolveMaskSrvIndices_.size()); }
 
+	void SetProjectionInverse(const MyMath::Matrix4x4& mat) { projectionInverse_ = mat; }
+	const MyMath::Matrix4x4& GetProjectionInverse() const { return projectionInverse_; }
+
 	~PostEffect() = default;
 
 private:
@@ -92,6 +99,7 @@ private:
 	PostEffectParams* mappedPostEffectParams_ = nullptr;
 	int32_t kernelSize_ = 3;
 	float intensity_ = 1.0f;
+	MyMath::Matrix4x4 projectionInverse_ = {};
 
 	// Dissolve 用
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> dissolveRootSignature_;
@@ -105,4 +113,7 @@ private:
 	void CreateDissolveRootSignature();
 	void CreateGraphicsPipelines();
 	void LoadDissolveMasks();
+
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> outlineRootSignature_;
+	void CreateOutlineRootSignature();
 };

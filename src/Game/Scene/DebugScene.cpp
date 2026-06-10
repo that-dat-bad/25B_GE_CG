@@ -167,7 +167,7 @@ void DebugScene::Update() {
 	changed |= ImGui::Checkbox("Skybox Visible", &isSkyboxVisible_);
 
 	static int currentEffect = 0;
-	const char* effectItems[] = { "None", "GrayScale", "Vignette", "BoxFilter", "GaussBlur", "KawaseBlur", "RadialBlur", "Dissolve" };
+	const char* effectItems[] = { "None", "GrayScale", "Vignette", "BoxFilter", "GaussBlur", "KawaseBlur", "RadialBlur", "Dissolve", "LuminanceBasedOutline", "DepthBasedOutline" };
 	if (ImGui::Combo("Post Effect", &currentEffect, effectItems, IM_ARRAYSIZE(effectItems))) {
 		PostEffect::GetInstance()->SetEffectType(static_cast<PostEffectType>(currentEffect));
 	}
@@ -311,6 +311,11 @@ void DebugScene::Update() {
 	
 	if (camera) {
 		Object3dCommon::GetInstance()->SetCameraPosition(camera->GetTranslate());
+		
+		// Set inverse projection matrix for depth-based outline
+		if (PostEffect::GetInstance()->GetEffectType() == PostEffectType::kDepthBasedOutline) {
+			PostEffect::GetInstance()->SetProjectionInverse(Inverse(camera->GetProjectionMatrix()));
+		}
 	}
 }
 

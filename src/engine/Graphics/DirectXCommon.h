@@ -77,6 +77,7 @@ public:
 	ID3D12Resource* GetRenderTexture(uint32_t index = 0) { return renderTextures_[index].Get(); }
 	uint32_t GetRenderTextureSrvIndex(uint32_t index = 0) const { return index == 0 ? renderTextureSrvIndex_ : renderTextureSrvIndex1_; }
 	D3D12_CPU_DESCRIPTOR_HANDLE GetRenderTextureRTVHandle(uint32_t index = 0) const { return renderTextureRtvHandles_[index]; }
+	uint32_t GetDepthSrvIndex() const { return depthSrvIndex_; }
 
 	/// renderTextures_[0] の SRV を SrvManager に登録する
 	void SetupRenderTextureSRV(SrvManager* srvManager);
@@ -145,6 +146,7 @@ private:
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kRenderTextureCount_> renderTextureRtvHandles_;
 	uint32_t renderTextureSrvIndex_ = 0; // renderTextures_[0] の SRV インデックス
 	uint32_t renderTextureSrvIndex1_ = 0; // renderTextures_[1] の SRV インデックス
+	uint32_t depthSrvIndex_ = 0; // Depth Buffer SRV Index
 
 	DXGI_FORMAT rtvFormat_;
 
