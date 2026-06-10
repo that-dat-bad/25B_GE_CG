@@ -6,7 +6,9 @@
 #include "ModelManager.h"
 #include "PrimitiveModel.h"
 #include "WinApp.h"
+#include "../../engine/Graphics/PostProcess/PostEffect.h"
 #include <cmath>
+#include <algorithm>
 
 #ifdef USE_IMGUI
 #include "../../../external/imgui/imgui.h"
