@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "cpp-pro": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/cpp-pro/SKILL.md",
+      "computedHash": "f475155435558cef35ca91a6f72f88c98d29e827445a65b5df977ba2f57a150b"
+    }
+  }
+}

@@ -79,6 +79,7 @@ void StageScene::Initialize() {
 	aircraftObject_->Initialize(Object3dCommon::GetInstance());
 	aircraftObject_->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
 	aircraftObject_->SetModel("Resources/planeplane.obj");
+	aircraftObject_->GetModel()->SetEnvironmentCoefficient(0.4f); // 機体表面にスカイボックスの映り込み
 
 	// 地面テクスチャ
 	TextureManager::GetInstance()->LoadTexture("assets/textures/white1x1.png");
