@@ -19,6 +19,7 @@ enum class PostEffectType : uint32_t {
 	kKawaseBlur,    // 川瀬式ブラー
 	kRadialBlur,    // ラジアルブラー
 	kDissolve,      // ディゾルブ
+	kRandom,        // ランダム
 	kCountOfPostEffects, // エフェクトの種類
 };
 
@@ -27,6 +28,8 @@ struct PostEffectParams {
 	float intensity;
 	float dirX;
 	float dirY;
+	float time;
+	float padding[3];
 };
 
 /// フルスクリーンポストエフェクトを管理するシングルトンクラス
@@ -100,6 +103,8 @@ private:
 	float dissolveThreshold_ = 0.5f;
 	float dissolveEdgeWidth_ = 0.05f;
 	int dissolveMaskIndex_ = 0; // 0=noise0, 1=noise1
+
+	float time_ = 0.0f;
 
 	void CreateRootSignature();
 	void CreateDissolveRootSignature();

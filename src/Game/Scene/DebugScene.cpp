@@ -167,7 +167,7 @@ void DebugScene::Update() {
 	changed |= ImGui::Checkbox("Skybox Visible", &isSkyboxVisible_);
 
 	static int currentEffect = 0;
-	const char* effectItems[] = { "None", "GrayScale", "Vignette", "BoxFilter", "GaussBlur", "KawaseBlur", "RadialBlur", "Dissolve" };
+	const char* effectItems[] = { "None", "GrayScale", "Vignette", "BoxFilter", "GaussBlur", "KawaseBlur", "RadialBlur", "Dissolve", "Random" };
 	if (ImGui::Combo("Post Effect", &currentEffect, effectItems, IM_ARRAYSIZE(effectItems))) {
 		PostEffect::GetInstance()->SetEffectType(static_cast<PostEffectType>(currentEffect));
 	}
