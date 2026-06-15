@@ -22,6 +22,7 @@ enum class PostEffectType : uint32_t {
 	kDissolve,      // ディゾルブ
 	kLuminanceBasedOutline, // 輝度ベースの輪郭線
 	kDepthBasedOutline,     // 深度ベースの輪郭線
+	kRandom,        // ランダム
 	kCountOfPostEffects, // エフェクトの種類
 };
 
@@ -31,6 +32,8 @@ struct PostEffectParams {
 	float dirX;
 	float dirY;
 	MyMath::Matrix4x4 projectionInverse;
+	float time;
+	float padding[3];
 };
 
 /// フルスクリーンポストエフェクトを管理するシングルトンクラス
@@ -108,6 +111,8 @@ private:
 	float dissolveThreshold_ = 0.5f;
 	float dissolveEdgeWidth_ = 0.05f;
 	int dissolveMaskIndex_ = 0; // 0=noise0, 1=noise1
+
+	float time_ = 0.0f;
 
 	void CreateRootSignature();
 	void CreateDissolveRootSignature();

@@ -232,6 +232,7 @@ void PostEffect::CreateGraphicsPipelines() {
 	Microsoft::WRL::ComPtr<IDxcBlob> psDissolve = dxCommon_->CompileShader(L"./assets/shaders/Dissolve.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psLuminanceOutline = dxCommon_->CompileShader(L"./assets/shaders/LuminanceBasedOutline.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psDepthOutline = dxCommon_->CompileShader(L"./assets/shaders/DepthBasedOutline.PS.hlsl", L"ps_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> psRandom = dxCommon_->CompileShader(L"./assets/shaders/Random.PS.hlsl", L"ps_6_0");
 
 	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaders[static_cast<size_t>(PostEffectType::kCountOfPostEffects)];
 	pixelShaders[static_cast<size_t>(PostEffectType::kNone)] = psNone;
@@ -244,6 +245,7 @@ void PostEffect::CreateGraphicsPipelines() {
 	pixelShaders[static_cast<size_t>(PostEffectType::kDissolve)] = psDissolve;  // placeholder for loop
 	pixelShaders[static_cast<size_t>(PostEffectType::kLuminanceBasedOutline)] = psLuminanceOutline;
 	pixelShaders[static_cast<size_t>(PostEffectType::kDepthBasedOutline)] = psDepthOutline;
+	pixelShaders[static_cast<size_t>(PostEffectType::kRandom)] = psRandom;
 
 	// PSO のベース設定
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
@@ -304,6 +306,8 @@ void PostEffect::CreateGraphicsPipelines() {
 
 void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderTextureSrvIndex) {
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+
+	time_ += 0.016f;
 
 	// PSO とルートシグネチャをセット (一部のエフェクトは別処理)
 	size_t effectIndex = static_cast<size_t>(currentEffect_);
@@ -507,6 +511,7 @@ void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderText
 		param0->intensity = intensity_;
 		param0->dirX = 1.0f;
 		param0->dirY = 1.0f;
+		param0->time = time_;
 		commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress());
 
 		commandList->DrawInstanced(3, 1, 0, 0);
