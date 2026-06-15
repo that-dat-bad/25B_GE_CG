@@ -36,6 +36,15 @@ struct PostEffectParams {
 	float padding[3];
 };
 
+struct ActivePostEffect {
+	PostEffectType type = PostEffectType::kNone;
+	int32_t kernelSize = 3;
+	float intensity = 1.0f;
+	float dissolveThreshold = 0.5f;
+	float dissolveEdgeWidth = 0.05f;
+	int dissolveMaskIndex = 0;
+};
+
 /// フルスクリーンポストエフェクトを管理するシングルトンクラス
 class PostEffect {
 public:
@@ -51,27 +60,10 @@ public:
 	/// PostDraw 内で CopyResource の代わりに呼ぶ
 	void Draw(ID3D12Resource* renderTextureResource, uint32_t renderTextureSrvIndex);
 
-	/// 現在のエフェクトを設定
-	void SetEffectType(PostEffectType type) { currentEffect_ = type; }
+	/// 現在のエフェクトのリストを取得・設定
+	std::vector<ActivePostEffect>& GetActiveEffects() { return activeEffects_; }
+	const std::vector<ActivePostEffect>& GetActiveEffects() const { return activeEffects_; }
 
-	/// 現在のエフェクトを取得
-	PostEffectType GetEffectType() const { return currentEffect_; }
-
-	void SetKernelSize(int32_t size) { kernelSize_ = size; }
-	int32_t GetKernelSize() const { return kernelSize_; }
-
-	void SetIntensity(float intensity) { intensity_ = intensity; }
-	float GetIntensity() const { return intensity_; }
-
-	// Dissolve パラメータ
-	void SetDissolveThreshold(float t) { dissolveThreshold_ = t; }
-	float GetDissolveThreshold() const { return dissolveThreshold_; }
-
-	void SetDissolveEdgeWidth(float w) { dissolveEdgeWidth_ = w; }
-	float GetDissolveEdgeWidth() const { return dissolveEdgeWidth_; }
-
-	void SetDissolveMaskIndex(int idx) { dissolveMaskIndex_ = idx; }
-	int GetDissolveMaskIndex() const { return dissolveMaskIndex_; }
 	int GetDissolveMaskCount() const { return static_cast<int>(dissolveMaskSrvIndices_.size()); }
 
 	void SetProjectionInverse(const MyMath::Matrix4x4& mat) { projectionInverse_ = mat; }
@@ -95,24 +87,20 @@ private:
 	// エフェクトごとの PSO
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineStates_[static_cast<size_t>(PostEffectType::kCountOfPostEffects)];
 
-	// 現在のエフェクト種類
-	PostEffectType currentEffect_ = PostEffectType::kNone;
+	std::vector<ActivePostEffect> activeEffects_;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> postEffectParamsBuffer_;
 	PostEffectParams* mappedPostEffectParams_ = nullptr;
-	int32_t kernelSize_ = 3;
-	float intensity_ = 1.0f;
 	MyMath::Matrix4x4 projectionInverse_ = {};
 
 	// Dissolve 用
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> dissolveRootSignature_;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> dissolvePSO_;
 	std::vector<uint32_t> dissolveMaskSrvIndices_; // noise texture SRV indices
-	float dissolveThreshold_ = 0.5f;
-	float dissolveEdgeWidth_ = 0.05f;
-	int dissolveMaskIndex_ = 0; // 0=noise0, 1=noise1
 
 	float time_ = 0.0f;
+
+	void DrawSinglePass(ID3D12GraphicsCommandList* commandList, const ActivePostEffect& effect, uint32_t srcIndex, uint32_t dstIndex, bool isOutputToBackBuffer, uint32_t passIndex, float customDirX = 1.0f, float customDirY = 1.0f, float customIntensity = -1.0f);
 
 	void CreateRootSignature();
 	void CreateDissolveRootSignature();
