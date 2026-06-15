@@ -13,6 +13,7 @@ struct PostEffectParams {
     float intensity;
     float dirX;
     float dirY;
+    matrix projectionInverse;
     float time;
 };
 
