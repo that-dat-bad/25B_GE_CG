@@ -201,3 +201,24 @@ void EffectManager::EmitHitPlaneEffect(const Vector3& position) {
 		AddEffect(new HitRotPlaneEffect(position, color, 0.3f, 3.0f));
 	}
 }
+
+void EffectManager::EmitDestroyEffect(const Vector3& position) {
+	// 敵破壊時：EmitHitEffectより大きく派手に
+	Vector4 fireColor = { 1.0f, 0.5f, 0.1f, 1.0f };  // 炎のオレンジ
+
+	// 1. 大きなRingエフェクト（衝撃波）
+	AddEffect(new RingEffect(position, fireColor, 0.8f, 8.0f));
+
+	// 2. Cylinderエフェクト（爆発柱）
+	AddEffect(new CylinderEffect(position, fireColor, 0.6f, 12.0f, 3.0f));
+
+	// 3. 回転Planeエフェクト（破片散乱風）
+	Vector4 whiteColor = { 1.0f, 1.0f, 0.8f, 1.0f };
+	for (int i = 0; i < 5; i++) {
+		AddEffect(new HitRotPlaneEffect(position, whiteColor, 0.5f, 5.0f));
+	}
+
+	// 4. Billboard Particle エフェクト（大量の火花）
+	AddEffect(new BillboardParticleEffect(position, "HitSpark", 40));
+}
+

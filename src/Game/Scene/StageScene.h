@@ -6,6 +6,9 @@
 #include "FlightModel/FlightModel.h"
 #include "FlightModel/FlightInstructor.h"
 #include "FlightModel/MouseAimController.h"
+#include "FlightModel/Payload/Gunpod.h"
+#include "Enemy/EnemyManager.h"
+#include "Bullet/BulletManager.h"
 
 /// @brief ゲーム本編のステージシーン
 class StageScene : public IScene {
@@ -64,4 +67,15 @@ private:
 	// カメラの回転角キャッシュ（マウスエイムの目標方向計算に使用）
 	float cachedCameraYaw_ = 0.0f;
 	float cachedCameraPitch_ = 0.0f;
+
+	// ============================
+	// 戦闘システム
+	// ============================
+	GunPod gunpod_;
+	EnemyManager enemyManager_;
+	BulletManager bulletManager_;
+
+	// ゲーム状態
+	bool isMissionCleared_ = false;
+	bool isMissionFailed_ = false;
 };

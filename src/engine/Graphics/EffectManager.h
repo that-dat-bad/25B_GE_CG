@@ -102,6 +102,9 @@ public:
 	// planeのみ
 	void EmitHitPlaneEffect(const Vector3& position);
 
+	// 敵破壊時の大きな爆発エフェクト
+	void EmitDestroyEffect(const Vector3& position);
+
 	~EffectManager() = default;
 private:
 	EffectManager() = default;

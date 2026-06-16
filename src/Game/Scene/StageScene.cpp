@@ -7,6 +7,9 @@
 #include "PrimitiveModel.h"
 #include "WinApp.h"
 #include "../../engine/Graphics/PostProcess/PostEffect.h"
+#include "../../engine/Graphics/EffectManager.h"
+#include "../../engine/Graphics/ParticleManager.h"
+#include "../../engine/Physics/CollisionManager.h"
 #include <cmath>
 #include <algorithm>
 
@@ -139,6 +142,40 @@ void StageScene::Initialize() {
 	Vector3 camRot = LookAtRotation(cameraCurrentPos_, cameraLookTarget_);
 	cachedCameraYaw_ = camRot.y;
 	cachedCameraPitch_ = camRot.x;
+
+	// ============================
+	// 戦闘システムの初期化
+	// ============================
+
+	// Gunpod 初期化
+	GunPodData gunpodData{};
+	gunpodData.baseMass = 50.0f;
+	gunpodData.drag = 0.005f;
+	gunpodData.ammoWeight = 0.1f;
+	gunpodData.maxAmmo = 200;
+	gunpodData.fireRate = 10.0f;  // 秒間10発
+	gunpod_.Initialize(gunpodData);
+
+	// 敵の配置（ミッション01仕様）
+	std::vector<EnemySpawnData> mission01Enemies = {
+		{ {  100.0f, 0.0f,  200.0f }, "models/sphere.obj", 50.0f },
+		{ {  -80.0f, 0.0f,  300.0f }, "models/sphere.obj", 50.0f },
+		{ {  200.0f, 0.0f,  450.0f }, "models/sphere.obj", 50.0f },
+		{ { -150.0f, 0.0f,  500.0f }, "models/sphere.obj", 50.0f },
+		{ {   50.0f, 0.0f,  700.0f }, "models/sphere.obj", 50.0f },
+	};
+	enemyManager_.Initialize(mission01Enemies);
+
+	// 弾丸マネージャー初期化
+	bulletManager_.Initialize(512);
+
+	// エフェクトマネージャー初期化
+	EffectManager::GetInstance()->Initialize();
+	ParticleManager::GetInstance()->CreateParticleGroup("HitSpark", "assets/textures/white1x1.png");
+
+	// ゲーム状態リセット
+	isMissionCleared_ = false;
+	isMissionFailed_ = false;
 }
 
 
@@ -251,10 +288,63 @@ void StageScene::Update() {
 		sceneID = SCENE::RESULT;
 	}
 
+	// --- 射撃入力（マウス左クリック） ---
+	if (input->PushMouse(0) && !isMissionCleared_ && !isMissionFailed_) {
+		int ammoBefore = gunpod_.GetCurrentAmmo();
+		gunpod_.Fire();
+		// Fire() が実際に弾を消費した場合のみ弾丸エンティティを生成
+		if (gunpod_.GetCurrentAmmo() < ammoBefore) {
+			Vector3 firePos = flightModel_.GetPosition();
+			Vector3 fireDir = flightModel_.GetForwardDirection();
+			// 機首先端から発射
+			firePos = Add(firePos, Multiply(5.0f, fireDir));
+			bulletManager_.SpawnBullet(firePos, fireDir, 500.0f, 10.0f);
+		}
+	}
+
 	// ============================
 	// FlightModel 物理更新
 	// ============================
 	flightModel_.Update(kDeltaTime);
+
+	// ============================
+	// 戦闘システム更新
+	// ============================
+	gunpod_.Update(kDeltaTime);
+	bulletManager_.Update(kDeltaTime);
+	enemyManager_.Update();
+	EffectManager::GetInstance()->Update();
+
+	// --- 弾丸 × 敵 の衝突判定 ---
+	{
+		auto aliveEnemies = enemyManager_.GetAliveEnemies();
+		int prevAlive = static_cast<int>(aliveEnemies.size());
+
+		CollisionManager::CheckBulletEnemyCollisions(
+			bulletManager_.GetBullets(),
+			aliveEnemies,
+			10.0f  // 弾丸ダメージ
+		);
+
+		// 敵が新たに破壊されたら破壊演出を発生
+		for (auto* enemy : aliveEnemies) {
+			if (!enemy->IsAlive()) {
+				EffectManager::GetInstance()->EmitDestroyEffect(enemy->GetPosition());
+			}
+		}
+	}
+
+	// --- クリア判定 ---
+	if (!isMissionCleared_ && enemyManager_.IsAllDestroyed()) {
+		isMissionCleared_ = true;
+		sceneID = SCENE::CLEAR;
+	}
+
+	// --- 地面衝突判定 ---
+	if (!isMissionFailed_ && CollisionManager::CheckGroundCollision(flightModel_.GetPosition())) {
+		isMissionFailed_ = true;
+		sceneID = SCENE::RESULT;
+	}
 
 	// ============================
 	// 描画オブジェクトに位置・姿勢を反映
@@ -266,8 +356,6 @@ void StageScene::Update() {
 	aircraftObject_->SetRotate(euler);
 	aircraftObject_->Update();
 
-
-
 	if (skybox_) {
 		skybox_->Update();
 	}
@@ -276,7 +364,6 @@ void StageScene::Update() {
 	// 追従カメラ
 	// ============================
 	UpdateChaseCamera(kDeltaTime);
-
 
 	// ============================
 	// ImGui デバッグ UI
@@ -438,6 +525,21 @@ void StageScene::Update() {
 		}
 	}
 #endif
+
+	// === ゲーム情報UI（ImGui仮実装） ===
+#ifdef USE_IMGUI
+	ImGui::Begin("Mission Status");
+	ImGui::Text("Enemies: %d / %d", enemyManager_.GetDestroyedCount(), enemyManager_.GetTotalCount());
+	ImGui::Text("Ammo: %d / %d", gunpod_.GetCurrentAmmo(), gunpod_.GetMaxAmmo());
+	ImGui::Text("Bullets Active: %u", bulletManager_.GetActiveBulletCount());
+	if (isMissionCleared_) {
+		ImGui::TextColored(ImVec4(0, 1, 0, 1), "*** MISSION CLEAR ***");
+	}
+	if (isMissionFailed_) {
+		ImGui::TextColored(ImVec4(1, 0, 0, 1), "*** MISSION FAILED ***");
+	}
+	ImGui::End();
+#endif
 }
 
 
@@ -454,14 +556,27 @@ void StageScene::Draw() {
 		aircraftObject_->Draw();
 	}
 
-	// 地面描画（PrimitiveModelパイプライン — Object3dの後に描画）
+	// 敵描画
+	enemyManager_.Draw();
+
+	// 地面描画（PrimitiveModelパイプライン）
 	DrawGround();
+
+	// 弾丸描画
+	Camera* cam = CameraManager::GetInstance()->GetActiveCamera();
+	bulletManager_.Draw(cam);
+
+	// エフェクト描画
+	EffectManager::GetInstance()->Draw(cam);
 }
 
 
 void StageScene::Finalize() {
 	// シーン終了時にカーソルを復帰
 	Input::GetInstance()->UnlockCursor();
+
+	// エフェクトマネージャーの後片付け
+	EffectManager::GetInstance()->Finalize();
 }
 
 
