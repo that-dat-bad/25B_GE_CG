@@ -129,6 +129,80 @@ void BillboardParticleEffect::Draw(Camera* camera) {
 }
 
 // ============================================
+// ExplosionParticleEffect
+// ============================================
+ExplosionParticleEffect::ExplosionParticleEffect(const Vector3& pos) {
+	position_ = pos;
+	lifeTime_ = 0.1f; // 発行するだけなので短く
+
+	ParticleManager* pm = ParticleManager::GetInstance();
+
+	// === 1. 火花 (Sparks): 高速で放射状に飛散する小さな黄色パーティクル ===
+	{
+		ParticleParameters sparkParams;
+		sparkParams.minVelocity = { -0.8f, -0.3f, -0.8f };
+		sparkParams.maxVelocity = {  0.8f,  1.2f,  0.8f };
+		sparkParams.minColor = { 1.0f, 0.8f, 0.2f, 1.0f };  // 黄色
+		sparkParams.maxColor = { 1.0f, 1.0f, 0.6f, 1.0f };  // 白黄色
+		sparkParams.minLifeTime = 0.3f;
+		sparkParams.maxLifeTime = 0.8f;
+		sparkParams.acceleration = { 0.0f, -0.02f, 0.0f };  // 微量の重力
+		sparkParams.minScale = 0.3f;
+		sparkParams.maxScale = 0.6f;
+		sparkParams.endScale = 0.0f;
+		sparkParams.fadeOut = true;
+		sparkParams.scaleEasing = 0.5f;  // 急速に縮小
+		pm->Emit("ExplosionSpark", position_, sparkParams, 50);
+	}
+
+	// === 2. 炎コア (FireCore): 中心付近でゆっくり膨張するオレンジ～赤 ===
+	{
+		ParticleParameters fireParams;
+		fireParams.minVelocity = { -0.15f, 0.05f, -0.15f };
+		fireParams.maxVelocity = {  0.15f, 0.3f,   0.15f };
+		fireParams.minColor = { 1.0f, 0.3f, 0.0f, 1.0f };  // 深いオレンジ
+		fireParams.maxColor = { 1.0f, 0.6f, 0.1f, 1.0f };  // 明るいオレンジ
+		fireParams.minLifeTime = 0.4f;
+		fireParams.maxLifeTime = 1.0f;
+		fireParams.acceleration = { 0.0f, 0.01f, 0.0f };   // ゆっくり上昇
+		fireParams.minScale = 1.5f;
+		fireParams.maxScale = 3.0f;
+		fireParams.endScale = 0.2f;
+		fireParams.fadeOut = true;
+		fireParams.scaleEasing = 2.0f;  // 後半で急速縮小
+		pm->Emit("ExplosionFire", position_, fireParams, 20);
+	}
+
+	// === 3. 煙 (Smoke): ゆっくり上昇する灰色パーティクル ===
+	{
+		ParticleParameters smokeParams;
+		smokeParams.minVelocity = { -0.08f, 0.1f, -0.08f };
+		smokeParams.maxVelocity = {  0.08f, 0.3f,  0.08f };
+		smokeParams.minColor = { 0.3f, 0.3f, 0.3f, 0.6f };  // 暗い灰色
+		smokeParams.maxColor = { 0.5f, 0.5f, 0.5f, 0.8f };  // 明るい灰色
+		smokeParams.minLifeTime = 1.0f;
+		smokeParams.maxLifeTime = 2.0f;
+		smokeParams.acceleration = { 0.0f, 0.005f, 0.0f };  // 微量上昇
+		smokeParams.minScale = 2.0f;
+		smokeParams.maxScale = 4.0f;
+		smokeParams.endScale = 5.0f;   // 拡散して消える
+		smokeParams.fadeOut = true;
+		smokeParams.scaleEasing = 0.5f;  // 最初に急拡大
+		pm->Emit("ExplosionSmoke", position_, smokeParams, 15);
+	}
+}
+
+void ExplosionParticleEffect::Update() {
+	currentTime_ += 1.0f / 60.0f;
+	if (currentTime_ >= lifeTime_) isDead_ = true;
+}
+
+void ExplosionParticleEffect::Draw(Camera* camera) {
+	// 描画自体はParticleManagerが担当するため何もしない
+	(void)camera;
+}
+
+// ============================================
 // EffectManager
 // ============================================
 std::unique_ptr<EffectManager> EffectManager::instance_ = nullptr;
@@ -203,7 +277,7 @@ void EffectManager::EmitHitPlaneEffect(const Vector3& position) {
 }
 
 void EffectManager::EmitDestroyEffect(const Vector3& position) {
-	// 敵破壊時：EmitHitEffectより大きく派手に
+	// 敵破壊時：爆発パーティクル + 幾何学エフェクトの複合演出
 	Vector4 fireColor = { 1.0f, 0.5f, 0.1f, 1.0f };  // 炎のオレンジ
 
 	// 1. 大きなRingエフェクト（衝撃波）
@@ -218,7 +292,7 @@ void EffectManager::EmitDestroyEffect(const Vector3& position) {
 		AddEffect(new HitRotPlaneEffect(position, whiteColor, 0.5f, 5.0f));
 	}
 
-	// 4. Billboard Particle エフェクト（大量の火花）
-	AddEffect(new BillboardParticleEffect(position, "HitSpark", 40));
+	// 4. 爆発パーティクルエフェクト（火花+炎+煙の複合演出）
+	AddEffect(new ExplosionParticleEffect(position));
 }
 

@@ -182,6 +182,17 @@ void StageScene::Initialize() {
 	EffectManager::GetInstance()->Initialize();
 	ParticleManager::GetInstance()->CreateParticleGroup("HitSpark", "assets/textures/white1x1.png");
 
+	// 爆発用パーティクルグループの登録
+	TextureManager::GetInstance()->LoadTexture("assets/textures/circle.png");
+	ParticleManager::GetInstance()->CreateParticleGroup("ExplosionSpark", "assets/textures/circle.png");
+	ParticleManager::GetInstance()->SetBlendMode("ExplosionSpark", BlendMode::kAdd);
+
+	ParticleManager::GetInstance()->CreateParticleGroup("ExplosionFire", "assets/textures/circle2.png");
+	ParticleManager::GetInstance()->SetBlendMode("ExplosionFire", BlendMode::kAdd);
+
+	ParticleManager::GetInstance()->CreateParticleGroup("ExplosionSmoke", "assets/textures/circle2.png");
+	ParticleManager::GetInstance()->SetBlendMode("ExplosionSmoke", BlendMode::kNormal);
+
 	// ゲーム状態リセット
 	isMissionCleared_ = false;
 	isMissionFailed_ = false;
@@ -548,6 +559,17 @@ void StageScene::Update() {
 	}
 	ImGui::End();
 #endif
+
+	// ============================
+	// ブラックアウト ポストエフェクト（既存ビネットを利用）
+	// ============================
+	// 常にビネットを有効にし、blackoutFactor に応じて強度を滑らかに変化させる
+	// intensity(pow指数): 0.0(透明) → 5.0(ほぼ真っ暗)
+	// pow(x, 0) = 1.0 なので intensity=0 ではビネットは完全に見えない
+	float blackout = flightModel_.GetBlackoutFactor();
+	PostEffect* postEffect = PostEffect::GetInstance();
+	postEffect->SetEffectType(PostEffectType::kVignette);
+	postEffect->SetIntensity(blackout * 5.0f);
 }
 
 

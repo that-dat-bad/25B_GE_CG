@@ -84,6 +84,16 @@ public:
 };
 
 // ============================================
+// 爆発パーティクルエフェクト（火花+炎+煙の複合演出）
+// ============================================
+class ExplosionParticleEffect : public IEffect {
+public:
+	ExplosionParticleEffect(const Vector3& pos);
+	void Update() override;
+	void Draw(Camera* camera) override;
+};
+
+// ============================================
 // エフェクトマネージャー
 // ============================================
 class EffectManager {

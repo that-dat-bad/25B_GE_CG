@@ -24,6 +24,12 @@ struct Particle {
 	Vector4 color;
 	float lifeTime;
 	float currentTime;
+
+	// アニメーション用パラメータ
+	float startScale = 1.0f;   // 初期スケール
+	float endScale = 0.0f;     // 終了時スケール
+	float startAlpha = 1.0f;   // 初期アルファ（フェードアウト用）
+	float scaleEasing = 1.0f;  // スケールイージング指数
 };
 
 // パーティクル発生パラメータ
@@ -35,6 +41,13 @@ struct ParticleParameters {
 	float minLifeTime = 1.0f;
 	float maxLifeTime = 3.0f;
 	Vector3 acceleration = { 0.0f, 0.0f, 0.0f }; // 重力など
+
+	// スケール・フェードアニメーション
+	float minScale = 1.0f;     // 初期スケールの範囲（最小）
+	float maxScale = 1.0f;     // 初期スケールの範囲（最大）
+	float endScale = 0.0f;     // 寿命終了時のスケール
+	bool fadeOut = true;       // アルファフェードアウトの有効化
+	float scaleEasing = 1.0f;  // スケール変化のイージング指数（1.0=リニア）
 };
 
 // GPUに送るインスタンシングデータ (StructuredBuffer用)

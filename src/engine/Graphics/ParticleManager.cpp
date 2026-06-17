@@ -2,6 +2,7 @@
 #include "TextureManager.h"
 #include "CameraManager.h"
 #include <cassert>
+#include <cmath>
 #include <d3dcompiler.h>
 
 #pragma comment(lib, "d3dcompiler.lib")
@@ -88,6 +89,20 @@ void ParticleManager::Update() {
 
 			// 経過時間を加算
 			it->currentTime += 1.0f / 60.0f; // 60FPS想定
+
+			// ============================
+			// ライフタイムベースのアニメーション
+			// ============================
+			float t = it->currentTime / it->lifeTime; // 0.0 ~ 1.0
+			if (t > 1.0f) t = 1.0f;
+
+			// スケール補間（イージング付き）
+			float easedT = std::pow(t, it->scaleEasing);
+			float currentScale = it->startScale + (it->endScale - it->startScale) * easedT;
+			it->transform.scale = { currentScale, currentScale, currentScale };
+
+			// アルファフェードアウト
+			it->color.w = it->startAlpha * (1.0f - t);
 
 			// インスタンス数が最大を超えたらそれ以上処理しない（描画しない）
 			if (group.instanceCount < kMaxInstanceCount_) {
@@ -233,6 +248,9 @@ void ParticleManager::Emit(const std::string& name, const Vector3& position, con
 
 	std::uniform_real_distribution<float> distTime(params.minLifeTime, params.maxLifeTime);
 
+	// スケールのランダム分布
+	std::uniform_real_distribution<float> distScale(params.minScale, params.maxScale);
+
 	// 位置のランダム分布（もし必要ならパラメータ化するが、一旦既存のまま固定範囲にするか、パラメータに入れるか。
 	// ここでは元のEmitに合わせて少し散らす処理は入れておくが、velocityメインで制御する）
 	std::uniform_real_distribution<float> distPos(-1.0f, 1.0f); // 散らし具合は固定で残すか、これもパラメータ化すべきだが
@@ -255,6 +273,15 @@ void ParticleManager::Emit(const std::string& name, const Vector3& position, con
 		particle.color = { distColorR(randomEngine_), distColorG(randomEngine_), distColorB(randomEngine_), distColorA(randomEngine_) };
 		particle.lifeTime = distTime(randomEngine_);
 		particle.currentTime = 0.0f;
+
+		// アニメーションパラメータの設定
+		particle.startScale = distScale(randomEngine_);
+		particle.endScale = params.endScale;
+		particle.startAlpha = particle.color.w; // 初期アルファを保存
+		particle.scaleEasing = params.scaleEasing;
+
+		// 初期スケールを適用
+		particle.transform.scale = { particle.startScale, particle.startScale, particle.startScale };
 
 		group.particles.push_back(particle);
 	}

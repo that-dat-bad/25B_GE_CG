@@ -70,6 +70,8 @@ public:
 	int GetDissolveMaskIndex() const { return dissolveMaskIndex_; }
 	int GetDissolveMaskCount() const { return static_cast<int>(dissolveMaskSrvIndices_.size()); }
 
+
+
 	~PostEffect() = default;
 
 private:
@@ -105,6 +107,7 @@ private:
 	int dissolveMaskIndex_ = 0; // 0=noise0, 1=noise1
 
 	float time_ = 0.0f;
+
 
 	void CreateRootSignature();
 	void CreateDissolveRootSignature();
