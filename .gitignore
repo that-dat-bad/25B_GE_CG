@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /imgui.ini
 /.agents/skills/cpp-pro
+.aider*

@@ -29,6 +29,7 @@ public:
 	float GetThrustAtAltitude(float altitude, float engineDamageFactor) const;
 	float GetFuelConsumptionRate() const { return baseFuelFlowRate_ * currentThrottle_; }
 	float GetCurrentThrottle() const { return currentThrottle_; }
+	void SetThrottle(float throttle) { currentThrottle_ = throttle; }
 
 private:
 	// --- 物理スペック（不変データ） ---

@@ -28,6 +28,7 @@ public:
 
 	// ---setter --
 	void SetThrottleInput(float throttle) { targetThrottle_ = throttle; }                      // 0.0f(停止) ~ 1.0f(全開)
+	void SetThrottle(float throttle) { engine_.SetThrottle(throttle); targetThrottle_ = throttle; }
 	void SetControlInput(float pitch, float roll, float yaw) { inputPitch_ = pitch; inputRoll_ = roll; inputYaw_ = yaw; }   // 各軸 -1.0f ~ 1.0f
 	void SetFlapInput(bool deploy) { airframe_.SetFlapDesired(deploy); }
 	void SetAirBrakeInput(bool deploy) { airframe_.SetAirBrakeDesired(deploy); }
@@ -56,9 +57,10 @@ public:
 	Airframe& GetAirframe() { return airframe_; }
 	const Airframe& GetAirframe() const { return airframe_; }
 
-	// 外部から位置・姿勢をセットする（スポーン時など）
+	// 外部から位置・姿勢・速度をセットする（スポーン時など）
 	void SetPosition(const MyMath::Vector3& pos) { position_ = pos; }
 	void SetOrientation(const MyMath::Quaternion& ori) { orientation_ = ori; }
+	void SetVelocity(const MyMath::Vector3& vel) { velocity_ = vel; }
 
 	// 方向ベクトルの取得（クォータニオンから計算）
 	MyMath::Vector3 GetForwardDirection() const;

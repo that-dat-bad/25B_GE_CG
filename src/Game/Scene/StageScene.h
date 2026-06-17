@@ -78,4 +78,7 @@ private:
 	// ゲーム状態
 	bool isMissionCleared_ = false;
 	bool isMissionFailed_ = false;
+
+	// スロットル入力状態（メンバー変数化して初期化時にリセットできるようにする）
+	float throttle_ = 0.0f;
 };

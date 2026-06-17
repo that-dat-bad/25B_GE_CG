@@ -69,12 +69,21 @@ void StageScene::Initialize() {
 	// 初期位置: 上空100mから開始
 	flightModel_.SetPosition({ 0.0f, 100.0f, 0.0f });
 
+	// 開始時の速度を250km/hに設定
+	float initialSpeed = 250.0f / 3.6f; // m/s
+	flightModel_.SetVelocity(Multiply(initialSpeed, flightModel_.GetForwardDirection()));
+
+	// スロットルを60%に初期化（速度維持のため）
+	throttle_ = 0.6f;
+	flightModel_.SetThrottle(throttle_);
+
 	// ============================
 	// 描画オブジェクトの初期化
 	// ============================
 
 	// テクスチャのプリロード（モデルのマテリアルが参照するテクスチャを先に読み込む）
 	TextureManager::GetInstance()->LoadTexture("assets/textures/uvChecker.png");
+	TextureManager::GetInstance()->LoadTexture("assets/textures/circle2.png");
 
 	// 機体モデル
 	ModelManager::GetInstance()->LoadModel("Resources/planeplane.obj");
@@ -186,16 +195,15 @@ void StageScene::Update() {
 	Input* input = Input::GetInstance();
 
 	// --- スロットル ---
-	static float throttle = 0.0f;
 	if (input->PushKey(DIK_LSHIFT)) {
-		throttle += 0.8f * kDeltaTime;
+		throttle_ += 0.8f * kDeltaTime;
 	}
 	if (input->PushKey(DIK_LCONTROL)) {
-		throttle -= 0.8f * kDeltaTime;
+		throttle_ -= 0.8f * kDeltaTime;
 	}
-	if (throttle < 0.0f) throttle = 0.0f;
-	if (throttle > 1.0f) throttle = 1.0f;
-	flightModel_.SetThrottleInput(throttle);
+	if (throttle_ < 0.0f) throttle_ = 0.0f;
+	if (throttle_ > 1.0f) throttle_ = 1.0f;
+	flightModel_.SetThrottleInput(throttle_);
 
 	// --- マウスエイム ON/OFF トグル (M キー) ---
 	if (input->TriggerKey(DIK_M)) {
@@ -395,7 +403,7 @@ void StageScene::Update() {
 
 	ImGui::Separator();
 	ImGui::Text("=== Engine ===");
-	ImGui::Text("Throttle: %.0f%%", throttle * 100.0f);
+	ImGui::Text("Throttle: %.0f%%", throttle_ * 100.0f);
 	ImGui::Text("Engine Output: %.0f%%", flightModel_.GetCurrentThrottle() * 100.0f);
 	ImGui::Text("Fuel: %.1f kg", flightModel_.GetCurrentFuel());
 
