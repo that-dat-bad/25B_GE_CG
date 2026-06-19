@@ -489,23 +489,40 @@ void FlightModel::UpdateOrientation(float deltaTime)
 // ===========================================================
 void FlightModel::UpdateGEffects(float deltaTime)
 {
-	// --- ブラックアウト（高正G） ---
-	if (currentG_ > kBlackoutOnsetG) {
-		float excess = currentG_ - kBlackoutOnsetG;
-		blackoutFactor_ += excess * kGEffectBuildRate * deltaTime;
-	} else {
-		blackoutFactor_ -= kGEffectRecoveryRate * deltaTime;
-	}
-	blackoutFactor_ = std::clamp(blackoutFactor_, 0.0f, 1.0f);
+	// --- Gエフェクト進行の共通処理 ---
+	auto UpdateGEffect = [&](float currentG, float onsetG, float buildRate, float& toleranceTimer, float& factor) {
+		bool isTriggered = false;
+		float excess = 0.0f;
+		
+		// 閾値判定（OnsetG が正ならブラックアウト、負ならレッドアウト）
+		if (onsetG > 0.0f && currentG > onsetG) {
+			isTriggered = true;
+			excess = currentG - onsetG;
+		} else if (onsetG < 0.0f && currentG < onsetG) {
+			isTriggered = true;
+			excess = onsetG - currentG; // 超過分を正の値にする
+		}
 
-	// --- レッドアウト（負G） ---
-	if (currentG_ < kRedoutOnsetG) {
-		float excess = -(currentG_ - kRedoutOnsetG); // 正の値にする
-		redoutFactor_ += excess * (kGEffectBuildRate * 1.5f) * deltaTime;
-	} else {
-		redoutFactor_ -= kGEffectRecoveryRate * deltaTime;
-	}
-	redoutFactor_ = std::clamp(redoutFactor_, 0.0f, 1.0f);
+		if (isTriggered) {
+			// 規定Gを超えたら、まずは猶予タイマーを進める
+			toleranceTimer += deltaTime;
+			if (toleranceTimer >= 0.3f) { // 0.3秒耐えたら症状が出始める
+				factor += excess * buildRate * deltaTime;
+			}
+		} else {
+			// Gが収まったら猶予タイマーは急速回復、症状自体はゆっくり回復
+			toleranceTimer -= deltaTime * 2.0f;
+			toleranceTimer = (std::max)(0.0f, toleranceTimer);
+			factor -= kGEffectRecoveryRate * deltaTime;
+		}
+		
+		// 0.0 ～ 1.0 の範囲にクランプ
+		factor = std::clamp(factor, 0.0f, 1.0f);
+	};
+
+	// ブラックアウト（高正G）とレッドアウト（負G）を共通処理で更新
+	UpdateGEffect(currentG_, kBlackoutOnsetG, kGEffectBuildRate, blackoutToleranceTimer_, blackoutFactor_);
+	UpdateGEffect(currentG_, kRedoutOnsetG, kGEffectBuildRate * 1.5f, redoutToleranceTimer_, redoutFactor_);
 
 	// --- 構造G超過ダメージ（翼に蓄積） ---
 	float posLimit = airframe_.GetPositiveGLimit();

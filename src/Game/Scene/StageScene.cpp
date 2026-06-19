@@ -98,6 +98,7 @@ void StageScene::Initialize() {
 	groundTextureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/white1x1.png");
 
 
+
 	// Skybox
 	TextureManager::GetInstance()->LoadTexture("assets/textures/cedar_bridge_sunset_1_2k.dds");
 	skybox_ = std::make_unique<Skybox>();
@@ -114,7 +115,7 @@ void StageScene::Initialize() {
 	if (dirLight) {
 		dirLight->color = { 1.0f, 0.95f, 0.85f, 1.0f };       // やや暖色の太陽光
 		dirLight->direction = { 0.5f, -0.8f, 0.3f };           // 斜め上から
-		dirLight->intensity = 1.2f;
+		dirLight->intensity = 0.5f;
 	}
 	// ライティングモデル設定
 	Object3dCommon::GetInstance()->SetLightType(1);             // Directional Light 有効
@@ -161,8 +162,8 @@ void StageScene::Initialize() {
 	gunpodData.baseMass = 50.0f;
 	gunpodData.drag = 0.005f;
 	gunpodData.ammoWeight = 0.1f;
-	gunpodData.maxAmmo = 200;
-	gunpodData.fireRate = 10.0f;  // 秒間10発
+	gunpodData.maxAmmo = 500;
+	gunpodData.fireRate = 25.0f;  // 秒間25発（レートアップ）
 	gunpod_.Initialize(gunpodData);
 
 	// 敵の配置（ミッション01仕様）
@@ -196,6 +197,7 @@ void StageScene::Initialize() {
 	// ゲーム状態リセット
 	isMissionCleared_ = false;
 	isMissionFailed_ = false;
+	muzzleFlashTimer_ = 0.0f;
 }
 
 
@@ -294,6 +296,8 @@ void StageScene::Update() {
 			}
 		}
 
+
+
 		// マウスエイムコントローラーがPID制御で操舵入力を生成
 		mouseAimController_.CalculateSteeringInput(
 			flightModel_.GetOrientation(),
@@ -335,9 +339,42 @@ void StageScene::Update() {
 			Vector3 firePos = flightModel_.GetPosition();
 			Vector3 fireDir = flightModel_.GetForwardDirection();
 			// 機首先端から発射
-			firePos = Add(firePos, Multiply(5.0f, fireDir));
+			firePos = Add(firePos, Multiply(8.0f, fireDir));
 			bulletManager_.SpawnBullet(firePos, fireDir, 500.0f, 10.0f);
+
+			// マズルフラッシュの間引き（2発に1回エフェクトを発生）
+			muzzleFlashCount_++;
+			if (muzzleFlashCount_ % 2 == 0) {
+				EffectManager::GetInstance()->EmitMuzzleFlash(firePos, fireDir);
+				muzzleFlashTimer_ = 0.08f; // 表示時間
+
+				// ランダム化パラメータの設定
+				muzzleFlashRandomScale_ = 0.8f + (rand() % 40) / 100.0f; // 0.8 ~ 1.2
+				muzzleFlashRandomRoll_ = (rand() % 628) / 100.0f;        // 0 ~ 2PI
+				muzzleFlashRandomAlpha_ = 0.8f + (rand() % 20) / 100.0f; // 0.8 ~ 1.0
+
+				// 動的ライト (PointLight) の点灯
+				PointLight* pLight = Object3dCommon::GetInstance()->GetPointLightData();
+				if (pLight) {
+					pLight->position = firePos;
+					pLight->color = { 1.0f, 0.4f, 0.05f, 1.0f }; // 濃いオレンジ
+					pLight->intensity = 30.0f; // 強く光らせる
+					pLight->radius = 30.0f;    // 届く範囲
+					pLight->decay = 2.0f;      // 減衰
+				}
+			}
 		}
+	}
+
+	if (muzzleFlashTimer_ > 0.0f) {
+		muzzleFlashTimer_ -= kDeltaTime;
+	}
+
+	// 動的ライトの減衰（毎フレーム少しずつ暗くする）
+	PointLight* pLight = Object3dCommon::GetInstance()->GetPointLightData();
+	if (pLight && pLight->intensity > 0.0f) {
+		pLight->intensity -= 200.0f * kDeltaTime; // 0.15秒程度で消えるペース
+		if (pLight->intensity < 0.0f) pLight->intensity = 0.0f;
 	}
 
 	// ============================
@@ -580,15 +617,18 @@ void StageScene::Update() {
 #endif
 
 	// ============================
-	// ブラックアウト ポストエフェクト（既存ビネットを利用）
+	// ブラックアウト & レッドアウト ポストエフェクト（既存ビネットを拡張）
 	// ============================
-	// 常にビネットを有効にし、blackoutFactor に応じて強度を滑らかに変化させる
-	// intensity(pow指数): 0.0(透明) → 5.0(ほぼ真っ暗)
-	// pow(x, 0) = 1.0 なので intensity=0 ではビネットは完全に見えない
+	// 常にビネットを有効にし、Gフォースに応じて強度を滑らかに変化させる
+	// intensity(ブラックアウト): 0.0(透明) → 5.0(ほぼ真っ暗)
+	// dirX(レッドアウト): 0.0(透明) → 1.0以上(真っ赤)
 	float blackout = flightModel_.GetBlackoutFactor();
+	float redout = flightModel_.GetRedoutFactor();
+	
 	PostEffect* postEffect = PostEffect::GetInstance();
 	postEffect->SetEffectType(PostEffectType::kVignette);
 	postEffect->SetIntensity(blackout * 5.0f);
+	postEffect->SetDirX(redout * 1.5f); // 1.5倍で強めにかける
 }
 
 
@@ -617,6 +657,65 @@ void StageScene::Draw() {
 
 	// エフェクト描画
 	EffectManager::GetInstance()->Draw(cam);
+
+	// 追従マズルフラッシュ（板ポリ・リング）の描画
+	if (muzzleFlashTimer_ > 0.0f) {
+		Vector3 aircraftPos = flightModel_.GetPosition();
+		Vector3 forward = flightModel_.GetForwardDirection();
+		Vector3 muzzlePos = Add(aircraftPos, Multiply(8.0f, forward));
+		
+		float t = 1.0f - (muzzleFlashTimer_ / 0.08f); // 0.0(開始) -> 1.0(終了)
+		if (t < 0.0f) t = 0.0f;
+		if (t > 1.0f) t = 1.0f;
+		
+		// 機体の回転を取得（オイラー角）
+		Vector3 aircraftRot = QuaternionToEuler(flightModel_.GetOrientation());
+		
+		float randomAlpha = muzzleFlashRandomAlpha_ * (1.0f - t);
+		
+		// ============================
+		// 1. Flash (中心の閃光)
+		// ============================
+		// 銃口から前方（Z軸方向）に長く伸びる十字の板ポリゴン
+		uint32_t flashTex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/white1x1.png");
+		Vector4 flashColor = { 1.0f, 0.9f, 0.6f, randomAlpha }; // 鋭い白黄色
+		
+		// Z軸方向（長さ）を大きくし、X/Y軸方向は細くする
+		float flashLength = 10.0f * muzzleFlashRandomScale_ * (1.0f - t);
+		float flashWidth = 0.5f * muzzleFlashRandomScale_ * (1.0f - t);
+		Vector3 flashScale = { flashWidth, flashWidth, flashLength };
+		
+		for (int i = 0; i < 2; i++) {
+			Vector3 rot = aircraftRot;
+			// 進行方向（Z軸）を中心に十字になるように回転
+			rot.z += muzzleFlashRandomRoll_ + (i * 3.14159f / 2.0f);
+			// DrawCylinder を使って長さを表現する（または Z向きに引き伸ばした板ポリ）
+			// ※PrimitiveModel::DrawPlane は XY平面(Z=0)のポリゴンのため、そのままでは前方に伸びない
+			// ここでは DrawCylinder を前方に伸ばす形で利用する
+			Vector3 cylinderRot = aircraftRot;
+			cylinderRot.z += muzzleFlashRandomRoll_ + (i * 3.14159f / 2.0f);
+			PrimitiveModel::GetInstance()->DrawCylinder(flashScale, cylinderRot, muzzlePos, flashColor, flashTex, cam, BlendMode::kAdd);
+		}
+
+		// ============================
+		// 2. Petals (星型の広がり)
+		// ============================
+		// 銃口の横（XY平面）に広がるガス炎
+		uint32_t petalTex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/circle2.png");
+		Vector4 petalColor = { 1.0f, 0.5f, 0.1f, randomAlpha }; // オレンジ色
+		float petalSize = 4.0f * muzzleFlashRandomScale_ * (1.0f - t);
+		Vector3 petalScale = { petalSize * 0.15f, petalSize, petalSize * 0.15f };
+		
+		for (int i = 0; i < 4; i++) {
+			Vector3 rot = aircraftRot;
+			// ベースがXZ平面（法線+Y）なので、X軸で90度回転させて前方を向ける
+			rot.x += 3.14159265f / 2.0f;
+			// 十字/星型になるようにZ軸回転
+			rot.z += muzzleFlashRandomRoll_ + (i * 3.14159f / 4.0f);
+			
+			PrimitiveModel::GetInstance()->DrawPlane(petalScale, rot, muzzlePos, petalColor, petalTex, cam, BlendMode::kAdd);
+		}
+	}
 }
 
 

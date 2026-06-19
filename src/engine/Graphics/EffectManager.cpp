@@ -203,6 +203,104 @@ void ExplosionParticleEffect::Draw(Camera* camera) {
 }
 
 // ============================================
+// MuzzleFlashEffect (発砲時の閃光 + 火花)
+// ============================================
+MuzzleFlashEffect::MuzzleFlashEffect(const Vector3& pos, const Vector3& direction) {
+	position_ = pos;
+	direction_ = Normalize(direction);
+	lifeTime_ = 0.1f; // 発行するだけなので短く
+
+	ParticleManager* pm = ParticleManager::GetInstance();
+
+	// === 1. 火花 (Sparks): 小さく多数を射撃方向に沿って飛散 ===
+	{
+		ParticleParameters sparkParams;
+		float sparkBase = 6.0f;
+		float sparkSpread = 4.0f;
+		sparkParams.minVelocity = {
+			direction_.x * sparkBase - sparkSpread,
+			direction_.y * sparkBase - sparkSpread,
+			direction_.z * sparkBase - sparkSpread
+		};
+		sparkParams.maxVelocity = {
+			direction_.x * sparkBase + sparkSpread,
+			direction_.y * sparkBase + sparkSpread,
+			direction_.z * sparkBase + sparkSpread
+		};
+		sparkParams.minColor = { 1.0f, 0.6f, 0.1f, 1.0f };  // オレンジ色
+		sparkParams.maxColor = { 1.0f, 0.8f, 0.2f, 1.0f };   // 少し明るいオレンジ
+		sparkParams.minLifeTime = 0.03f;
+		sparkParams.maxLifeTime = 0.12f;
+		sparkParams.acceleration = { 0.0f, -0.02f, 0.0f };
+		sparkParams.minScale = 0.02f; // 小さく
+		sparkParams.maxScale = 0.08f;
+		sparkParams.endScale = 0.0f;
+		sparkParams.fadeOut = true;
+		sparkParams.scaleEasing = 0.5f;
+
+		// ストレッチ（引き伸ばし）ビルボードを有効化
+		sparkParams.isStretched = true;
+		sparkParams.stretchFactor = 0.08f; // 速度に応じて長さが変わる係数
+
+		pm->Emit("ExplosionSpark", position_, sparkParams, 60); // 30 -> 60 に増やす
+	}
+
+	// === 2. フラッシュコア: 銃口で一瞬大きく光る閃光 ===
+	{
+		ParticleParameters flashParams;
+		flashParams.minVelocity = { 0.0f, 0.0f, 0.0f };
+		flashParams.maxVelocity = { 0.0f, 0.0f, 0.0f };
+		flashParams.minColor = { 1.0f, 0.5f, 0.05f, 1.0f }; // 濃いオレンジ
+		flashParams.maxColor = { 1.0f, 0.7f, 0.1f, 1.0f };  // オレンジ
+		flashParams.minLifeTime = 0.03f;
+		flashParams.maxLifeTime = 0.06f;
+		flashParams.acceleration = { 0.0f, 0.0f, 0.0f };
+		flashParams.minScale = 1.0f; // 3.0 -> 1.0 に小さく
+		flashParams.maxScale = 2.0f; // 5.0 -> 2.0 に小さく
+		flashParams.endScale = 0.0f;
+		flashParams.fadeOut = true;
+		flashParams.scaleEasing = 0.2f;
+		pm->Emit("ExplosionFire", position_, flashParams, 10); // 4 -> 10 に増やす
+	}
+
+	// === 3. スモーク (Smoke): 発砲後にほんの一瞬残る微量の煙 ===
+	{
+		ParticleParameters smokeParams;
+		smokeParams.minVelocity = { -0.5f, -0.5f, -0.5f };
+		smokeParams.maxVelocity = { 0.5f, 0.5f, 0.5f };
+		// 進行方向（逆向き）に少し流れる
+		smokeParams.minVelocity.x -= direction_.x * 2.0f;
+		smokeParams.minVelocity.y -= direction_.y * 2.0f;
+		smokeParams.minVelocity.z -= direction_.z * 2.0f;
+		smokeParams.maxVelocity.x -= direction_.x * 2.0f;
+		smokeParams.maxVelocity.y -= direction_.y * 2.0f;
+		smokeParams.maxVelocity.z -= direction_.z * 2.0f;
+		
+		smokeParams.minColor = { 0.4f, 0.4f, 0.4f, 0.3f };  // 薄いグレー
+		smokeParams.maxColor = { 0.6f, 0.6f, 0.6f, 0.5f };
+		smokeParams.minLifeTime = 0.15f;
+		smokeParams.maxLifeTime = 0.3f;
+		smokeParams.acceleration = { 0.0f, 0.5f, 0.0f }; // 少し上に昇る
+		smokeParams.minScale = 1.5f;
+		smokeParams.maxScale = 2.5f;
+		smokeParams.endScale = 4.0f; // ゆっくり広がる
+		smokeParams.fadeOut = true;
+		smokeParams.scaleEasing = 1.0f;
+		pm->Emit("ExplosionSmoke", position_, smokeParams, 4); // 少量の煙
+	}
+}
+
+void MuzzleFlashEffect::Update() {
+	currentTime_ += 1.0f / 60.0f;
+	if (currentTime_ >= lifeTime_) isDead_ = true;
+}
+
+void MuzzleFlashEffect::Draw(Camera* camera) {
+	// 描画自体はParticleManagerが担当するため何もしない
+	(void)camera;
+}
+
+// ============================================
 // EffectManager
 // ============================================
 std::unique_ptr<EffectManager> EffectManager::instance_ = nullptr;
@@ -294,5 +392,11 @@ void EffectManager::EmitDestroyEffect(const Vector3& position) {
 
 	// 4. 爆発パーティクルエフェクト（火花+炎+煙の複合演出）
 	AddEffect(new ExplosionParticleEffect(position));
+}
+
+void EffectManager::EmitMuzzleFlash(const Vector3& position, const Vector3& direction) {
+	// パーティクルベースの火花+閃光
+	// (板ポリやリングの閃光はStageScene側で機体に追従させて描画する)
+	AddEffect(new MuzzleFlashEffect(position, direction));
 }
 

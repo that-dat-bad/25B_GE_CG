@@ -30,6 +30,10 @@ struct Particle {
 	float endScale = 0.0f;     // 終了時スケール
 	float startAlpha = 1.0f;   // 初期アルファ（フェードアウト用）
 	float scaleEasing = 1.0f;  // スケールイージング指数
+
+	// ストレッチビルボード
+	bool isStretched = false;
+	float stretchFactor = 1.0f;
 };
 
 // パーティクル発生パラメータ
@@ -48,6 +52,10 @@ struct ParticleParameters {
 	float endScale = 0.0f;     // 寿命終了時のスケール
 	bool fadeOut = true;       // アルファフェードアウトの有効化
 	float scaleEasing = 1.0f;  // スケール変化のイージング指数（1.0=リニア）
+
+	// ストレッチ（引き伸ばし）ビルボード用
+	bool isStretched = false;
+	float stretchFactor = 1.0f;
 };
 
 // GPUに送るインスタンシングデータ (StructuredBuffer用)

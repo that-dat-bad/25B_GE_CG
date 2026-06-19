@@ -59,6 +59,12 @@ public:
 	void SetIntensity(float intensity) { intensity_ = intensity; }
 	float GetIntensity() const { return intensity_; }
 
+	void SetDirX(float dirX) { dirX_ = dirX; }
+	float GetDirX() const { return dirX_; }
+
+	void SetDirY(float dirY) { dirY_ = dirY; }
+	float GetDirY() const { return dirY_; }
+
 	// Dissolve パラメータ
 	void SetDissolveThreshold(float t) { dissolveThreshold_ = t; }
 	float GetDissolveThreshold() const { return dissolveThreshold_; }
@@ -97,6 +103,8 @@ private:
 	PostEffectParams* mappedPostEffectParams_ = nullptr;
 	int32_t kernelSize_ = 3;
 	float intensity_ = 1.0f;
+	float dirX_ = 0.0f;
+	float dirY_ = 0.0f;
 
 	// Dissolve 用
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> dissolveRootSignature_;

@@ -94,6 +94,18 @@ public:
 };
 
 // ============================================
+// マズルフラッシュエフェクト（発砲時の火花+閃光）
+// ============================================
+class MuzzleFlashEffect : public IEffect {
+public:
+	MuzzleFlashEffect(const Vector3& pos, const Vector3& direction);
+	void Update() override;
+	void Draw(Camera* camera) override;
+private:
+	Vector3 direction_;
+};
+
+// ============================================
 // エフェクトマネージャー
 // ============================================
 class EffectManager {
@@ -114,6 +126,9 @@ public:
 
 	// 敵破壊時の大きな爆発エフェクト
 	void EmitDestroyEffect(const Vector3& position);
+
+	// 発砲時のマズルフラッシュエフェクト
+	void EmitMuzzleFlash(const Vector3& position, const Vector3& direction);
 
 	~EffectManager() = default;
 private:

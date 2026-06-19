@@ -83,6 +83,17 @@ private:
 	EnemyManager enemyManager_;
 	BulletManager bulletManager_;
 
+	// 追従マズルフラッシュ描画用タイマー
+	float muzzleFlashTimer_ = 0.0f;
+	
+	// マズルフラッシュの間引き（スキップ）制御用カウンター
+	int muzzleFlashCount_ = 0;
+	
+	// マズルフラッシュのランダム化パラメータ
+	float muzzleFlashRandomScale_ = 1.0f;
+	float muzzleFlashRandomRoll_ = 0.0f;
+	float muzzleFlashRandomAlpha_ = 1.0f;
+
 	// ゲーム状態
 	bool isMissionCleared_ = false;
 	bool isMissionFailed_ = false;

@@ -110,7 +110,42 @@ void ParticleManager::Update() {
 				// ワールド行列の計算
 				Matrix4x4 scaleMatrix = MakeScaleMatrix(it->transform.scale);
 				Matrix4x4 translateMatrix = MakeTranslateMatrix(it->transform.translate);
-				Matrix4x4 worldMatrix = Multiply(scaleMatrix, Multiply(billboardMatrix, translateMatrix));
+				
+				Matrix4x4 finalBillboard = billboardMatrix;
+				
+				if (it->isStretched) {
+					Vector3 camToParticle = Substract(it->transform.translate, camera->GetTranslate());
+					if (Length(camToParticle) > 0.001f) {
+						camToParticle = Normalize(camToParticle);
+						float speed = Length(it->velocity);
+						if (speed > 0.001f) {
+							Vector3 velDir = Normalize(it->velocity);
+							// 速度ベクトルをスクリーン平面（法線camToParticle）に投影
+							float dot = Dot(velDir, camToParticle);
+							Vector3 projVel = Substract(velDir, Multiply(dot, camToParticle));
+							if (Length(projVel) > 0.0001f) {
+								projVel = Normalize(projVel);
+								Vector3 right = Normalize(Cross(camToParticle, projVel));
+								
+								// 進行方向（Y軸）と右方向（X軸）でカスタムビルボード行列を構築
+								finalBillboard.m[0][0] = right.x;
+								finalBillboard.m[0][1] = right.y;
+								finalBillboard.m[0][2] = right.z;
+								finalBillboard.m[1][0] = projVel.x;
+								finalBillboard.m[1][1] = projVel.y;
+								finalBillboard.m[1][2] = projVel.z;
+								finalBillboard.m[2][0] = -camToParticle.x; // 手前を向く
+								finalBillboard.m[2][1] = -camToParticle.y;
+								finalBillboard.m[2][2] = -camToParticle.z;
+								
+								// Y軸（進行方向）にスケールを引き伸ばす
+								scaleMatrix.m[1][1] *= (1.0f + speed * it->stretchFactor);
+							}
+						}
+					}
+				}
+
+				Matrix4x4 worldMatrix = Multiply(scaleMatrix, Multiply(finalBillboard, translateMatrix));
 
 				// WVP行列の計算
 				Matrix4x4 wvp = Multiply(worldMatrix, viewProjectionMatrix);
@@ -279,6 +314,9 @@ void ParticleManager::Emit(const std::string& name, const Vector3& position, con
 		particle.endScale = params.endScale;
 		particle.startAlpha = particle.color.w; // 初期アルファを保存
 		particle.scaleEasing = params.scaleEasing;
+
+		particle.isStretched = params.isStretched;
+		particle.stretchFactor = params.stretchFactor;
 
 		// 初期スケールを適用
 		particle.transform.scale = { particle.startScale, particle.startScale, particle.startScale };

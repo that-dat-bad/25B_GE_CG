@@ -21,19 +21,31 @@ void BulletManager::Update(float dt) {
 void BulletManager::Draw(Camera* camera) {
 	if (!camera) return;
 
-	// 弾丸テクスチャインデックス（白1x1テクスチャを使用）
-	uint32_t texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/white1x1.png");
+	// 丸いパーティクル用テクスチャ（マズルフラッシュと同じもの）
+	uint32_t texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/circle2.png");
 
-	// アクティブな弾丸をPrimitiveModelの板ポリで描画（ビルボード風トレーサー）
+	// アクティブな弾丸をビルボードのパーティクル球として描画
 	for (const auto& bullet : bullets_) {
 		if (!bullet.IsAlive()) continue;
 
 		Vector3 pos = bullet.GetPosition();
-		Vector3 scale = { 0.5f, 0.5f, 0.5f };   // 小さな板ポリ
+		Vector3 vel = bullet.GetVelocity();
+		
+		// 速度ベクトルから回転角（Yaw, Pitch）を計算
+		Vector3 velDir = { 0.0f, 0.0f, 1.0f }; // デフォルト
+		float speed = Length(vel);
 		Vector3 rotate = { 0.0f, 0.0f, 0.0f };
-		Vector4 color = { 1.0f, 0.9f, 0.3f, 1.0f };  // 黄色のトレーサー
+		if (speed > 0.001f) {
+			velDir = Normalize(vel);
+			rotate.y = std::atan2(velDir.x, velDir.z); // Yaw
+			rotate.x = std::asin(-velDir.y);           // Pitch
+		}
 
-		PrimitiveModel::GetInstance()->DrawPlane(
+		// 曳光弾（Tracer）として、細長く引き伸ばす（Z軸方向）
+		Vector3 scale = { 0.15f, 0.15f, 4.0f }; // 幅0.15m、長さ4mの線状メッシュ
+		Vector4 color = { 1.0f, 0.2f, 0.1f, 1.0f };  // 赤色に発光
+
+		PrimitiveModel::GetInstance()->DrawCylinder(
 			scale, rotate, pos, color,
 			texIndex, camera, BlendMode::kAdd
 		);

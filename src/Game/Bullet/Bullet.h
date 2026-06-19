@@ -24,6 +24,7 @@ public:
 	// === アクセッサ ===
 	bool IsAlive() const { return isAlive_; }
 	MyMath::Vector3 GetPosition() const { return position_; }
+	MyMath::Vector3 GetVelocity() const { return velocity_; }
 	float GetDamage() const { return damage_; }
 
 	/// @brief 衝突判定用のコライダーを取得

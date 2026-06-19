@@ -92,6 +92,8 @@ private:
 	bool  isStalling_;        // 失速中フラグ
 	float blackoutFactor_;    // ブラックアウト度合い (+G)
 	float redoutFactor_;      // レッドアウト度合い (-G)
+	float blackoutToleranceTimer_ = 0.0f; // ブラックアウトまでの猶予タイマー
+	float redoutToleranceTimer_ = 0.0f;   // レッドアウトまでの猶予タイマー
 
 	// プレイヤーからの入力状態
 	float targetThrottle_;  // 目標スロットル

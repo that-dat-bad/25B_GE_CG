@@ -26,9 +26,26 @@ PixelShaderOutput main(VertexShaderOutput input)
     //周囲を0に、中心になるほど明るくなるように
     float32_t2 correct = input.texcoord * (1.0f - input.texcoord.yx);
     float vignette = correct.x * correct.y * 16.0f;
-    // intensity で pow の指数を制御: 大きい値ほどビネットが強くなる
-    vignette = saturate(pow(vignette, intensity));
-    output.color.rgb *= vignette;
+    
+    // 1. ブラックアウト処理
+    // intensity で pow の指数を制御: 大きい値ほどビネット（暗転）が強くなる
+    float blackoutFactor = saturate(pow(vignette, intensity));
+    output.color.rgb *= blackoutFactor;
+
+    // 2. レッドアウト処理
+    // dirX はレッドアウトの強度（0.0〜）
+    if (dirX > 0.0f) {
+        // 画面の端ほど強く赤くなり、中央も赤みがかかるようにする
+        // (1.0 - vignette) は画面端で 1.0、中央で 0.0 になる
+        float edgeRedness = saturate(1.0f - vignette);
+        
+        // レッドアウトの強さに応じて、基本の赤み＋端の赤みをブレンド
+        // 全体を赤く染めつつ、端はさらに濃い赤にする
+        float totalRedness = saturate(dirX * (0.3f + edgeRedness * 0.7f));
+        
+        float3 redColor = float3(0.9f, 0.05f, 0.05f); // 血のような赤
+        output.color.rgb = lerp(output.color.rgb, redColor, totalRedness);
+    }
     
     return output;
 }

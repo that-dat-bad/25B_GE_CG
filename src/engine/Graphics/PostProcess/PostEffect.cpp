@@ -379,8 +379,8 @@ void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderText
 		PostEffectParams* param0 = reinterpret_cast<PostEffectParams*>(reinterpret_cast<uint8_t*>(mappedPostEffectParams_) + 0);
 		param0->kernelSize = kernelSize_;
 		param0->intensity = intensity_;
-		param0->dirX = 1.0f;
-		param0->dirY = 1.0f;
+		param0->dirX = dirX_;
+		param0->dirY = dirY_;
 		param0->time = time_;
 		commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress());
 
