@@ -677,24 +677,25 @@ void StageScene::Draw() {
 		// 1. Flash (中心の閃光)
 		// ============================
 		// 銃口から前方（Z軸方向）に長く伸びる十字の板ポリゴン
-		uint32_t flashTex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/white1x1.png");
-		Vector4 flashColor = { 1.0f, 0.9f, 0.6f, randomAlpha }; // 鋭い白黄色
+		uint32_t flashTex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/circle2.png");
+		Vector4 flashColor = { 1.0f, 0.7f, 0.2f, randomAlpha }; // 燃えるようなオレンジイエロー
 		
-		// Z軸方向（長さ）を大きくし、X/Y軸方向は細くする
-		float flashLength = 10.0f * muzzleFlashRandomScale_ * (1.0f - t);
-		float flashWidth = 0.5f * muzzleFlashRandomScale_ * (1.0f - t);
-		Vector3 flashScale = { flashWidth, flashWidth, flashLength };
+		// Z軸方向（長さ）と幅の調整
+		float flashLength = 4.0f * muzzleFlashRandomScale_ * (1.0f - t);
+		float flashWidth = 1.0f * muzzleFlashRandomScale_ * (1.0f - t);
+		Vector3 flashScale = { flashWidth, flashLength, 1.0f }; // Y軸方向に長くする（あとでX軸回転でZ軸方向に向ける）
+		
+		// 板ポリの中心が銃口になるため、前方に長さの半分だけオフセットする
+		Vector3 flashPos = Add(muzzlePos, Multiply(flashLength * 0.5f, forward));
 		
 		for (int i = 0; i < 2; i++) {
 			Vector3 rot = aircraftRot;
-			// 進行方向（Z軸）を中心に十字になるように回転
+			// 1. X軸で90度回転し、Y軸方向の伸びをZ軸方向（前方）へ向ける
+			rot.x -= 3.14159265f / 2.0f;
+			// 2. 進行方向（Z軸）を中心に十字になるように回転
 			rot.z += muzzleFlashRandomRoll_ + (i * 3.14159f / 2.0f);
-			// DrawCylinder を使って長さを表現する（または Z向きに引き伸ばした板ポリ）
-			// ※PrimitiveModel::DrawPlane は XY平面(Z=0)のポリゴンのため、そのままでは前方に伸びない
-			// ここでは DrawCylinder を前方に伸ばす形で利用する
-			Vector3 cylinderRot = aircraftRot;
-			cylinderRot.z += muzzleFlashRandomRoll_ + (i * 3.14159f / 2.0f);
-			PrimitiveModel::GetInstance()->DrawCylinder(flashScale, cylinderRot, muzzlePos, flashColor, flashTex, cam, BlendMode::kAdd);
+			
+			PrimitiveModel::GetInstance()->DrawPlane(flashScale, rot, flashPos, flashColor, flashTex, cam, BlendMode::kAdd);
 		}
 
 		// ============================
@@ -702,15 +703,17 @@ void StageScene::Draw() {
 		// ============================
 		// 銃口の横（XY平面）に広がるガス炎
 		uint32_t petalTex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/circle2.png");
-		Vector4 petalColor = { 1.0f, 0.5f, 0.1f, randomAlpha }; // オレンジ色
-		float petalSize = 4.0f * muzzleFlashRandomScale_ * (1.0f - t);
-		Vector3 petalScale = { petalSize * 0.15f, petalSize, petalSize * 0.15f };
+		Vector4 petalColor = { 1.0f, 0.4f, 0.05f, randomAlpha }; // 濃いオレンジ色
+		
+		// 星の「トゲ」を表現するため、細長い楕円を複数枚重ねる
+		float petalLength = 3.0f * muzzleFlashRandomScale_ * (1.0f - t);
+		float petalWidth = 0.5f * muzzleFlashRandomScale_ * (1.0f - t);
+		Vector3 petalScale = { petalWidth, petalLength, 1.0f };
 		
 		for (int i = 0; i < 4; i++) {
 			Vector3 rot = aircraftRot;
-			// ベースがXZ平面（法線+Y）なので、X軸で90度回転させて前方を向ける
-			rot.x += 3.14159265f / 2.0f;
-			// 十字/星型になるようにZ軸回転
+			// ペタルは前方に伸びるのではなく、銃口の正面（XY平面）に広がるため、X軸の回転は不要！
+			// 十字/星型になるようにZ軸のみ回転させる
 			rot.z += muzzleFlashRandomRoll_ + (i * 3.14159f / 4.0f);
 			
 			PrimitiveModel::GetInstance()->DrawPlane(petalScale, rot, muzzlePos, petalColor, petalTex, cam, BlendMode::kAdd);
