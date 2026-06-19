@@ -216,6 +216,24 @@ void StageScene::Update() {
 	if (throttle_ > 1.0f) throttle_ = 1.0f;
 	flightModel_.SetThrottleInput(throttle_);
 
+	// --- 自由視点カメラ (Cキー長押し) ---
+	if (input->PushKey(DIK_C)) {
+		if (!freeViewActive_) {
+			// 押し始め: 現在のカメラ位置から球面座標を逆算して初期化
+			// → 開始時にカメラがジャンプしない
+			freeViewActive_ = true;
+			Vector3 camOffset = Substract(cameraCurrentPos_, flightModel_.GetPosition());
+			freeViewDistance_ = Length(camOffset);
+			if (freeViewDistance_ < 1.0f) freeViewDistance_ = cameraDistance_;
+			Vector3 dir = Normalize(camOffset);
+			freeViewPitch_ = std::asin(std::clamp(dir.y, -1.0f, 1.0f));
+			freeViewYaw_   = std::atan2(dir.x, dir.z);
+		}
+	} else {
+		// Cを離したらデフォルト視点に戻る
+		freeViewActive_ = false;
+	}
+
 	// --- マウスエイム ON/OFF トグル (M キー) ---
 	if (input->TriggerKey(DIK_M)) {
 		mouseAimEnabled_ = !mouseAimEnabled_;
@@ -264,7 +282,8 @@ void StageScene::Update() {
 	if (mouseAimEnabled_ && !hasManualInput) {
 		// === マウスエイムモード ===
 		// カーソルロック中のみマウス入力で目標方向を更新
-		if (input->IsCursorLocked()) {
+		// ※自由視点カメラ中はマウス操舵を抑制
+		if (input->IsCursorLocked() && !freeViewActive_) {
 			Input::MouseMove mouseMove = input->GetMouseMove();
 			Camera* cam = CameraManager::GetInstance()->GetActiveCamera();
 			if (cam) {
@@ -696,6 +715,50 @@ void StageScene::UpdateChaseCamera(float dt) {
 	Vector3 aircraftPos = flightModel_.GetPosition();
 	Vector3 forward = flightModel_.GetForwardDirection();
 	Vector3 up = flightModel_.GetUpDirection();
+
+	// ============================
+	// 自由視点カメラ（Cキー長押し中）
+	// ============================
+	if (freeViewActive_) {
+		// マウス移動量で軌道角度を更新
+		Input::MouseMove mouseMove = Input::GetInstance()->GetMouseMove();
+		const float sensitivity = 0.005f;
+		freeViewYaw_   += static_cast<float>(mouseMove.lX) * sensitivity;
+		freeViewPitch_ += static_cast<float>(mouseMove.lY) * sensitivity;
+
+		// ピッチを制限（真上・真下を超えないように）
+		const float pitchLimit = 3.141592f * 0.49f;
+		if (freeViewPitch_ > pitchLimit)  freeViewPitch_ = pitchLimit;
+		if (freeViewPitch_ < -pitchLimit) freeViewPitch_ = -pitchLimit;
+
+		// 球面座標で機体中心からのオフセットを計算
+		Vector3 offset;
+		offset.x = freeViewDistance_ * std::cos(freeViewPitch_) * std::sin(freeViewYaw_);
+		offset.y = freeViewDistance_ * std::sin(freeViewPitch_);
+		offset.z = freeViewDistance_ * std::cos(freeViewPitch_) * std::cos(freeViewYaw_);
+
+		Vector3 freeViewPos = Add(aircraftPos, offset);
+
+		// カメラ位置・注視点を即座にセット（自由視点中は補間なし）
+		cameraCurrentPos_ = freeViewPos;
+		cameraLookTarget_ = aircraftPos;
+
+		Vector3 cameraRotation = LookAtRotation(freeViewPos, aircraftPos);
+		cachedCameraPitch_ = cameraRotation.x;
+		cachedCameraYaw_   = cameraRotation.y;
+
+		Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
+		if (camera) {
+			camera->SetTranslate(freeViewPos);
+			camera->SetRotate(cameraRotation);
+			Object3dCommon::GetInstance()->SetCameraPosition(freeViewPos);
+		}
+		return;
+	}
+
+	// ============================
+	// 通常の追従カメラ
+	// ============================
 
 	// --- 理想的なカメラ位置を計算 ---
 	// 機体のローカル後方（-forward）× 距離 + ローカル上方 × 高さ
