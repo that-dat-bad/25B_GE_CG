@@ -3,6 +3,7 @@
 #include <cassert>
 
 enum class BlendMode {
+	kOpaque,	//!< 不透明 (Z書き込みあり)
 	kNormal,	//!< 通常
 	kAdd,		//!< 加算
 	kSubtract,	//!< 減算
@@ -17,6 +18,10 @@ inline D3D12_BLEND_DESC GetBlendDesc(BlendMode mode) {
 	blendDesc.RenderTarget[0].BlendEnable = TRUE;
 
 	switch (mode) {
+	case BlendMode::kOpaque:
+		blendDesc.RenderTarget[0].BlendEnable = FALSE;
+		break;
+
 	case BlendMode::kNormal:
 		blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
 		blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;

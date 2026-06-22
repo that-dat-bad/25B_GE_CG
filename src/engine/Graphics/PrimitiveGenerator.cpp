@@ -81,3 +81,39 @@ std::vector<PrimitiveModel::VertexData> PrimitiveGenerator::CreatePlane(float si
 
 	return vertices;
 }
+
+std::vector<PrimitiveModel::VertexData> PrimitiveGenerator::CreateCone(int segments, float height, float radius) {
+	std::vector<PrimitiveModel::VertexData> vertices;
+	float angleStep = (2.0f * 3.14159265f) / segments;
+	float h = height; // 原点から先端（+h）、底面（-h）
+	float r = radius;
+
+	for (int i = 0; i < segments; ++i) {
+		float a1 = i * angleStep;
+		float a2 = (i + 1) * angleStep;
+
+		// 頂点（コーンの先端。半径0）
+		MyMath::Vector4 top = { 0.0f, h, 0.0f, 1.0f };
+		// 底面点1
+		MyMath::Vector4 b1 = { cosf(a1) * r, -h, sinf(a1) * r, 1.0f };
+		// 底面点2
+		MyMath::Vector4 b2 = { cosf(a2) * r, -h, sinf(a2) * r, 1.0f };
+
+		// 法線（側面の法線。円周上の方向から少し上向きに）
+		float midAngle = (a1 + a2) * 0.5f;
+		MyMath::Vector3 n = { cosf(midAngle), 0.5f, sinf(midAngle) };
+		n = MyMath::Normalize(n);
+
+		// UV座標（円形テクスチャのグラデーションを活かすため、先端をテクスチャ中心（0.5, 0.5）に、底面を円周上にマッピング）
+		Vector2 uvTop = { 0.5f, 0.5f };
+		Vector2 uvB1 = { 0.5f + 0.5f * cosf(a1), 0.5f + 0.5f * sinf(a1) };
+		Vector2 uvB2 = { 0.5f + 0.5f * cosf(a2), 0.5f + 0.5f * sinf(a2) };
+
+		// 三角形1（側面）※カリング対応のため順序を設定
+		vertices.push_back({ top, uvTop, n });
+		vertices.push_back({ b2, uvB2, n });
+		vertices.push_back({ b1, uvB1, n });
+	}
+
+	return vertices;
+}

@@ -14,4 +14,8 @@ public:
 
 	// プレーン（四角形）の頂点データを生成
 	static std::vector<PrimitiveModel::VertexData> CreatePlane(float size);
+
+	// 円錐（コーン）の頂点データを生成
+	// segments: 分割数, height: 高さ（原点から上下の長さ）, radius: 底面の半径
+	static std::vector<PrimitiveModel::VertexData> CreateCone(int segments, float height, float radius);
 };

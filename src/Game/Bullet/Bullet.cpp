@@ -9,10 +9,25 @@ void Bullet::Spawn(const Vector3& position, const Vector3& direction, float spee
 	lifeTime_ = 5.0f;
 	currentTime_ = 0.0f;
 	isAlive_ = true;
+
+	// 履歴の初期化
+	for (int i = 0; i < kMaxHistory; ++i) {
+		history_[i] = position;
+	}
+	historyCount_ = 1;
 }
 
 void Bullet::Update(float dt) {
 	if (!isAlive_) return;
+
+	// 履歴の更新
+	for (int i = kMaxHistory - 1; i > 0; --i) {
+		history_[i] = history_[i - 1];
+	}
+	history_[0] = position_;
+	if (historyCount_ < kMaxHistory) {
+		historyCount_++;
+	}
 
 	// 位置を更新
 	position_ = Add(position_, Multiply(dt, velocity_));

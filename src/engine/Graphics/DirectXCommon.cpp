@@ -297,7 +297,7 @@ void DirectXCommon::CreateDepthStencilBuffer()
 	resourceDesc.Height = winApp_->kClientHeight;
 	resourceDesc.MipLevels = 1;
 	resourceDesc.DepthOrArraySize = 1;
-	resourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	resourceDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
 	resourceDesc.SampleDesc.Count = 1;
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
@@ -718,5 +718,22 @@ void DirectXCommon::SetupRenderTextureSRV(SrvManager* srvManager) {
 		renderTextures_[1].Get(),
 		&srvDesc,
 		srvManager->GetCPUDescriptorHandle(renderTextureSrvIndex1_)
+	);
+}
+
+void DirectXCommon::SetupDepthTextureSRV(SrvManager* srvManager) {
+	// 深度バッファのSRVを登録
+	depthSrvIndex_ = srvManager->Allocate();
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+	srvDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+
+	device_->CreateShaderResourceView(
+		depthStencilResource_.Get(),
+		&srvDesc,
+		srvManager->GetCPUDescriptorHandle(depthSrvIndex_)
 	);
 }

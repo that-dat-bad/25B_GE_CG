@@ -35,6 +35,14 @@ public:
 	uint32_t GetActiveBulletCount() const;
 
 private:
+	void DrawTracerSegment(
+		const MyMath::Vector3& p1,
+		const MyMath::Vector3& p2,
+		int segmentIndex,
+		Camera* camera,
+		uint32_t texIndex
+	);
+
 	std::vector<Bullet> bullets_;
 	uint32_t maxBullets_ = 512;
 };

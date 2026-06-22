@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cmath>
 #include <d3dcompiler.h>
+#include <algorithm>
 
 #pragma comment(lib, "d3dcompiler.lib")
 
@@ -35,6 +36,10 @@ void ParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager
 
 	// 板ポリゴン（モデル）生成
 	CreateModel();
+
+	// カメラ用定数バッファの生成
+	cameraBuffer_ = dxCommon_->CreateBufferResource(sizeof(CameraData));
+	cameraBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&cameraDataPtr_));
 }
 
 void ParticleManager::Update() {
@@ -44,6 +49,13 @@ void ParticleManager::Update() {
 	Matrix4x4 projectionMatrix = camera->GetProjectionMatrix();
 	Matrix4x4 viewProjectionMatrix = camera->GetViewProjectionMatrix();
 
+	// カメラ定数データの更新
+	if (cameraDataPtr_) {
+		cameraDataPtr_->nearClip = 0.1f; // 固定値でも良いですが実際の値に合わせてください
+		cameraDataPtr_->farClip = 1000.0f; // 実際の FarClip
+		cameraDataPtr_->screenWidth = 1280.0f; // WinAppのサイズ
+		cameraDataPtr_->screenHeight = 720.0f;
+	}
 
 	Matrix4x4 cameraWorldMatrix = camera->GetWorldMatrix();
 	Matrix4x4 billboardMatrix = Identity4x4();
@@ -90,6 +102,9 @@ void ParticleManager::Update() {
 			// 経過時間を加算
 			it->currentTime += 1.0f / 60.0f; // 60FPS想定
 
+			// 回転の更新
+			it->transform.rotate = Add(it->transform.rotate, Multiply(1.0f / 60.0f, it->angularVelocity));
+
 			// ============================
 			// ライフタイムベースのアニメーション
 			// ============================
@@ -117,10 +132,21 @@ void ParticleManager::Update() {
 					Vector3 camToParticle = Substract(it->transform.translate, camera->GetTranslate());
 					if (Length(camToParticle) > 0.001f) {
 						camToParticle = Normalize(camToParticle);
-						float speed = Length(it->velocity);
-						if (speed > 0.001f) {
-							Vector3 velDir = Normalize(it->velocity);
-							// 速度ベクトルをスクリーン平面（法線camToParticle）に投影
+						
+						// ストレッチ方向の基準と強度を決定
+						Vector3 stretchVec = { 0.0f, 0.0f, 0.0f };
+						float stretchAmount = 0.0f;
+						if (Length(it->stretchDir) > 0.001f) {
+							stretchVec = it->stretchDir;
+							stretchAmount = Length(it->stretchDir);
+						} else {
+							stretchVec = it->velocity;
+							stretchAmount = Length(it->velocity);
+						}
+
+						if (stretchAmount > 0.001f) {
+							Vector3 velDir = Normalize(stretchVec);
+							// 速度（または指定方向）ベクトルをスクリーン平面（法線camToParticle）に投影
 							float dot = Dot(velDir, camToParticle);
 							Vector3 projVel = Substract(velDir, Multiply(dot, camToParticle));
 							if (Length(projVel) > 0.0001f) {
@@ -139,13 +165,15 @@ void ParticleManager::Update() {
 								finalBillboard.m[2][2] = -camToParticle.z;
 								
 								// Y軸（進行方向）にスケールを引き伸ばす
-								scaleMatrix.m[1][1] *= (1.0f + speed * it->stretchFactor);
+								scaleMatrix.m[1][1] *= (1.0f + stretchAmount * it->stretchFactor);
 							}
 						}
 					}
 				}
 
-				Matrix4x4 worldMatrix = Multiply(scaleMatrix, Multiply(finalBillboard, translateMatrix));
+				// Z軸回転行列をビルボードに適用
+				Matrix4x4 rotateZMatrix = MakeRotateZMatrix(it->transform.rotate.z);
+				Matrix4x4 worldMatrix = Multiply(scaleMatrix, Multiply(rotateZMatrix, Multiply(finalBillboard, translateMatrix)));
 
 				// WVP行列の計算
 				Matrix4x4 wvp = Multiply(worldMatrix, viewProjectionMatrix);
@@ -177,6 +205,20 @@ void ParticleManager::Draw() {
 	// VBVの設定
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 
+	// --- Soft Particle 用の深度バッファ準備 ---
+	// 深度バッファを SRV 用 (PIXEL_SHADER_RESOURCE) に遷移させる
+	D3D12_RESOURCE_BARRIER barrier = {};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Transition.pResource = dxCommon_->GetDepthStencilBuffer();
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	commandList->ResourceBarrier(1, &barrier);
+
+	// DSVを外す (OMSetRenderTargetsでDSVをnullptrに)
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = dxCommon_->GetRenderTextureRTVHandle(0);
+	commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
+
 	// 全てのパーティクルグループについて処理
 	BlendMode currentBlendMode = BlendMode::kCountOf; // 初期値として無効な値をセット
 
@@ -197,9 +239,25 @@ void ParticleManager::Draw() {
 		D3D12_GPU_DESCRIPTOR_HANDLE instancingHandle = srvManager_->GetGPUDescriptorHandle(group.instancingSrvIndex);
 		commandList->SetGraphicsRootDescriptorTable(1, instancingHandle);
 
+		// 深度テクスチャのSRVを設定 (t2)
+		D3D12_GPU_DESCRIPTOR_HANDLE depthHandle = srvManager_->GetGPUDescriptorHandle(dxCommon_->GetDepthSrvIndex());
+		commandList->SetGraphicsRootDescriptorTable(2, depthHandle);
+
+		// カメラ用定数バッファを設定 (b0)
+		commandList->SetGraphicsRootConstantBufferView(3, cameraBuffer_->GetGPUVirtualAddress());
+
 		// インスタンシング描画
 		commandList->DrawInstanced(6, group.instanceCount, 0, 0);
 	}
+
+	// 深度バッファの状態を DEPTH_WRITE に戻す
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+	commandList->ResourceBarrier(1, &barrier);
+
+	// DSVを元に戻す
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
+	commandList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
 }
 
 void ParticleManager::SetBlendMode(const std::string& name, BlendMode mode) {
@@ -272,23 +330,22 @@ void ParticleManager::Emit(const std::string& name, const Vector3& position, con
 
 	ParticleGroup& group = particleGroups_[name];
 
-	std::uniform_real_distribution<float> distVelX(params.minVelocity.x, params.maxVelocity.x);
-	std::uniform_real_distribution<float> distVelY(params.minVelocity.y, params.maxVelocity.y);
-	std::uniform_real_distribution<float> distVelZ(params.minVelocity.z, params.maxVelocity.z);
+	std::uniform_real_distribution<float> distVelX((std::min)(params.minVelocity.x, params.maxVelocity.x), (std::max)(params.minVelocity.x, params.maxVelocity.x));
+	std::uniform_real_distribution<float> distVelY((std::min)(params.minVelocity.y, params.maxVelocity.y), (std::max)(params.minVelocity.y, params.maxVelocity.y));
+	std::uniform_real_distribution<float> distVelZ((std::min)(params.minVelocity.z, params.maxVelocity.z), (std::max)(params.minVelocity.z, params.maxVelocity.z));
 
-	std::uniform_real_distribution<float> distColorR(params.minColor.x, params.maxColor.x);
-	std::uniform_real_distribution<float> distColorG(params.minColor.y, params.maxColor.y);
-	std::uniform_real_distribution<float> distColorB(params.minColor.z, params.maxColor.z);
-	std::uniform_real_distribution<float> distColorA(params.minColor.w, params.maxColor.w);
+	std::uniform_real_distribution<float> distColorR((std::min)(params.minColor.x, params.maxColor.x), (std::max)(params.minColor.x, params.maxColor.x));
+	std::uniform_real_distribution<float> distColorG((std::min)(params.minColor.y, params.maxColor.y), (std::max)(params.minColor.y, params.maxColor.y));
+	std::uniform_real_distribution<float> distColorB((std::min)(params.minColor.z, params.maxColor.z), (std::max)(params.minColor.z, params.maxColor.z));
+	std::uniform_real_distribution<float> distColorA((std::min)(params.minColor.w, params.maxColor.w), (std::max)(params.minColor.w, params.maxColor.w));
 
-	std::uniform_real_distribution<float> distTime(params.minLifeTime, params.maxLifeTime);
+	std::uniform_real_distribution<float> distTime((std::min)(params.minLifeTime, params.maxLifeTime), (std::max)(params.minLifeTime, params.maxLifeTime));
 
 	// スケールのランダム分布
-	std::uniform_real_distribution<float> distScale(params.minScale, params.maxScale);
+	std::uniform_real_distribution<float> distScale((std::min)(params.minScale, params.maxScale), (std::max)(params.minScale, params.maxScale));
 
-	// 位置のランダム分布（もし必要ならパラメータ化するが、一旦既存のまま固定範囲にするか、パラメータに入れるか。
-	// ここでは元のEmitに合わせて少し散らす処理は入れておくが、velocityメインで制御する）
-	std::uniform_real_distribution<float> distPos(-1.0f, 1.0f); // 散らし具合は固定で残すか、これもパラメータ化すべきだが
+	// 位置のランダム分布（0.0に設定された場合はズレを無くす）
+	std::uniform_real_distribution<float> distPos(-params.randomPositionRange, params.randomPositionRange);
 
 	for (uint32_t i = 0; i < count; ++i) {
 		Particle particle{};
@@ -301,7 +358,12 @@ void ParticleManager::Emit(const std::string& name, const Vector3& position, con
 
 		// 速度設定
 		particle.velocity = { distVelX(randomEngine_), distVelY(randomEngine_), distVelZ(randomEngine_) };
-		// 既存コードにあった0.1倍はパラメータ側で制御すべきなので削除
+
+		// 回転設定
+		std::uniform_real_distribution<float> distRot((std::min)(params.minRotation, params.maxRotation), (std::max)(params.minRotation, params.maxRotation));
+		std::uniform_real_distribution<float> distRotSpeed((std::min)(params.minRotationSpeed, params.maxRotationSpeed), (std::max)(params.minRotationSpeed, params.maxRotationSpeed));
+		particle.transform.rotate.z = distRot(randomEngine_);
+		particle.angularVelocity.z = distRotSpeed(randomEngine_);
 
 		particle.acceleration = params.acceleration;
 
@@ -317,6 +379,7 @@ void ParticleManager::Emit(const std::string& name, const Vector3& position, con
 
 		particle.isStretched = params.isStretched;
 		particle.stretchFactor = params.stretchFactor;
+		particle.stretchDir = params.stretchDir;
 
 		// 初期スケールを適用
 		particle.transform.scale = { particle.startScale, particle.startScale, particle.startScale };
@@ -380,19 +443,36 @@ void ParticleManager::CreateRootSignature() {
 	descriptorRangeInstancing[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriptorRangeInstancing[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_ROOT_PARAMETER rootParameters[2] = {};
+	D3D12_DESCRIPTOR_RANGE descriptorRangeDepth[1] = {};
+	descriptorRangeDepth[0].BaseShaderRegister = 2; // t2
+	descriptorRangeDepth[0].NumDescriptors = 1;
+	descriptorRangeDepth[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	descriptorRangeDepth[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	// テクスチャ用
+	D3D12_ROOT_PARAMETER rootParameters[4] = {};
+
+	// テクスチャ用 (t0)
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[0].DescriptorTable.pDescriptorRanges = descriptorRange;
 	rootParameters[0].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
 
-	// インスタンシングデータ用 (StructuredBuffer)
+	// インスタンシングデータ用 (StructuredBuffer, t1)
 	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 	rootParameters[1].DescriptorTable.pDescriptorRanges = descriptorRangeInstancing;
 	rootParameters[1].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeInstancing);
+
+	// 深度バッファ用 (t2)
+	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRangeDepth;
+	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRangeDepth);
+
+	// 定数バッファ (b0) - カメラパラメータ用
+	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootParameters[3].Descriptor.ShaderRegister = 0;
 
 	// サンプラー設定
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};

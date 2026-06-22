@@ -81,6 +81,9 @@ public:
 	/// renderTextures_[0] の SRV を SrvManager に登録する
 	void SetupRenderTextureSRV(SrvManager* srvManager);
 
+	/// depthStencilResource_ の SRV を SrvManager に登録する
+	void SetupDepthTextureSRV(SrvManager* srvManager);
+	uint32_t GetDepthSrvIndex() const { return depthSrvIndex_; }
 
 	//セッター
 	void IncrementFenceValue() { fenceValue_++; }
@@ -145,6 +148,7 @@ private:
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, kRenderTextureCount_> renderTextureRtvHandles_;
 	uint32_t renderTextureSrvIndex_ = 0; // renderTextures_[0] の SRV インデックス
 	uint32_t renderTextureSrvIndex1_ = 0; // renderTextures_[1] の SRV インデックス
+	uint32_t depthSrvIndex_ = 0; // 深度バッファのSRVインデックス
 
 	DXGI_FORMAT rtvFormat_;
 

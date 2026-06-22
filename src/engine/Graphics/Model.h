@@ -24,6 +24,9 @@ public:
 	void SetEnvironmentCoefficient(float coefficient) { materialData_->environmentCoefficient = coefficient; }
 	float GetEnvironmentCoefficient() const { return materialData_->environmentCoefficient; }
 
+	void SetSpecularIntensity(float intensity) { materialData_->specularIntensity = intensity; }
+	float GetSpecularIntensity() const { return materialData_->specularIntensity; }
+
 	struct VertexData {
 		Vector4 position;
 		Vector2 texcoord;
@@ -36,7 +39,7 @@ public:
 		int32_t enableLighting;
 		float shininess;
 		float environmentCoefficient;
-		float padding;
+		float specularIntensity; // 反射強度
 		Matrix4x4 uvTransform; // UV変換行列
 	};
 
@@ -49,6 +52,7 @@ public:
 		Vector4 baseColor = { 1.0f, 1.0f, 1.0f, 1.0f }; //デフォルトは白
 		float shininess = 50.0f;
 		float environmentCoefficient = 0.0f; //環境マップの反射度合い
+		float specularIntensity = 1.0f;      // 反射強度
 	};
 	struct Node {
 		Matrix4x4 localMatrix = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };

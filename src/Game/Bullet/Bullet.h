@@ -26,6 +26,10 @@ public:
 	MyMath::Vector3 GetPosition() const { return position_; }
 	MyMath::Vector3 GetVelocity() const { return velocity_; }
 	float GetDamage() const { return damage_; }
+	
+	static constexpr int kMaxHistory = 4;
+	const MyMath::Vector3* GetHistory() const { return history_; }
+	int GetHistoryCount() const { return historyCount_; }
 
 	/// @brief 衝突判定用のコライダーを取得
 	SphereCollider GetCollider() const;
@@ -37,6 +41,9 @@ private:
 	float lifeTime_ = 5.0f;     // 最大生存時間（秒）
 	float currentTime_ = 0.0f;
 	bool isAlive_ = false;
+
+	MyMath::Vector3 history_[kMaxHistory]{};
+	int historyCount_ = 0;
 
 	static constexpr float kCollisionRadius = 0.5f;
 };

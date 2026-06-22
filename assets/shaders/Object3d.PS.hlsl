@@ -12,7 +12,7 @@ struct Material
     int enableLighting;
     float shininess;
     float environmentCoefficient;
-    float padding;
+    float specularIntensity; // 反射強度
     matrix uvTransform;
 };
 
@@ -97,6 +97,9 @@ PixelShaderOutput main(PixelInput input)
         float32_t3 N = normalize(input.normal);
         float32_t3 toEye = normalize(gLightingSettings.cameraPosition - input.worldPosition);
 
+        // 金属的な反射色を計算（ベースカラーを80%染める）
+        float32_t3 specColor = lerp(float32_t3(1.0f, 1.0f, 1.0f), texColor.rgb, 0.8f) * gMaterial.specularIntensity;
+
         float32_t3 totalDiffuse = float32_t3(0.0f, 0.0f, 0.0f);
         float32_t3 totalSpecular = float32_t3(0.0f, 0.0f, 0.0f);
 
@@ -134,7 +137,7 @@ PixelShaderOutput main(PixelInput input)
                          float NDotH = dot(N, halfVector);
                          specularPow = pow(saturate(NDotH), gMaterial.shininess);
                      }
-                     dirSpecular = gDirectionalLight.color.rgb * gDirectionalLight.intensity * specularPow * float32_t3(1.0f, 1.0f, 1.0f);
+                      dirSpecular = gDirectionalLight.color.rgb * gDirectionalLight.intensity * specularPow * specColor;
                  }
             }
             totalDiffuse += dirDiffuse;
@@ -180,7 +183,7 @@ PixelShaderOutput main(PixelInput input)
                          float NDotH = dot(N, halfVector);
                          specularPow = pow(saturate(NDotH), gMaterial.shininess);
                      }
-                     pointSpecular = gPointLight.color.rgb * gPointLight.intensity * pointLightFactor * specularPow * float32_t3(1.0f, 1.0f, 1.0f);
+                      pointSpecular = gPointLight.color.rgb * gPointLight.intensity * pointLightFactor * specularPow * specColor;
                  }
             }
             totalDiffuse += pointDiffuse;
@@ -240,7 +243,7 @@ PixelShaderOutput main(PixelInput input)
                           float NDotH = dot(N, halfVector);
                           specularPow = pow(saturate(NDotH), gMaterial.shininess);
                       }
-                      spotSpecular = gSpotLight.color.rgb * totalData * specularPow * float32_t3(1.0f, 1.0f, 1.0f);
+                       spotSpecular = gSpotLight.color.rgb * totalData * specularPow * specColor;
                   }
              }
              totalDiffuse += spotDiffuse;
@@ -252,7 +255,11 @@ PixelShaderOutput main(PixelInput input)
         if (gMaterial.environmentCoefficient > 0.0f)
         {
             float32_t3 reflectVector = reflect(-toEye, N); // 視線からサーフェスへのベクトルの反射
-            envColor = gEnvTexture.Sample(gSampler, reflectVector).rgb * gMaterial.environmentCoefficient;
+            float32_t3 baseEnv = gEnvTexture.Sample(gSampler, reflectVector).rgb;
+            
+            // 環境反射光もベースカラーで染める (70% tint)
+            float32_t3 envTint = lerp(float32_t3(1.0f, 1.0f, 1.0f), texColor.rgb, 0.7f);
+            envColor = baseEnv * envTint * gMaterial.environmentCoefficient * gMaterial.specularIntensity;
 
             // 暗い場所（影）で光って見える現象をごまかすハック
             // 主光源（平行光源）の当たり具合を利用して、光が当たりにくい面の反射を暗くする

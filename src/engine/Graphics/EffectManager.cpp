@@ -140,82 +140,134 @@ ExplosionParticleEffect::ExplosionParticleEffect(const Vector3& pos) {
 	ParticleManager* pm = ParticleManager::GetInstance();
 
 	// --- 1. Flash (閃光): 超高速で最大化してすぐ消える ---
-	flashScale_ = 50.0f; // 最初からデカい
+	flashScale_ = 30.0f; 
 	flashAlpha_ = 1.0f;
 	
-	// --- 2. Shockwave (衝撃波): 超高速で広がる ---
-	shockwaveScale_ = 5.0f;
-	shockwaveAlpha_ = 0.8f;
-	
-	lightIntensity_ = 200.0f; // 強烈な光
+	// --- 2. Ground Shockwave Dust (地面を這う土煙の波動) ---
+	// 波動も数を多く、間隔を狭めるため大量のパーティクルを円周状に放出
+	for (int i = 0; i < 180; i++) { // 数を大幅に増加
+		float angle = ((float)(rand() % 360)) * 3.141592f / 180.0f;
+		Vector3 dir = { cosf(angle), 0.0f, sinf(angle) };
+		
+		ParticleParameters waveParams;
+		float speed = 15.0f + (rand() % 100) / 10.0f; // 速度を落としてゆっくり広がるように
+		Vector3 baseVel = { dir.x * speed, 0.5f, dir.z * speed };
+		Vector3 spread = { std::abs(dir.x * 2.0f), 0.5f, std::abs(dir.z * 2.0f) };
+		
+		waveParams.minVelocity = { baseVel.x - spread.x, baseVel.y - spread.y, baseVel.z - spread.z };
+		waveParams.maxVelocity = { baseVel.x + spread.x, baseVel.y + spread.y, baseVel.z + spread.z };
+		
+		// 砂埃のような色味
+		float shade = 0.5f + ((rand() % 100) / 100.0f) * 0.3f;
+		waveParams.minColor = { shade, shade * 0.9f, shade * 0.8f, 0.02f }; 
+		waveParams.maxColor = { shade + 0.1f, (shade + 0.1f) * 0.9f, (shade + 0.1f) * 0.8f, 0.08f };
+		waveParams.minLifeTime = 1.5f;
+		waveParams.maxLifeTime = 2.5f;
+		waveParams.acceleration = { 0.0f, -0.2f, 0.0f }; 
+		waveParams.minScale = 6.0f;
+		waveParams.maxScale = 12.0f;
+		waveParams.endScale = 30.0f;
+		waveParams.fadeOut = true;
+		waveParams.scaleEasing = 0.5f; 
+		
+		waveParams.minRotation = 0.0f;
+		waveParams.maxRotation = 6.28f;
+		waveParams.minRotationSpeed = -2.0f;
+		waveParams.maxRotationSpeed = 2.0f;
 
-	// --- 3. Core (炎): 爆発的な初速を持つ火柱（短寿命） ---
-	// 中心から放射状に飛び散る、濃いオレンジ〜赤の火球
-	for (int i = 0; i < 20; i++) {
-		Vector3 offset = { ((rand() % 100) / 50.0f - 1.0f) * 1.5f,
-		                   ((rand() % 100) / 50.0f - 1.0f) * 1.5f,
-		                   ((rand() % 100) / 50.0f - 1.0f) * 1.5f };
+		pm->Emit("ExplosionSmoke", position_, waveParams, 4); // 重ねて表示
+	}
+	
+	lightIntensity_ = 300.0f; // 強烈な光
+
+	// --- 3. Core Fire (爆発の核となる炎): 広がりながら消える ---
+	for (int i = 0; i < 40; i++) {
+		// 球状に広がるランダムベクトル
+		Vector3 offset = { ((rand() % 100) / 50.0f - 1.0f),
+		                   ((rand() % 100) / 50.0f - 1.0f),
+		                   ((rand() % 100) / 50.0f - 1.0f) };
+		offset = Normalize(offset);
 
 		ParticleParameters fireParams;
-		// 非常に速い初速で外側に弾け飛ぶ（マイナス値でのmin/max逆転を防ぐためSpread方式に変更）
-		Vector3 baseVel = { offset.x * 6.5f, offset.y * 6.5f + 7.5f, offset.z * 6.5f };
-		Vector3 spread = { std::abs(offset.x * 1.5f) + 0.1f, std::abs(offset.y * 1.5f) + 2.5f, std::abs(offset.z * 1.5f) + 0.1f };
+		// 外側へ向かう初速
+		float speed = 10.0f + (rand() % 200) / 10.0f;
+		Vector3 baseVel = { offset.x * speed, offset.y * speed, offset.z * speed };
+		Vector3 spread = { std::abs(baseVel.x * 0.2f), std::abs(baseVel.y * 0.2f), std::abs(baseVel.z * 0.2f) };
 		fireParams.minVelocity = { baseVel.x - spread.x, baseVel.y - spread.y, baseVel.z - spread.z };
 		fireParams.maxVelocity = { baseVel.x + spread.x, baseVel.y + spread.y, baseVel.z + spread.z };
 
-		fireParams.minColor = { 1.0f, 0.3f, 0.0f, 1.0f }; // 最小値
-		fireParams.maxColor = { 1.0f, 0.9f, 0.2f, 1.0f }; // 最大値
+		fireParams.minColor = { 1.0f, 0.4f, 0.0f, 1.0f }; // 濃いオレンジ
+		fireParams.maxColor = { 1.0f, 0.8f, 0.2f, 1.0f }; // 黄色っぽいオレンジ
 		fireParams.minLifeTime = 0.2f;
-		fireParams.maxLifeTime = 0.4f; // 一瞬で消える
+		fireParams.maxLifeTime = 0.6f; 
 		fireParams.acceleration = { 0.0f, 0.0f, 0.0f };   
 		fireParams.minScale = 5.0f;
-		fireParams.maxScale = 8.0f;
+		fireParams.maxScale = 12.0f;
 		fireParams.endScale = 0.0f; // 急速に縮んで消える
 		fireParams.fadeOut = true;
 		fireParams.scaleEasing = 0.2f;
+
+		// 回転
+		fireParams.minRotation = 0.0f;
+		fireParams.maxRotation = 6.28f;
+		fireParams.minRotationSpeed = -0.5f;
+		fireParams.maxRotationSpeed = 0.5f;
+
 		pm->Emit("ExplosionFire", position_, fireParams, 1);
 	}
 
 	// --- 4. Core (煙): 厚みのある不透明な雲（もくもく感） ---
-	// 輪郭が見えないよう、透明度をやや落として枚数を増やし、柔らかく重ねる
-	for (int i = 0; i < 30; i++) {
-		// 爆発の勢いで少し上に偏って発生
-		Vector3 offset = { ((rand() % 100) / 50.0f - 1.0f) * 4.0f,
-		                   ((rand() % 100) / 50.0f) * 6.0f,
-		                   ((rand() % 100) / 50.0f - 1.0f) * 4.0f };
+	// 輪郭が見えないよう、透明度をかなり落として枚数を大幅に増やし、柔らかく重ねる
+	for (int i = 0; i < 100; i++) { // 数をさらに増加
+		// 発生位置を下に下げる（Y軸のオフセットを低く設定）
+		Vector3 offset = { ((rand() % 100) / 50.0f - 1.0f) * 3.5f,
+		                   ((rand() % 100) / 50.0f - 0.5f) * 2.0f, // -1.0〜+3.0付近に発生
+		                   ((rand() % 100) / 50.0f - 1.0f) * 3.5f };
 
 		ParticleParameters smokeParams;
-		// 初速は遅め（爆発地点に留まってモクモク膨張する）
-		Vector3 baseVel = { offset.x * 0.5f, offset.y * 0.5f + 1.0f, offset.z * 0.5f };
-		Vector3 sSpread = { std::abs(offset.x * 0.2f) + 0.1f, std::abs(offset.y * 0.2f) + 1.0f, std::abs(offset.z * 0.2f) + 0.1f };
+		// 煙全体は極めて遅くしつつ、横方向（X, Z）にだけジワジワと広がるように設定
+		Vector3 baseVel = { offset.x * 0.15f, offset.y * 0.02f + 0.05f, offset.z * 0.15f };
+		Vector3 sSpread = { std::abs(offset.x * 0.05f) + 0.05f, 0.1f, std::abs(offset.z * 0.05f) + 0.05f };
 		smokeParams.minVelocity = { baseVel.x - sSpread.x, baseVel.y - sSpread.y, baseVel.z - sSpread.z };
 		smokeParams.maxVelocity = { baseVel.x + sSpread.x, baseVel.y + sSpread.y, baseVel.z + sSpread.z };
 		
-		// 輪郭を目立たなくするため、Alphaを0.2〜0.4程度に落とし、重ねて濃さを出す
-		float shade = 0.1f + ((rand() % 100) / 100.0f) * 0.2f; // ランダムな濃淡
-		smokeParams.minColor = { shade, shade, shade, 0.2f };  
-		smokeParams.maxColor = { shade + 0.1f, shade + 0.1f, shade + 0.1f, 0.4f };     
-		smokeParams.minLifeTime = 1.0f;
-		smokeParams.maxLifeTime = 1.5f;
-		smokeParams.acceleration = { 0.0f, 2.0f, 0.0f };  // ゆっくり上昇
+		// 輪郭を目立たなくするため、Alphaを極限まで落とす（0.015〜0.08）
+		float shade = 0.1f + ((rand() % 100) / 100.0f) * 0.2f; 
+		smokeParams.minColor = { shade, shade, shade, 0.015f };  
+		smokeParams.maxColor = { shade + 0.1f, shade + 0.1f, shade + 0.1f, 0.08f };     
+		// ライフタイムを若干長く
+		smokeParams.minLifeTime = 2.0f;
+		smokeParams.maxLifeTime = 3.5f;
+		smokeParams.acceleration = { 0.0f, 0.1f, 0.0f };  // 上昇速度を極端に遅くする
 		
-		smokeParams.minScale = 8.0f;
-		smokeParams.maxScale = 14.0f;
-		smokeParams.endScale = 25.0f; // 大きく膨張させることでエッジをさらにボカす
+		// サイズをさらに大きくして重なりを増やす
+		smokeParams.minScale = 16.0f;
+		smokeParams.maxScale = 24.0f;
+		smokeParams.endScale = 50.0f; 
 		smokeParams.fadeOut = true;
-		smokeParams.scaleEasing = 0.8f;  
-		pm->Emit("ExplosionSmoke", Add(position_, offset), smokeParams, 2); 
+		smokeParams.scaleEasing = 0.6f;  
+		
+		// ランダムな初期回転と、ゆっくりとした回転を与える
+		smokeParams.minRotation = 0.0f;
+		smokeParams.maxRotation = 6.28f; // 2PI
+		smokeParams.minRotationSpeed = -0.5f;
+		smokeParams.maxRotationSpeed = 0.5f;
+
+		pm->Emit("ExplosionSmoke", Add(position_, offset), smokeParams, 5); 
 	}
 
-	// --- 5. Debris (破片): 重く速い破片 ---
-	int debrisCount = 6 + (rand() % 4); 
+	// --- 5. Debris (破片): 四方八方に飛び散る ---
+	int debrisCount = 10 + (rand() % 5); 
 	for (int i = 0; i < debrisCount; i++) {
 		Debris d;
 		d.pos = position_;
-		// 斜め上方向に極めて速い初速
-		d.vel.x = ((rand() % 100) / 50.0f - 1.0f) * 35.0f;
-		d.vel.y = ((rand() % 100) / 100.0f) * 30.0f + 15.0f; 
-		d.vel.z = ((rand() % 100) / 50.0f - 1.0f) * 35.0f;
+		// 半球状に広がるランダムベクトル
+		Vector3 dir = { ((rand() % 100) / 50.0f - 1.0f),
+		                ((rand() % 100) / 100.0f) + 0.2f, // 上方向中心
+		                ((rand() % 100) / 50.0f - 1.0f) };
+		dir = Normalize(dir);
+		float dSpeed = 20.0f + (rand() % 300) / 10.0f;
+		d.vel = Multiply(dSpeed, dir);
 		debris_.push_back(d);
 	}
 }
@@ -230,16 +282,9 @@ void ExplosionParticleEffect::Update() {
 
 	// --- Flash (閃光): 2〜3フレームで一瞬で消える ---
 	if (flashAlpha_ > 0.0f) {
-		flashScale_ += 100.0f * dt;
-		flashAlpha_ -= 10.0f * dt; // 0.1秒で消滅
+		flashScale_ += 80.0f * dt;
+		flashAlpha_ -= 8.0f * dt; 
 		if (flashAlpha_ < 0.0f) flashAlpha_ = 0.0f;
-	}
-
-	// --- Shockwave (衝撃波): 超高速で一瞬で消える ---
-	if (shockwaveAlpha_ > 0.0f) {
-		shockwaveScale_ += 800.0f * dt; // 爆発的な速度で広がる
-		shockwaveAlpha_ -= 6.0f * dt;   // 0.15秒で消滅
-		if (shockwaveAlpha_ < 0.0f) shockwaveAlpha_ = 0.0f;
 	}
 
 	// --- Light (環境光) ---
@@ -260,15 +305,21 @@ void ExplosionParticleEffect::Update() {
 		ParticleParameters trailParams;
 		trailParams.minVelocity = { -0.5f, -0.5f, -0.5f }; // ほとんど動かない
 		trailParams.maxVelocity = {  0.5f,  0.5f,  0.5f };
-		trailParams.minColor = { 0.1f, 0.1f, 0.1f, 0.4f }; // 濃い黒煙
-		trailParams.maxColor = { 0.2f, 0.2f, 0.2f, 0.6f };
-		trailParams.minLifeTime = 0.4f;
-		trailParams.maxLifeTime = 0.8f;
-		trailParams.minScale = 2.0f;
-		trailParams.maxScale = 3.0f;
-		trailParams.endScale = 6.0f;
+		trailParams.minColor = { 0.1f, 0.1f, 0.1f, 0.05f }; // 非常に薄く重ねる
+		trailParams.maxColor = { 0.2f, 0.2f, 0.2f, 0.15f };
+		trailParams.minLifeTime = 0.5f;
+		trailParams.maxLifeTime = 1.0f;
+		trailParams.minScale = 4.0f;
+		trailParams.maxScale = 6.0f;
+		trailParams.endScale = 12.0f;
 		trailParams.fadeOut = true;
 		trailParams.scaleEasing = 0.5f;
+
+		trailParams.minRotation = 0.0f;
+		trailParams.maxRotation = 6.28f;
+		trailParams.minRotationSpeed = -1.0f;
+		trailParams.maxRotationSpeed = 1.0f;
+
 		pm->Emit("ExplosionSmoke", d.pos, trailParams, 2);
 	}
 }
@@ -285,17 +336,6 @@ void ExplosionParticleEffect::Draw(Camera* camera) {
 		
 		Vector3 rotate = camera->GetRotate(); // カメラ目線
 		prim->DrawPlane(scale, rotate, position_, flashColor, flashTex, camera, BlendMode::kAdd);
-	}
-
-	// --- Shockwave (衝撃波) ---
-	// 水平方向に広がるシャープなリング
-	if (shockwaveAlpha_ > 0.0f) {
-		uint32_t ringTex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/circle.png");
-		Vector4 shockColor = { 1.0f, 0.9f, 0.6f, shockwaveAlpha_ * 0.8f }; 
-		Vector3 scale = { shockwaveScale_, shockwaveScale_, shockwaveScale_ };
-		
-		Vector3 rot = { 0.0f, 0.0f, 0.0f }; 
-		prim->DrawRing(scale, rot, position_, shockColor, ringTex, camera, BlendMode::kAdd);
 	}
 
 	// --- Dynamic Light ---
@@ -489,22 +529,11 @@ void EffectManager::EmitHitPlaneEffect(const Vector3& position) {
 }
 
 void EffectManager::EmitDestroyEffect(const Vector3& position) {
-	// 敵破壊時：爆発パーティクル + 幾何学エフェクトの複合演出
-	Vector4 fireColor = { 1.0f, 0.5f, 0.1f, 1.0f };  // 炎のオレンジ
-
-	// 1. 大きなRingエフェクト（衝撃波）
-	AddEffect(new RingEffect(position, fireColor, 0.8f, 8.0f));
-
-	// 2. Cylinderエフェクト（爆発柱）
-	AddEffect(new CylinderEffect(position, fireColor, 0.6f, 12.0f, 3.0f));
-
-	// 3. 回転Planeエフェクト（破片散乱風）
-	Vector4 whiteColor = { 1.0f, 1.0f, 0.8f, 1.0f };
-	for (int i = 0; i < 5; i++) {
-		AddEffect(new HitRotPlaneEffect(position, whiteColor, 0.5f, 5.0f));
-	}
-
-	// 4. 爆発パーティクルエフェクト（火花+炎+煙の複合演出）
+	// 敵破壊時：純粋なパーティクルによる大爆発演出
+	
+	// 幾何学エフェクト（Ring, Cylinder, RotPlane）はチープに見えるため削除し、
+	// 代わりにリッチな ExplosionParticleEffect に全振りします。
+	
 	AddEffect(new ExplosionParticleEffect(position));
 }
 

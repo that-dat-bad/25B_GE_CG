@@ -100,4 +100,12 @@ private:
 
 	// スロットル入力状態（メンバー変数化して初期化時にリセットできるようにする）
 	float throttle_ = 0.0f;
+
+	// 翼端エフェクト用の前フレーム位置保存
+	MyMath::Vector3 lastLeftWingTip_{};
+	MyMath::Vector3 lastRightWingTip_{};
+	bool hasLastWingTips_ = false;
+
+	// 経過時間（エフェクトアニメーション用）
+	float totalTime_ = 0.0f;
 };

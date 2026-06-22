@@ -57,7 +57,7 @@ void StageScene::Initialize() {
 
 	EngineData engineData{};
 	engineData.mass = 500.0f;                 // エンジン 500kg
-	engineData.baseThrust = 50000.0f;         // 推力 50kN
+	engineData.baseThrust = 300000.0f;         // 推力 300kN (テスト用に大幅に引き上げ)
 	engineData.normalThrottleLimit = 1.0f;
 	engineData.wepThrottleLimit = 1.1f;       // WEPで110%
 	engineData.physicalSpoolSpeed = 0.5f;     // スプール速度
@@ -91,7 +91,9 @@ void StageScene::Initialize() {
 	aircraftObject_->Initialize(Object3dCommon::GetInstance());
 	aircraftObject_->SetCamera(CameraManager::GetInstance()->GetActiveCamera());
 	aircraftObject_->SetModel("Resources/planeplane.obj");
-	aircraftObject_->GetModel()->SetEnvironmentCoefficient(0.4f); // 機体表面にスカイボックスの映り込み
+	aircraftObject_->GetModel()->SetEnvironmentCoefficient(0.6f); // 機体表面にスカイボックスの映り込み (強度引き上げ)
+	aircraftObject_->GetModel()->SetSpecularIntensity(2.5f);     // 鏡面反射強度を大幅に引き上げ
+	aircraftObject_->GetModel()->SetShininess(120.0f);            // シャープな光沢
 
 	// 地面テクスチャ
 	TextureManager::GetInstance()->LoadTexture("assets/textures/white1x1.png");
@@ -182,6 +184,8 @@ void StageScene::Initialize() {
 	// エフェクトマネージャー初期化
 	EffectManager::GetInstance()->Initialize();
 	ParticleManager::GetInstance()->CreateParticleGroup("HitSpark", "assets/textures/white1x1.png");
+	ParticleManager::GetInstance()->CreateParticleGroup("Vortex", "assets/textures/circle2.png");
+	ParticleManager::GetInstance()->CreateParticleGroup("Casing", "assets/textures/white1x1.png");
 
 	// 爆発用パーティクルグループの登録
 	TextureManager::GetInstance()->LoadTexture("assets/textures/circle.png");
@@ -198,10 +202,14 @@ void StageScene::Initialize() {
 	isMissionCleared_ = false;
 	isMissionFailed_ = false;
 	muzzleFlashTimer_ = 0.0f;
+	totalTime_ = 0.0f;
 }
 
 
 void StageScene::Update() {
+	// 経過時間を更新
+	totalTime_ += kDeltaTime;
+
 	// ============================
 	// プレイヤー入力 → FlightModel
 	// ============================
@@ -340,7 +348,60 @@ void StageScene::Update() {
 			Vector3 fireDir = flightModel_.GetForwardDirection();
 			// 機首先端から発射
 			firePos = Add(firePos, Multiply(8.0f, fireDir));
-			bulletManager_.SpawnBullet(firePos, fireDir, 500.0f, 10.0f);
+			// 弾丸の初速は機体速度＋射出速度(500.0f)にする (自機が弾を追い抜く問題を防止)
+			float bulletSpeed = flightModel_.GetSpeed() + 500.0f;
+			bulletManager_.SpawnBullet(firePos, fireDir, bulletSpeed, 10.0f);
+
+			// --- 薬莢の放出エフェクト ---
+			{
+				Vector3 aircraftPos = flightModel_.GetPosition();
+				Vector3 velocity = flightModel_.GetVelocity(); // 機体の現在の速度
+				Vector3 right = flightModel_.GetRightDirection();
+				Vector3 up = flightModel_.GetUpDirection();
+				Vector3 forward = flightModel_.GetForwardDirection();
+
+				// 薬莢の排出口位置（コックピットより少し後ろの左下あたりにオフセット）
+				Vector3 casingPos = Add(aircraftPos, Multiply(-2.0f, forward));
+				casingPos = Add(casingPos, Multiply(-0.4f, right)); // 排出口に近い本来の左下オフセットに戻す
+				casingPos = Add(casingPos, Multiply(-0.5f, up));
+
+				ParticleParameters casingParams;
+				// 機体速度をベースに、後方（-forward）へ勢いよくはじき出す速度を加算（後ろ側に吹き飛ぶように設定）
+				Vector3 localMinVel = Add(Add(Multiply(-2.0f, right), Multiply(-3.0f, up)), Multiply(-18.0f, forward));
+				Vector3 localMaxVel = Add(Add(Multiply(-0.5f, right), Multiply(-1.0f, up)), Multiply(-10.0f, forward));
+				
+				casingParams.minVelocity = Add(velocity, localMinVel);
+				casingParams.maxVelocity = Add(velocity, localMaxVel);
+				
+				// 加速度：重力（-Y方向に 9.8m/s^2）
+				casingParams.acceleration = { 0.0f, -9.8f, 0.0f };
+
+				// 寿命：1.5秒程度で消える
+				casingParams.minLifeTime = 1.2f;
+				casingParams.maxLifeTime = 1.8f;
+
+				// サイズ：カメラからでも黄銅色の破片がはっきり見えるようにサイズを大きくする
+				casingParams.minScale = 0.12f;
+				casingParams.maxScale = 0.18f;
+				casingParams.endScale = 0.08f;
+				casingParams.fadeOut = true;
+
+				// 色：より明るく目立つゴールド/真鍮色
+				casingParams.minColor = { 0.95f, 0.75f, 0.15f, 1.0f };
+				casingParams.maxColor = { 1.0f, 0.85f, 0.30f, 1.0f };
+
+				// 向き（回転）を完全にランダムに
+				casingParams.minRotation = 0.0f;
+				casingParams.maxRotation = 6.283185f;
+				casingParams.minRotationSpeed = -15.0f;
+				casingParams.maxRotationSpeed = 15.0f;
+
+				// 発生位置のランダムばらつきはゼロ (排出口から直接)
+				casingParams.randomPositionRange = 0.0f;
+
+				// エミット（1発につき1個）
+				ParticleManager::GetInstance()->Emit("Casing", casingPos, casingParams, 1);
+			}
 
 			// マズルフラッシュの間引き（2発に1回エフェクトを発生）
 			muzzleFlashCount_++;
@@ -381,6 +442,89 @@ void StageScene::Update() {
 	// FlightModel 物理更新
 	// ============================
 	flightModel_.Update(kDeltaTime);
+
+	// --- 翼端ボルテックスエフェクトの発生 ---
+	float currentG = flightModel_.GetCurrentG();
+	Vector3 aircraftPos = flightModel_.GetPosition();
+	Vector3 right = flightModel_.GetRightDirection();
+	Vector3 forward = flightModel_.GetForwardDirection();
+
+	// 左右の翼端位置の計算 (翼幅を約12mと仮定し、左右に6.0mオフセット)
+	// 翼端は重心より少し後方（-2.0m）にあると仮定
+	Vector3 leftWingTip = Add(Add(aircraftPos, Multiply(-6.0f, right)), Multiply(-2.0f, forward));
+	Vector3 rightWingTip = Add(Add(aircraftPos, Multiply(6.0f, right)), Multiply(-2.0f, forward));
+
+	if (currentG > 3.0f && flightModel_.GetSpeed() > 50.0f) {
+		// Gの強さに応じて透明度（濃さ）を調整 (3Gで透明度0.0, 6G以上で0.12)
+		float gFactor = (currentG - 3.0f) / 3.0f; // 0.0 ~ 1.0
+		if (gFactor < 0.0f) gFactor = 0.0f;
+		if (gFactor > 1.0f) gFactor = 1.0f;
+
+		Vector4 baseColor = { 0.95f, 0.98f, 1.0f, 0.35f * gFactor }; // アルファ値を適度に見える濃さに調整
+
+		ParticleParameters params;
+		params.minVelocity = { 0.0f, 0.0f, 0.0f }; // 完全にブレをゼロにして直線を保つ
+		params.maxVelocity = { 0.0f, 0.0f, 0.0f };
+		params.randomPositionRange = 0.0f;         // 発生位置の強制的なランダム散らしを無効化する
+		params.minColor = baseColor;
+		params.maxColor = baseColor;
+		params.minLifeTime = 0.4f; // 寿命は少し長めで安定させる
+		params.maxLifeTime = 0.4f;
+		params.minScale = 0.08f;   // 初期サイズを非常に細くする (直径約16cm)
+		params.maxScale = 0.08f;
+		params.endScale = 0.12f;   // 消え際もあまり膨らませない (直径約24cm)
+		params.fadeOut = true;
+		params.minRotation = 0.0f; // 回転を完全にゼロにして繋がりを均一にする
+		params.maxRotation = 0.0f;
+		params.minRotationSpeed = 0.0f;
+		params.maxRotationSpeed = 0.0f;
+
+		// ストレッチビルボード（トレイル化）設定
+		params.isStretched = true;
+		params.stretchFactor = 12.5f; // scale 0.08f の逆数（1/0.08 = 12.5）で移動長さにフィットさせる
+
+		if (hasLastWingTips_) {
+			// 前フレームからの移動距離に応じて、隙間を埋めるように補間
+			Vector3 deltaL = Substract(leftWingTip, lastLeftWingTip_);
+			float distL = Length(deltaL);
+			Vector3 deltaR = Substract(rightWingTip, lastRightWingTip_);
+
+			// 0.25m（25cm）間隔で配置するための補間数（ストレッチビルボード化によりステップ数を激減）
+			int steps = static_cast<int>(std::ceil(distL / 0.25f));
+			if (steps < 1) steps = 1;
+			if (steps > 40) steps = 40; // 最大生成数を大幅に削減し負荷軽減（250 -> 40）
+
+			// 各ステップの移動ベクトルを計算
+			Vector3 stepDeltaL = Multiply(1.0f / static_cast<float>(steps), deltaL);
+			Vector3 stepDeltaR = Multiply(1.0f / static_cast<float>(steps), deltaR);
+
+			for (int i = 0; i < steps; ++i) {
+				float t = static_cast<float>(i) / static_cast<float>(steps);
+				Vector3 interpL = Lerp(lastLeftWingTip_, leftWingTip, t);
+				Vector3 interpR = Lerp(lastRightWingTip_, rightWingTip, t);
+
+				// 左翼ボルテックスのストレッチ方向を設定してエミット
+				params.stretchDir = stepDeltaL;
+				ParticleManager::GetInstance()->Emit("Vortex", interpL, params, 1);
+
+				// 右翼ボルテックスのストレッチ方向を設定してエミット
+				params.stretchDir = stepDeltaR;
+				ParticleManager::GetInstance()->Emit("Vortex", interpR, params, 1);
+			}
+		} else {
+			// 最初の1フレームは補間なしで単一生成（ストレッチは無効化）
+			params.isStretched = false;
+			ParticleManager::GetInstance()->Emit("Vortex", leftWingTip, params, 1);
+			ParticleManager::GetInstance()->Emit("Vortex", rightWingTip, params, 1);
+		}
+
+		lastLeftWingTip_ = leftWingTip;
+		lastRightWingTip_ = rightWingTip;
+		hasLastWingTips_ = true;
+	} else {
+		// ボルテックスが発生していないときは前フレーム履歴をリセット
+		hasLastWingTips_ = false;
+	}
 
 	// ============================
 	// 戦闘システム更新
@@ -657,6 +801,116 @@ void StageScene::Draw() {
 
 	// エフェクト描画
 	EffectManager::GetInstance()->Draw(cam);
+
+	// --- ベイパーコーン（プラントル・グロワート・シンギュラリティ）エフェクトの描画 ---
+	float speed = flightModel_.GetSpeed();
+	float speedKmH = speed * 3.6f; // m/s から km/h に変換
+	if (speedKmH >= 1000.0f && speedKmH <= 1200.0f) {
+		// 1000km/hで0.0、1100km/hで最大(1.0)、1200km/hで0.0になるフェードイン・アウト係数
+		float speedFactor = 0.0f;
+		if (speedKmH < 1100.0f) {
+			speedFactor = (speedKmH - 1000.0f) / 100.0f;
+		} else {
+			speedFactor = (1200.0f - speedKmH) / 100.0f;
+		}
+
+		// 経過時間を用いたゆらぎの計算
+		float t = totalTime_ * 40.0f; // 高速で揺らす
+
+		// 基本位置・姿勢
+		Vector3 aircraftPos = flightModel_.GetPosition();
+		Vector3 forward = flightModel_.GetForwardDirection();
+		MyMath::Quaternion aircraftQ = flightModel_.GetOrientation();
+
+		// クォータニオンの乗算ヘルパー
+		auto qMul = [](const MyMath::Quaternion& a, const MyMath::Quaternion& b) -> MyMath::Quaternion {
+			return {
+				a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
+				a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
+				a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
+				a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z
+			};
+		};
+
+		// 軸と角度からクォータニオンを作成するヘルパー
+		auto makeRotation = [](const MyMath::Vector3& axis, float angle) -> MyMath::Quaternion {
+			float halfAngle = angle * 0.5f;
+			float sinHalf = sinf(halfAngle);
+			Vector3 normAxis = Normalize(axis);
+			return {
+				normAxis.x * sinHalf,
+				normAxis.y * sinHalf,
+				normAxis.z * sinHalf,
+				cosf(halfAngle)
+			};
+		};
+
+		// 描画用のテクスチャ取得
+		uint32_t coneTex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/circle2.png");
+
+		// -------------------------------------------------------------
+		// コーン1 (アウターシェル: 大きくて薄い)
+		// -------------------------------------------------------------
+		{
+			// ゆらぎパラメータ
+			float scaleNoise = 1.0f + 0.08f * sinf(t * 1.3f);
+			float lengthNoise = 1.0f + 0.12f * cosf(t * 0.9f);
+			float offsetNoise = 0.15f * sinf(t * 1.7f);
+
+			// スケール: Y軸が長さ、X/Z軸が半径。
+			// アウターシェルは少し大きめに。
+			float radius = 5.0f * scaleNoise;
+			float length = 4.0f * lengthNoise;
+			Vector3 scale = { radius, length, radius };
+
+			// 位置: 機体の中央付近に配置。オフセットも揺らす。
+			Vector3 pos = Add(aircraftPos, Multiply(-0.8f + offsetNoise, forward));
+
+			// 回転: 機体のクォータニオン * ローカル回転（X軸+90度 + ゆらぎ）
+			MyMath::Quaternion localPitch = makeRotation({1.0f, 0.0f, 0.0f}, 3.14159265f / 2.0f);
+			MyMath::Quaternion localYaw = makeRotation({0.0f, 1.0f, 0.0f}, 0.03f * sinf(t * 0.8f));
+			MyMath::Quaternion localRoll = makeRotation({0.0f, 0.0f, 1.0f}, t * 0.2f);
+			MyMath::Quaternion localRot = qMul(localRoll, qMul(localYaw, localPitch));
+			MyMath::Quaternion finalRot = qMul(aircraftQ, localRot);
+
+			// 色: 少し青みがかった白、フェードイン
+			float alpha = 0.22f * speedFactor * (0.8f + 0.2f * sinf(t * 2.1f));
+			Vector4 color = { 0.92f, 0.96f, 1.0f, alpha };
+
+			PrimitiveModel::GetInstance()->DrawCone(scale, finalRot, pos, color, coneTex, cam, BlendMode::kNormal);
+		}
+
+		// -------------------------------------------------------------
+		// コーン2 (インナーシェル: 小さくて濃い)
+		// -------------------------------------------------------------
+		{
+			// ゆらぎパラメータ (アウターシェルと異なる周期で)
+			float scaleNoise = 1.0f + 0.06f * sinf(t * 1.5f + 1.0f);
+			float lengthNoise = 1.0f + 0.10f * cosf(t * 1.1f + 0.5f);
+			float offsetNoise = 0.10f * sinf(t * 2.0f + 2.0f);
+
+			// スケール: インナーシェルは少し小さく、長めに。
+			float radius = 3.5f * scaleNoise;
+			float length = 5.0f * lengthNoise;
+			Vector3 scale = { radius, length, radius };
+
+			// 位置: アウターシェルより少し前寄り（-0.4f）に。
+			Vector3 pos = Add(aircraftPos, Multiply(-0.4f + offsetNoise, forward));
+
+			// 回転: 機体のクォータニオン * ローカル回転（X軸+90度 + ゆらぎ）
+			MyMath::Quaternion localPitch = makeRotation({1.0f, 0.0f, 0.0f}, 3.14159265f / 2.0f);
+			MyMath::Quaternion localYaw = makeRotation({0.0f, 1.0f, 0.0f}, 0.02f * sinf(t * 1.2f + 0.3f));
+			MyMath::Quaternion localRoll = makeRotation({0.0f, 0.0f, 1.0f}, -t * 0.15f);
+			MyMath::Quaternion localRot = qMul(localRoll, qMul(localYaw, localPitch));
+			MyMath::Quaternion finalRot = qMul(aircraftQ, localRot);
+
+			// 色: より白っぽく、少し濃い
+			float alpha = 0.28f * speedFactor * (0.85f + 0.15f * cosf(t * 1.9f));
+			Vector4 color = { 0.95f, 0.98f, 1.0f, alpha };
+
+			PrimitiveModel::GetInstance()->DrawCone(scale, finalRot, pos, color, coneTex, cam, BlendMode::kNormal);
+		}
+	}
 
 	// 追従マズルフラッシュ（板ポリ・リング）の描画
 	if (muzzleFlashTimer_ > 0.0f) {

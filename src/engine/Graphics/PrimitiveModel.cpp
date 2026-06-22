@@ -64,6 +64,14 @@ void PrimitiveModel::DrawPlane(const Vector3& scale, const Vector3& rotate, cons
 	CallDrawCommand(planeVertexBufferView_, planeVertexCount_, scale, rotate, translate, color, textureIndex, camera, blendMode);
 }
 
+void PrimitiveModel::DrawCone(const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode) {
+	CallDrawCommand(coneVertexBufferView_, coneVertexCount_, scale, rotate, translate, color, textureIndex, camera, blendMode);
+}
+
+void PrimitiveModel::DrawCone(const Vector3& scale, const Quaternion& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode) {
+	CallDrawCommand(coneVertexBufferView_, coneVertexCount_, scale, rotate, translate, color, textureIndex, camera, blendMode);
+}
+
 void PrimitiveModel::DrawLine3D(const Vector3& p1, const Vector3& p2, const Vector4& color, Camera* camera) {
 	if (currentDrawCount_ >= kMaxDrawCount) return;
 	if (!camera) return;
@@ -132,6 +140,59 @@ void PrimitiveModel::CallDrawCommand(D3D12_VERTEX_BUFFER_VIEW& vbView, uint32_t 
 	MaterialData* materialData = reinterpret_cast<MaterialData*>(&materialMappedData_[index * kCbAlignment]);
 	materialData->color = color;
 	materialData->enableLighting = 0; // 今回は常に0（Unlit）
+	materialData->shininess = 50.0f;
+	materialData->uvTransform = Identity4x4();
+
+	// --- 描画コマンドの発行 ---
+	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+
+	// パイプライン状態の設定
+	commandList->SetPipelineState(pipelineStates_[static_cast<size_t>(blendMode)].Get());
+	commandList->SetGraphicsRootSignature(rootSignature_.Get());
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	
+	// 頂点バッファの設定
+	commandList->IASetVertexBuffers(0, 1, &vbView);
+
+	// RootParameter 0: Material (b0)
+	commandList->SetGraphicsRootConstantBufferView(0, materialBuffer_->GetGPUVirtualAddress() + (index * kCbAlignment));
+	
+	// RootParameter 1: Transform (b1)
+	commandList->SetGraphicsRootConstantBufferView(1, transformBuffer_->GetGPUVirtualAddress() + (index * kCbAlignment));
+
+	// RootParameter 2: Texture (t0) fallback
+	uint32_t texIndex = textureIndex;
+	if (texIndex == 0) texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/uvChecker.png");
+	if (texIndex != 0) {
+		commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(texIndex));
+	}
+
+	// 描画
+	commandList->DrawInstanced(vertexCount, 1, 0, 0);
+}
+
+void PrimitiveModel::CallDrawCommand(D3D12_VERTEX_BUFFER_VIEW& vbView, uint32_t vertexCount, const Vector3& scale, const Quaternion& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode) {
+	if (currentDrawCount_ >= kMaxDrawCount) return; // 描画上限
+	if (vertexCount == 0 || !camera) return;        // ガード
+
+	// 行列計算 (クォータニオンを使用する MakeAffineMatrix)
+	Matrix4x4 wMatrix = MakeAffineMatrix(scale, rotate, translate);
+	Matrix4x4 wvpMatrix = wMatrix * camera->GetViewProjectionMatrix();
+
+	// 定数バッファの書き込み先インデックス
+	uint32_t index = currentDrawCount_;
+	currentDrawCount_++;
+
+	// Transform の書き込み
+	TransformationMatrix* transformData = reinterpret_cast<TransformationMatrix*>(&transformMappedData_[index * kCbAlignment]);
+	transformData->WVP = wvpMatrix;
+	transformData->World = wMatrix;
+	transformData->WorldInverseTranspose = wMatrix; 
+
+	// Material の書き込み
+	MaterialData* materialData = reinterpret_cast<MaterialData*>(&materialMappedData_[index * kCbAlignment]);
+	materialData->color = color;
+	materialData->enableLighting = 0; // 常に0
 	materialData->shininess = 50.0f;
 	materialData->uvTransform = Identity4x4();
 
@@ -253,6 +314,14 @@ void PrimitiveModel::CreateGraphicsPipeline() {
 	for (size_t i = 0; i < static_cast<size_t>(BlendMode::kCountOf); ++i) {
 		BlendMode mode = static_cast<BlendMode>(i);
 		graphicsPipelineStateDesc.BlendState = GetBlendDesc(mode);
+		
+		if (mode == BlendMode::kOpaque) {
+			depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+		} else {
+			depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+		}
+		graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
+
 		HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&pipelineStates_[i]));
 		assert(SUCCEEDED(hr));
 	}
@@ -262,6 +331,14 @@ void PrimitiveModel::CreateGraphicsPipeline() {
 	for (size_t i = 0; i < static_cast<size_t>(BlendMode::kCountOf); ++i) {
 		BlendMode mode = static_cast<BlendMode>(i);
 		graphicsPipelineStateDesc.BlendState = GetBlendDesc(mode);
+
+		if (mode == BlendMode::kOpaque) {
+			depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+		} else {
+			depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+		}
+		graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
+
 		HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&pipelineStatesLine_[i]));
 		assert(SUCCEEDED(hr));
 	}
@@ -315,6 +392,22 @@ void PrimitiveModel::CreatePrimitiveBuffers() {
 	planeVertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&planeMapped));
 	std::memcpy(planeMapped, planeVertices.data(), planeVertexBufferView_.SizeInBytes);
 	planeVertexBuffer_->Unmap(0, nullptr);
+
+	// ===================================
+	// コーンの頂点データ生成
+	// ===================================
+	std::vector<VertexData> coneVertices = PrimitiveGenerator::CreateCone(32, 1.0f, 1.0f);
+
+	coneVertexCount_ = static_cast<uint32_t>(coneVertices.size());
+	coneVertexBuffer_ = dxCommon_->CreateBufferResource(sizeof(VertexData) * coneVertexCount_);
+	coneVertexBufferView_.BufferLocation = coneVertexBuffer_->GetGPUVirtualAddress();
+	coneVertexBufferView_.SizeInBytes = sizeof(VertexData) * coneVertexCount_;
+	coneVertexBufferView_.StrideInBytes = sizeof(VertexData);
+
+	VertexData* coneMapped = nullptr;
+	coneVertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&coneMapped));
+	std::memcpy(coneMapped, coneVertices.data(), coneVertexBufferView_.SizeInBytes);
+	coneVertexBuffer_->Unmap(0, nullptr);
 
 	// ===================================
 	// ラインの頂点データ生成 (0,0,0) -> (1,0,0)

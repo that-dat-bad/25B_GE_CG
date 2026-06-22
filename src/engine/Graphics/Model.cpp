@@ -119,6 +119,7 @@ void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypat
 	materialData_->enableLighting = true;
 	materialData_->shininess = modelData_.material.shininess;
 	materialData_->environmentCoefficient = modelData_.material.environmentCoefficient;
+	materialData_->specularIntensity = modelData_.material.specularIntensity;
 	materialData_->uvTransform = Identity4x4();
 	materialData_->environmentCoefficient = 0.0f;
 

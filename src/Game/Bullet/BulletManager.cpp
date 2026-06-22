@@ -21,36 +21,64 @@ void BulletManager::Update(float dt) {
 void BulletManager::Draw(Camera* camera) {
 	if (!camera) return;
 
-	// 丸いパーティクル用テクスチャ（マズルフラッシュと同じもの）
+	// 丸いパーティクル用テクスチャ
 	uint32_t texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/circle2.png");
 
-	// アクティブな弾丸をビルボードのパーティクル球として描画
 	for (const auto& bullet : bullets_) {
 		if (!bullet.IsAlive()) continue;
 
-		Vector3 pos = bullet.GetPosition();
-		Vector3 vel = bullet.GetVelocity();
-		
-		// 速度ベクトルから回転角（Yaw, Pitch）を計算
-		Vector3 velDir = { 0.0f, 0.0f, 1.0f }; // デフォルト
-		float speed = Length(vel);
-		Vector3 rotate = { 0.0f, 0.0f, 0.0f };
-		if (speed > 0.001f) {
-			velDir = Normalize(vel);
-			rotate.y = std::atan2(velDir.x, velDir.z); // Yaw
-			rotate.x = std::asin(-velDir.y);           // Pitch
+		const Vector3* history = bullet.GetHistory();
+		int count = bullet.GetHistoryCount();
+		Vector3 currentPos = bullet.GetPosition();
+
+		// 現在の位置から history[0] を繋ぐセグメントを描画
+		DrawTracerSegment(currentPos, history[0], 0, camera, texIndex);
+
+		// 履歴を辿って、連続する2点間を繋ぐセグメントを描画
+		for (int i = 0; i < count - 1; ++i) {
+			DrawTracerSegment(history[i], history[i + 1], i + 1, camera, texIndex);
 		}
+	}
+}
 
-		// 曳光弾（Tracer）として、細長く引き伸ばす（Z軸方向）
-		Vector3 scale = { 0.15f, 0.15f, 4.0f }; // 幅0.15m、長さ4mの線状メッシュ
-		Vector4 color = { 1.0f, 0.2f, 0.1f, 1.0f };  // 赤色に発光
+void BulletManager::DrawTracerSegment(const Vector3& p1, const Vector3& p2, int segmentIndex, Camera* camera, uint32_t texIndex) {
+	Vector3 toP1 = Substract(p1, p2);
+	float length = Length(toP1);
+	if (length < 0.01f) return;
 
-		PrimitiveModel::GetInstance()->DrawCylinder(
-			scale, rotate, pos, color,
-			texIndex, camera, BlendMode::kAdd
-		);
+	Vector3 pos = Multiply(0.5f, Add(p1, p2));
+	Vector3 dir = Normalize(toP1);
+
+	Vector3 rotate = { 0.0f, 0.0f, 0.0f };
+	rotate.y = std::atan2(dir.x, dir.z); // Yaw
+	rotate.x = std::asin(-dir.y);        // Pitch
+
+	// セグメントインデックスに応じた減衰（先端ほど太く明るく、後ろに行くほど細くフェード）
+	float widthFactor = 1.0f;
+	float alphaFactor = 1.0f;
+	if (segmentIndex == 0) {
+		widthFactor = 1.0f;
+		alphaFactor = 1.0f;
+	} else if (segmentIndex == 1) {
+		widthFactor = 0.7f;
+		alphaFactor = 0.6f;
+	} else if (segmentIndex == 2) {
+		widthFactor = 0.4f;
+		alphaFactor = 0.3f;
+	} else {
+		widthFactor = 0.2f;
+		alphaFactor = 0.1f;
 	}
 
+	float thickness = 0.15f * widthFactor;
+	// シリンダーの本来の長さは 2.0（-1.0〜1.0）なので、スケール長は length * 0.5f
+	Vector3 scale = { thickness, thickness, length * 0.5f };
+	Vector4 color = { 1.0f, 0.3f, 0.05f, 1.0f * alphaFactor }; // 黄オレンジ系の発光色
+
+	PrimitiveModel::GetInstance()->DrawCylinder(
+		scale, rotate, pos, color,
+		texIndex, camera, BlendMode::kAdd
+	);
 }
 
 void BulletManager::SpawnBullet(const Vector3& position, const Vector3& direction, float speed, float damage) {

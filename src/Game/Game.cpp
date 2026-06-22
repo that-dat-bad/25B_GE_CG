@@ -30,6 +30,7 @@ void Game::Initialize() {
 
 	// 4. ポストエフェクト初期化
 	DirectXCommon::GetInstance()->SetupRenderTextureSRV(srvManager.get());
+	DirectXCommon::GetInstance()->SetupDepthTextureSRV(srvManager.get());
 	PostEffect::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager.get());
 
 	// 5. シーンマネージャの生成 (全ての準備が整ってから)

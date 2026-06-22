@@ -30,6 +30,12 @@ public:
 	// エフェクト描画関数 (Plane)
 	void DrawPlane(const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode = BlendMode::kNormal);
 
+	// エフェクト描画関数 (Cone)
+	void DrawCone(const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode = BlendMode::kNormal);
+
+	// エフェクト描画関数 (Cone - クォータニオン版)
+	void DrawCone(const Vector3& scale, const Quaternion& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode = BlendMode::kNormal);
+
 	// 3D直線描画関数 (デバッグ用などに使用)
 	void DrawLine3D(const Vector3& p1, const Vector3& p2, const Vector4& color, Camera* camera);
 
@@ -71,6 +77,11 @@ private:
 	D3D12_VERTEX_BUFFER_VIEW planeVertexBufferView_{};
 	uint32_t planeVertexCount_ = 0;
 
+	// コーンのバッファ
+	Microsoft::WRL::ComPtr<ID3D12Resource> coneVertexBuffer_;
+	D3D12_VERTEX_BUFFER_VIEW coneVertexBufferView_{};
+	uint32_t coneVertexCount_ = 0;
+
 	// ラインのバッファ
 	Microsoft::WRL::ComPtr<ID3D12Resource> lineVertexBuffer_;
 	D3D12_VERTEX_BUFFER_VIEW lineVertexBufferView_{};
@@ -109,4 +120,5 @@ private:
 
 	// 描画実行の共通部分
 	void CallDrawCommand(D3D12_VERTEX_BUFFER_VIEW& vbView, uint32_t vertexCount, const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode);
+	void CallDrawCommand(D3D12_VERTEX_BUFFER_VIEW& vbView, uint32_t vertexCount, const Vector3& scale, const Quaternion& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode);
 };

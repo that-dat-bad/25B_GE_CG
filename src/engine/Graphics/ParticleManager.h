@@ -21,6 +21,7 @@ struct Particle {
 	Transform transform;
 	Vector3 velocity;
 	Vector3 acceleration; // 加速度
+	Vector3 angularVelocity; // 回転速度
 	Vector4 color;
 	float lifeTime;
 	float currentTime;
@@ -34,6 +35,7 @@ struct Particle {
 	// ストレッチビルボード
 	bool isStretched = false;
 	float stretchFactor = 1.0f;
+	Vector3 stretchDir = { 0.0f, 0.0f, 0.0f };
 };
 
 // パーティクル発生パラメータ
@@ -45,6 +47,13 @@ struct ParticleParameters {
 	float minLifeTime = 1.0f;
 	float maxLifeTime = 3.0f;
 	Vector3 acceleration = { 0.0f, 0.0f, 0.0f }; // 重力など
+	float randomPositionRange = 1.0f;            // 発生位置のランダムばらつき範囲（0.0で完全に点から発生）
+
+	// 回転
+	float minRotation = 0.0f;
+	float maxRotation = 0.0f;
+	float minRotationSpeed = 0.0f;
+	float maxRotationSpeed = 0.0f;
 
 	// スケール・フェードアニメーション
 	float minScale = 1.0f;     // 初期スケールの範囲（最小）
@@ -56,6 +65,7 @@ struct ParticleParameters {
 	// ストレッチ（引き伸ばし）ビルボード用
 	bool isStretched = false;
 	float stretchFactor = 1.0f;
+	Vector3 stretchDir = { 0.0f, 0.0f, 0.0f };
 };
 
 // GPUに送るインスタンシングデータ (StructuredBuffer用)
@@ -144,6 +154,16 @@ private:
 	};
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexBuffer_;
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView_{};
+
+	// カメラ・スクリーン定数バッファ
+	struct CameraData {
+		float nearClip;
+		float farClip;
+		float screenWidth;
+		float screenHeight;
+	};
+	Microsoft::WRL::ComPtr<ID3D12Resource> cameraBuffer_;
+	CameraData* cameraDataPtr_ = nullptr;
 
 	// パイプライン関連
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
