@@ -9,6 +9,7 @@
 #include "../../engine/Graphics/PostProcess/PostEffect.h"
 #include "../../engine/Graphics/EffectManager.h"
 #include "../../engine/Graphics/ParticleManager.h"
+#include "../../engine/Graphics/GPUParticleManager.h"
 #include "../../engine/Physics/CollisionManager.h"
 #include <cmath>
 #include <algorithm>
@@ -193,6 +194,8 @@ void StageScene::Initialize() {
 
 	ParticleManager::GetInstance()->CreateParticleGroup("ExplosionSmoke", "assets/textures/circle2.png");
 	ParticleManager::GetInstance()->SetBlendMode("ExplosionSmoke", BlendMode::kNormal);
+
+	GPUParticleManager::GetInstance()->SetTexture(TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/circle.png"));
 
 	// ゲーム状態リセット
 	isMissionCleared_ = false;
@@ -389,6 +392,12 @@ void StageScene::Update() {
 	bulletManager_.Update(kDeltaTime);
 	enemyManager_.Update();
 	EffectManager::GetInstance()->Update();
+
+	// Test GPU Particles emitting at the front of the aircraft
+	Vector3 emitPos = flightModel_.GetPosition();
+	emitPos = Add(emitPos, Multiply(10.0f, flightModel_.GetForwardDirection()));
+	GPUParticleManager::GetInstance()->SetEmitParams(emitPos, 10, 0.5f, 0.05f); // 10 particles every 0.05 seconds
+	GPUParticleManager::GetInstance()->Update();
 
 	// --- 弾丸 × 敵 の衝突判定 ---
 	{
@@ -657,6 +666,7 @@ void StageScene::Draw() {
 
 	// エフェクト描画
 	EffectManager::GetInstance()->Draw(cam);
+	GPUParticleManager::GetInstance()->Draw(cam->GetViewProjectionMatrix(), cam->GetWorldMatrix());
 
 	// 追従マズルフラッシュ（板ポリ・リング）の描画
 	if (muzzleFlashTimer_ > 0.0f) {

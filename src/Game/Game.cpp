@@ -3,6 +3,8 @@
 #include "PrimitiveModel.h"
 #include "PostProcess/PostEffect.h"
 
+#include "../../engine/Graphics/GPUParticleManager.h"
+
 void Game::Initialize() {
 	// 1. 基盤システムの初期化
 	winApp = std::make_unique<WinApp>();
@@ -19,6 +21,7 @@ void Game::Initialize() {
 	ModelManager::GetInstance()->Initialize(DirectXCommon::GetInstance());
 	CameraManager::GetInstance()->Initialize();
 	ParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager.get());
+	GPUParticleManager::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager.get());
 
 	Object3dCommon::GetInstance()->Initialize(DirectXCommon::GetInstance());
 	SkyboxCommon::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager.get());
@@ -144,6 +147,7 @@ void Game::Finalize() {
 	TextureManager::GetInstance()->Finalize();  // テクスチャクリア
 	CameraManager::GetInstance()->Finalize();
 	ParticleManager::GetInstance()->Finalize();
+	GPUParticleManager::GetInstance()->Finalize();
 
 	PrimitiveModel::GetInstance()->Finalize();
 	SkyboxCommon::GetInstance()->Finalize();
