@@ -38,9 +38,11 @@ public:
 	// 強制的に発生させるフラグ（毎フレーム呼び出すと発生し続ける）
 	void Emit();
 
+public:
+	~GPUParticleManager() = default;
+
 private:
 	GPUParticleManager() = default;
-	~GPUParticleManager() = default;
 	GPUParticleManager(const GPUParticleManager&) = delete;
 	GPUParticleManager& operator=(const GPUParticleManager&) = delete;
 
