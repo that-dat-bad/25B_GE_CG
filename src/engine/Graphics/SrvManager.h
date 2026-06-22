@@ -33,6 +33,7 @@ public:
 	//SRV生成(キューブマップ用)
 	void CreateSRVforTextureCube(uint32_t srvIndex, ID3D12Resource* pResource, DXGI_FORMAT Format, UINT MipLevels);
 	void CreateSRVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource* pResource, UINT numElements, UINT structureByteStride);
+	void CreateUAVforStructuredBuffer(uint32_t srvIndex, ID3D12Resource* pResource, UINT numElements, UINT structureByteStride);
 private:
 	DirectXCommon* dxCommon_ = nullptr;
 	//次に使用するSRVインデックス
