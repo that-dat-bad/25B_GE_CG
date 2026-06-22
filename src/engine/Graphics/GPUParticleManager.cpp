@@ -286,7 +286,7 @@ void GPUParticleManager::InitializeParticles() {
     commandList->SetComputeRootSignature(computeRootSignature_.Get());
     
     // Bind UAVs (particleUavIndex_ is the start of the contiguous descriptor table for u0, u1, u2)
-    srvManager_->SetGraphicsRootDescriptorTable(0, particleUavIndex_);
+    srvManager_->SetComputeRootDescriptorTable(0, particleUavIndex_);
 
     // Dispatch
     commandList->Dispatch(1, 1, 1); // Only 1 thread group needed (1024 threads inside)
@@ -335,7 +335,7 @@ void GPUParticleManager::Update() {
     // NOTE: In SrvManager they are allocated using Allocate() which returns sequentially incremented index.
     // But to be completely safe, we should ensure they are contiguous. Let's assume they are since we allocated them back to back.
     // Wait, in SrvManager, GetGPUDescriptorHandle increments by descriptor size. So yes, they are contiguous.
-    srvManager_->SetGraphicsRootDescriptorTable(0, particleUavIndex_);
+    srvManager_->SetComputeRootDescriptorTable(0, particleUavIndex_);
     
     // RootParam 1: Emitter CBV
     commandList->SetComputeRootConstantBufferView(1, emitterSphereBuffer_->GetGPUVirtualAddress());
