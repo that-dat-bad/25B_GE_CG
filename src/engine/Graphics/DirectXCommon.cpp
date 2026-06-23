@@ -112,12 +112,12 @@ void DirectXCommon::PreDraw()
 	barrierRT.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	commandList_->ResourceBarrier(1, &barrierRT);
 
-	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = GetDSVHandle();
 	commandList_->OMSetRenderTargets(1, &renderTextureRtvHandles_[0], false, &dsvHandle);
 
 	float clearColor[] = { 1.0f, 0.0f, 0.0f, 1.0f };
 	commandList_->ClearRenderTargetView(renderTextureRtvHandles_[0], clearColor, 0, nullptr);
-	commandList_->ClearDepthStencilView(dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	commandList_->ClearDepthStencilView(GetDSVHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 	commandList_->RSSetViewports(1, &viewport_);
 	commandList_->RSSetScissorRects(1, &scissorRect_);
@@ -327,7 +327,10 @@ void DirectXCommon::CreateDepthStencilView()
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
 	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	device_->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, dsvDescriptorHeap_->GetCPUDescriptorHandleForHeapStart());
+	device_->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, GetDSVHandle());
+
+	dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
+	device_->CreateDepthStencilView(depthStencilResource_.Get(), &dsvDesc, GetReadOnlyDSVHandle());
 }
 
 void DirectXCommon::CreateDescriptorHeaps()

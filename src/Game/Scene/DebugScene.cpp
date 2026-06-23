@@ -14,6 +14,7 @@
 #include "../../engine/Graphics/PostProcess/PostEffect.h"
 #include "../../engine/Graphics/EffectManager.h"
 #include "../../engine/Graphics/ParticleManager.h"
+#include "../../engine/Graphics/GPUParticleManager.h"
 
 void DebugScene::Initialize() {
 	sceneID = SCENE::DEBUG;
@@ -62,6 +63,10 @@ void DebugScene::Initialize() {
 	EffectManager::GetInstance()->Initialize();
 	// ヒットエフェクト用ビルボードのパーティクルグループ作成
 	ParticleManager::GetInstance()->CreateParticleGroup("HitSpark", "assets/textures/white1x1.png");
+
+	// GPUParticleManagerのテクスチャ設定
+	uint32_t gpuParticleTexIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/white1x1.png");
+	GPUParticleManager::GetInstance()->SetTexture(gpuParticleTexIndex);
 }
 
 void DebugScene::Update() {
@@ -132,7 +137,11 @@ void DebugScene::Update() {
 	if (Input::GetInstance()->TriggerKey(DIK_V)) {
 		EffectManager::GetInstance()->EmitHitPlaneEffect(sphereObject->GetTranslate());
 	}
-
+	// デバッグ用: BキーでGPUParticleManagerから最大数(1024個)のエフェクトを発生
+	if (Input::GetInstance()->TriggerKey(DIK_B)) {
+		GPUParticleManager::GetInstance()->SetEmitParams(sphereObject->GetTranslate(), 1024, 5.0f, 0.0f);
+		GPUParticleManager::GetInstance()->Emit();
+	}
 
 #ifdef USE_IMGUI
 	ImGui::Begin("Lighting Settings");
@@ -307,6 +316,8 @@ void DebugScene::Update() {
 	}
 
 	ImGui::End();
+
+	GPUParticleManager::GetInstance()->DrawImGui();
 #endif
 	
 	if (camera) {
@@ -333,6 +344,7 @@ void DebugScene::Draw() {
 	PrimitiveModel::GetInstance()->DrawLine3D({ -5.0f, 0.0f, 0.0f }, { 5.0f, 5.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f }, CameraManager::GetInstance()->GetActiveCamera());
 
 	// エフェクト（プリミティブ）描画 (加算合成で光る柱のように描画)
+	uint32_t particleTex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/circle2.png");
 	uint32_t whiteTex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/white1x1.png");
 	Vector3 cylScale = { 2.0f, 8.0f, 2.0f }; // 太さ2, 高さ8
 	Vector3 cylRotate = { 0.0f, 0.0f, 0.0f };
@@ -340,8 +352,16 @@ void DebugScene::Draw() {
 	Vector4 cylColor = { 1.0f, 0.3f, 0.3f, 0.8f }; // 半透明の赤
 	PrimitiveModel::GetInstance()->DrawCylinder(cylScale, cylRotate, cylTranslate, cylColor, whiteTex, CameraManager::GetInstance()->GetActiveCamera(), BlendMode::kAdd);
 
-	// 統合エフェクトシステムの描画
-	EffectManager::GetInstance()->Draw(CameraManager::GetInstance()->GetActiveCamera());
+	Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
+	if (camera) {
+		GPUParticleManager::GetInstance()->SetTexture(particleTex);
+		GPUParticleManager::GetInstance()->Draw(camera->GetViewProjectionMatrix(), camera->GetWorldMatrix());
+	}
+	
+	// GPUパーティクルの更新と描画
+	// DX12の制約上、Compute ShaderのDispatchコマンドも開かれたコマンドリストに積む必要があるため、
+	// PreDraw() 以降であるここに Update() を配置する。
+	GPUParticleManager::GetInstance()->Update();
 }
 
 void DebugScene::Finalize() {

@@ -3,11 +3,18 @@
 RWStructuredBuffer<ParticleCS> gParticles : register(u0);
 RWStructuredBuffer<int32_t> gFreeListIndex : register(u1);
 RWStructuredBuffer<uint32_t> gFreeList : register(u2);
+RWStructuredBuffer<uint32_t> gAliveList : register(u3);
+RWStructuredBuffer<uint32_t> gIndirectArgs : register(u4);
 
 ConstantBuffer<PerFrame> gPerFrame : register(b1);
 
 [numthreads(1024, 1, 1)]
 void main(uint32_t3 DTid : SV_DispatchThreadID) {
+    if (DTid.x == 0) {
+        gIndirectArgs[1] = 0; // Reset InstanceCount
+    }
+    DeviceMemoryBarrierWithGroupSync();
+
     uint32_t particleIndex = DTid.x;
     if (particleIndex < kMaxParticles) {
         if (gParticles[particleIndex].color.a != 0) {
@@ -27,6 +34,11 @@ void main(uint32_t3 DTid : SV_DispatchThreadID) {
                 } else {
                     InterlockedAdd(gFreeListIndex[0], -1, freeListIndex);
                 }
+            } else {
+                // 生きているパーティクルをAliveListに追加
+                uint32_t aliveIndex;
+                InterlockedAdd(gIndirectArgs[1], 1, aliveIndex);
+                gAliveList[aliveIndex] = particleIndex;
             }
         }
     }

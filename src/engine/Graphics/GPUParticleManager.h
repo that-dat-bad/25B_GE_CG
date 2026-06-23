@@ -14,10 +14,11 @@ public:
 	// CPU側からサイズ計算に使うため定義
 	struct ParticleCS {
 		Vector3 translate;
+		float padding1; // 16-byte alignment
 		Vector3 scale;
-		float lifeTime;
+		float lifeTime; // 16-byte alignment
 		Vector3 velocity;
-		float currentTime;
+		float currentTime; // 16-byte alignment
 		Vector4 color;
 	};
 
@@ -37,6 +38,9 @@ public:
 	
 	// 強制的に発生させるフラグ（毎フレーム呼び出すと発生し続ける）
 	void Emit();
+
+	// ImGuiを描画する
+	void DrawImGui();
 
 public:
 	~GPUParticleManager() = default;
@@ -59,20 +63,27 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> graphicsRootSignature_;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState_;
+	Microsoft::WRL::ComPtr<ID3D12CommandSignature> commandSignature_;
 
 	// Buffers
 	static const uint32_t kMaxParticles = 1024;
 	Microsoft::WRL::ComPtr<ID3D12Resource> particleBuffer_;
 	Microsoft::WRL::ComPtr<ID3D12Resource> freeListIndexBuffer_;
 	Microsoft::WRL::ComPtr<ID3D12Resource> freeListBuffer_;
+	Microsoft::WRL::ComPtr<ID3D12Resource> aliveListBuffer_;
+	Microsoft::WRL::ComPtr<ID3D12Resource> indirectArgsBuffer_;
 
 	uint32_t particleSrvIndex_ = 0;
+	uint32_t aliveListSrvIndex_ = 0;
+
 	uint32_t particleUavIndex_ = 0;
 	uint32_t freeListIndexUavIndex_ = 0;
 	uint32_t freeListUavIndex_ = 0;
+	uint32_t aliveListUavIndex_ = 0;
+	uint32_t indirectArgsUavIndex_ = 0;
 
 	// Constant Buffers
-	Microsoft::WRL::ComPtr<ID3D12Resource> emitterSphereBuffer_;
+	Microsoft::WRL::ComPtr<ID3D12Resource> emitterSphereBuffer_[2];
 	struct EmitterSphere {
 		Vector3 translate;
 		float radius;
@@ -81,7 +92,8 @@ private:
 		float frequencyTime;
 		uint32_t emit;
 	};
-	EmitterSphere* emitterSphereData_ = nullptr;
+	EmitterSphere* emitterSphereData_[2] = { nullptr, nullptr };
+	uint32_t currentBufferIndex_ = 0;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> perFrameBuffer_;
 	struct PerFrame {
@@ -111,7 +123,20 @@ private:
 
 	void CreateComputePipeline();
 	void CreateGraphicsPipeline();
+	void CreateCommandSignature();
 	void CreateBuffers();
 	void CreateModel();
 	void InitializeParticles();
+
+	bool manualEmitRequested_ = false;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> readbackBuffer_;
+	int32_t debugFreeListIndex_ = 0;
+	uint32_t debugInstanceCount_ = 0;
+
+	// GUI Controls
+	Vector3 guiEmitTranslate_ = { 0.0f, 0.0f, 0.0f };
+	int guiEmitCount_ = 1024;
+	float guiEmitRadius_ = 5.0f;
+	float guiEmitFrequency_ = 0.0f;
 };

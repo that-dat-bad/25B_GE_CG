@@ -541,7 +541,6 @@ void StageScene::Update() {
 	Vector3 emitPos = flightModel_.GetPosition();
 	emitPos = Add(emitPos, Multiply(10.0f, flightModel_.GetForwardDirection()));
 	GPUParticleManager::GetInstance()->SetEmitParams(emitPos, 10, 0.5f, 0.05f); // 10 particles every 0.05 seconds
-	GPUParticleManager::GetInstance()->Update();
 
 	// --- 弾丸 × 敵 の衝突判定 ---
 	{
@@ -810,6 +809,8 @@ void StageScene::Draw() {
 
 	// エフェクト描画
 	EffectManager::GetInstance()->Draw(cam);
+
+	GPUParticleManager::GetInstance()->Update();
 	GPUParticleManager::GetInstance()->Draw(cam->GetViewProjectionMatrix(), cam->GetWorldMatrix());
 
 	// --- ベイパーコーン（プラントル・グロワート・シンギュラリティ）エフェクトの描画 ---

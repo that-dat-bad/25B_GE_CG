@@ -1,9 +1,10 @@
 struct ParticleCS {
     float32_t3 translate;
+    float32_t padding1; // 16-byte alignment
     float32_t3 scale;
-    float32_t lifeTime;
+    float32_t lifeTime; // 16-byte alignment
     float32_t3 velocity;
-    float32_t currentTime;
+    float32_t currentTime; // 16-byte alignment
     float32_t4 color;
 };
 

@@ -24,7 +24,7 @@ public:
 	static DirectXCommon* GetInstance();
 
 	static const uint32_t kRtvHeapDescriptorNum_ = 5; // ダブルバッファ(2) + レンダーテクスチャ用(3)
-	static const uint32_t kDsvHeapDescriptorNum_ = 1; // 深度バッファ用
+	static const uint32_t kDsvHeapDescriptorNum_ = 2; // 深度バッファ用(R/W と ReadOnly)
 	static const uint32_t kSwapChainBufferCount_ = 2;
 	//static const uint32_t kMaxSRVCount_;//最大SRV数(最大テクスチャ枚数)
 
@@ -64,6 +64,8 @@ public:
 	}
 	ID3D12DescriptorHeap* GetRTVDescriptorHeap() { return rtvDescriptorHeap_.Get(); }
 	ID3D12DescriptorHeap* GetDSVDescriptorHeap() { return dsvDescriptorHeap_.Get(); }
+	D3D12_CPU_DESCRIPTOR_HANDLE GetDSVHandle() { return GetCPUDescriptorHandle(dsvDescriptorHeap_.Get(), dsvDescriptorSize_, 0); }
+	D3D12_CPU_DESCRIPTOR_HANDLE GetReadOnlyDSVHandle() { return GetCPUDescriptorHandle(dsvDescriptorHeap_.Get(), dsvDescriptorSize_, 1); }
 	ID3D12Resource* GetDepthStencilBuffer() { return depthStencilResource_.Get(); }
 	IDxcUtils* GetDxcUtils() { return dxcUtils_.Get(); }
 	IDxcCompiler3* GetDxcCompiler() { return dxcCompiler_.Get(); }

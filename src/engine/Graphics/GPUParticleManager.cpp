@@ -1,6 +1,7 @@
 #include "GPUParticleManager.h"
 #include <cassert>
 #include <vector>
+#include "../../../external/imgui/imgui.h"
 
 std::unique_ptr<GPUParticleManager> GPUParticleManager::instance_ = nullptr;
 
@@ -18,9 +19,8 @@ void GPUParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvMana
     CreateBuffers();
     CreateComputePipeline();
     CreateGraphicsPipeline();
+    CreateCommandSignature();
     CreateModel();
-
-    InitializeParticles();
 }
 
 void GPUParticleManager::Finalize() {
@@ -28,10 +28,14 @@ void GPUParticleManager::Finalize() {
     particleBuffer_.Reset();
     freeListIndexBuffer_.Reset();
     freeListBuffer_.Reset();
-    emitterSphereBuffer_.Reset();
+    aliveListBuffer_.Reset();
+    indirectArgsBuffer_.Reset();
+    emitterSphereBuffer_[0].Reset();
+    emitterSphereBuffer_[1].Reset();
     perFrameBuffer_.Reset();
     perViewBuffer_.Reset();
     vertexBuffer_.Reset();
+    readbackBuffer_.Reset();
 
     computeRootSignature_.Reset();
     initPipelineState_.Reset();
@@ -40,17 +44,20 @@ void GPUParticleManager::Finalize() {
 
     graphicsRootSignature_.Reset();
     graphicsPipelineState_.Reset();
+    commandSignature_.Reset();
 }
 
 void GPUParticleManager::CreateBuffers() {
     auto device = dxCommon_->GetDevice();
 
-    // Allocate indices first to ensure UAVs are contiguous
     particleUavIndex_ = srvManager_->Allocate();
     freeListIndexUavIndex_ = srvManager_->Allocate();
     freeListUavIndex_ = srvManager_->Allocate();
+    aliveListUavIndex_ = srvManager_->Allocate();
+    indirectArgsUavIndex_ = srvManager_->Allocate();
     
     particleSrvIndex_ = srvManager_->Allocate();
+    aliveListSrvIndex_ = srvManager_->Allocate();
 
     // 1. Particle Buffer (UAV/SRV)
     particleBuffer_ = dxCommon_->CreateUAVBufferResource(sizeof(ParticleCS) * kMaxParticles);
@@ -65,15 +72,26 @@ void GPUParticleManager::CreateBuffers() {
     freeListBuffer_ = dxCommon_->CreateUAVBufferResource(sizeof(uint32_t) * kMaxParticles);
     srvManager_->CreateUAVforStructuredBuffer(freeListUavIndex_, freeListBuffer_.Get(), kMaxParticles, sizeof(uint32_t));
 
-    // 4. EmitterSphere (Constant Buffer)
-    emitterSphereBuffer_ = dxCommon_->CreateBufferResource(sizeof(EmitterSphere));
-    emitterSphereBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&emitterSphereData_));
-    emitterSphereData_->translate = { 0, 0, 0 };
-    emitterSphereData_->radius = 1.0f;
-    emitterSphereData_->count = 10;
-    emitterSphereData_->frequency = 0.5f;
-    emitterSphereData_->frequencyTime = 0.0f;
-    emitterSphereData_->emit = 0;
+    // 4. AliveList Buffer (UAV/SRV)
+    aliveListBuffer_ = dxCommon_->CreateUAVBufferResource(sizeof(uint32_t) * kMaxParticles);
+    srvManager_->CreateUAVforStructuredBuffer(aliveListUavIndex_, aliveListBuffer_.Get(), kMaxParticles, sizeof(uint32_t));
+    srvManager_->CreateSRVforStructuredBuffer(aliveListSrvIndex_, aliveListBuffer_.Get(), kMaxParticles, sizeof(uint32_t));
+
+    // 5. IndirectArgs Buffer (UAV)
+    indirectArgsBuffer_ = dxCommon_->CreateUAVBufferResource(sizeof(D3D12_DRAW_ARGUMENTS));
+    srvManager_->CreateUAVforStructuredBuffer(indirectArgsUavIndex_, indirectArgsBuffer_.Get(), 4, sizeof(uint32_t));
+
+    	// 4. EmitterSphere (Constant Buffer) -> b0
+	for (int i = 0; i < 2; ++i) {
+		emitterSphereBuffer_[i] = dxCommon_->CreateBufferResource(sizeof(EmitterSphere));
+		emitterSphereBuffer_[i]->Map(0, nullptr, reinterpret_cast<void**>(&emitterSphereData_[i]));
+		emitterSphereData_[i]->translate = { 0.0f, 0.0f, 0.0f };
+		emitterSphereData_[i]->radius = 1.0f;
+		emitterSphereData_[i]->count = 100;
+		emitterSphereData_[i]->frequency = 0.5f;
+		emitterSphereData_[i]->frequencyTime = 0.0f;
+		emitterSphereData_[i]->emit = 0;
+	}
 
     // 5. PerFrame (Constant Buffer)
     perFrameBuffer_ = dxCommon_->CreateBufferResource(sizeof(PerFrame));
@@ -84,6 +102,26 @@ void GPUParticleManager::CreateBuffers() {
     // 6. PerView (Constant Buffer)
     perViewBuffer_ = dxCommon_->CreateBufferResource(sizeof(PerView));
     perViewBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&perViewData_));
+
+    // 7. Readback Buffer for ImGui Debugging
+    D3D12_HEAP_PROPERTIES heapProps = {};
+    heapProps.Type = D3D12_HEAP_TYPE_READBACK;
+
+    D3D12_RESOURCE_DESC resDesc = {};
+    resDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    resDesc.Width = sizeof(uint32_t) * 5; // [0-3]: indirectArgs, [4]: freeListIndex
+    resDesc.Height = 1;
+    resDesc.DepthOrArraySize = 1;
+    resDesc.MipLevels = 1;
+    resDesc.Format = DXGI_FORMAT_UNKNOWN;
+    resDesc.SampleDesc.Count = 1;
+    resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+    dxCommon_->GetDevice()->CreateCommittedResource(
+        &heapProps, D3D12_HEAP_FLAG_NONE, &resDesc,
+        D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
+        IID_PPV_ARGS(&readbackBuffer_)
+    );
 }
 
 void GPUParticleManager::CreateComputePipeline() {
@@ -98,7 +136,7 @@ void GPUParticleManager::CreateComputePipeline() {
     // Param 0: Descriptor Table for UAVs
     D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
     descriptorRange[0].BaseShaderRegister = 0; // u0
-    descriptorRange[0].NumDescriptors = 3;     // u0, u1, u2
+    descriptorRange[0].NumDescriptors = 5;     // u0, u1, u2, u3, u4
     descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
     descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
@@ -164,10 +202,10 @@ void GPUParticleManager::CreateGraphicsPipeline() {
 
     D3D12_ROOT_PARAMETER rootParameters[3] = {};
     
-    // SRV for Particles (t0)
+    // SRV for Particles and AliveList (t0, t1)
     D3D12_DESCRIPTOR_RANGE descriptorRangeSRV[1] = {};
     descriptorRangeSRV[0].BaseShaderRegister = 0;
-    descriptorRangeSRV[0].NumDescriptors = 1;
+    descriptorRangeSRV[0].NumDescriptors = 2;
     descriptorRangeSRV[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
     descriptorRangeSRV[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
@@ -279,6 +317,21 @@ void GPUParticleManager::CreateModel() {
     vertexData[3] = { { 0.5f,  0.5f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f} }; // Top Right
 }
 
+void GPUParticleManager::CreateCommandSignature() {
+    auto device = dxCommon_->GetDevice();
+
+    D3D12_INDIRECT_ARGUMENT_DESC argDesc = {};
+    argDesc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
+
+    D3D12_COMMAND_SIGNATURE_DESC cmdSigDesc = {};
+    cmdSigDesc.ByteStride = sizeof(D3D12_DRAW_ARGUMENTS);
+    cmdSigDesc.NumArgumentDescs = 1;
+    cmdSigDesc.pArgumentDescs = &argDesc;
+
+    HRESULT hr = device->CreateCommandSignature(&cmdSigDesc, nullptr, IID_PPV_ARGS(&commandSignature_));
+    assert(SUCCEEDED(hr));
+}
+
 void GPUParticleManager::InitializeParticles() {
     auto commandList = dxCommon_->GetCommandList();
     
@@ -295,50 +348,83 @@ void GPUParticleManager::InitializeParticles() {
     dxCommon_->UAVBarrier(particleBuffer_.Get());
     dxCommon_->UAVBarrier(freeListIndexBuffer_.Get());
     dxCommon_->UAVBarrier(freeListBuffer_.Get());
+    dxCommon_->UAVBarrier(aliveListBuffer_.Get());
+    dxCommon_->UAVBarrier(indirectArgsBuffer_.Get());
 }
 
 void GPUParticleManager::SetEmitParams(const MyMath::Vector3& position, uint32_t count, float radius, float frequency) {
-    emitterSphereData_->translate = position;
-    emitterSphereData_->count = count;
-    emitterSphereData_->radius = radius;
-    emitterSphereData_->frequency = frequency;
+	EmitterSphere* currentEmitterData = emitterSphereData_[currentBufferIndex_];
+	currentEmitterData->translate = position;
+	currentEmitterData->count = count;
+	currentEmitterData->radius = radius;
+	currentEmitterData->frequency = frequency;
 }
 
 void GPUParticleManager::Emit() {
-    emitterSphereData_->emit = 1;
+    manualEmitRequested_ = true;
 }
 
 void GPUParticleManager::Update() {
-    time_ += perFrameData_->deltaTime;
-    perFrameData_->time = time_;
-
-    // Emit Logic (CPU side)
-    emitterSphereData_->frequencyTime += perFrameData_->deltaTime;
-    if (emitterSphereData_->frequency <= emitterSphereData_->frequencyTime) {
-        emitterSphereData_->frequencyTime -= emitterSphereData_->frequency;
-        emitterSphereData_->emit = 1;
-    } else {
-        emitterSphereData_->emit = 0;
+    static bool isFirstFrame = true;
+    if (isFirstFrame) {
+        InitializeParticles();
+        isFirstFrame = false;
     }
+
+    // Readback status from GPU
+    uint32_t* mappedData = nullptr;
+    if (readbackBuffer_ && SUCCEEDED(readbackBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedData)))) {
+        uint32_t vertexCount = mappedData[0];
+        uint32_t instanceCount = mappedData[1];
+        uint32_t startVertex = mappedData[2];
+        uint32_t startInstance = mappedData[3];
+        int32_t freeListIndex = *reinterpret_cast<int32_t*>(&mappedData[4]);
+
+        readbackBuffer_->Unmap(0, nullptr);
+
+        debugInstanceCount_ = instanceCount;
+
+        ImGui::Begin("GPUParticle Debug");
+        ImGui::Text("Alive Particles (Instance Count): %u", instanceCount);
+        ImGui::Text("Vertex Count: %u", vertexCount);
+        ImGui::Text("Start Vertex: %u", startVertex);
+        ImGui::Text("Start Instance: %u", startInstance);
+        ImGui::Text("FreeList Index: %d", freeListIndex);
+        ImGui::End();
+    }
+
+    	time_ += perFrameData_->deltaTime;
+	perFrameData_->time = time_;
+
+	// Switch buffer
+	uint32_t nextBufferIndex = (currentBufferIndex_ + 1) % 2;
+	*emitterSphereData_[nextBufferIndex] = *emitterSphereData_[currentBufferIndex_];
+	currentBufferIndex_ = nextBufferIndex;
+	EmitterSphere* currentEmitterData = emitterSphereData_[currentBufferIndex_];
+
+	// Emit Logic (CPU side)
+	bool shouldEmit = manualEmitRequested_;
+	manualEmitRequested_ = false; // フラグを消費
+
+	currentEmitterData->frequencyTime += perFrameData_->deltaTime;
+	if (currentEmitterData->frequency > 0.0f && currentEmitterData->frequency <= currentEmitterData->frequencyTime) {
+		currentEmitterData->frequencyTime -= currentEmitterData->frequency;
+		shouldEmit = true;
+	}
+
+	currentEmitterData->emit = shouldEmit ? 1 : 0;
 
     auto commandList = dxCommon_->GetCommandList();
     
-    //---------------------------------------------------------
     // EMIT PASS
-    //---------------------------------------------------------
     commandList->SetPipelineState(emitPipelineState_.Get());
     commandList->SetComputeRootSignature(computeRootSignature_.Get());
     
     // RootParam 0: UAV Table
-    // The SRVs were allocated sequentially: particle, freeListIndex, freeList
-    // So if particleUavIndex_ was allocated first, we bind that as the table start.
-    // NOTE: In SrvManager they are allocated using Allocate() which returns sequentially incremented index.
-    // But to be completely safe, we should ensure they are contiguous. Let's assume they are since we allocated them back to back.
-    // Wait, in SrvManager, GetGPUDescriptorHandle increments by descriptor size. So yes, they are contiguous.
     srvManager_->SetComputeRootDescriptorTable(0, particleUavIndex_);
     
     // RootParam 1: Emitter CBV
-    commandList->SetComputeRootConstantBufferView(1, emitterSphereBuffer_->GetGPUVirtualAddress());
+    commandList->SetComputeRootConstantBufferView(1, emitterSphereBuffer_[currentBufferIndex_]->GetGPUVirtualAddress());
     
     // RootParam 2: PerFrame CBV
     commandList->SetComputeRootConstantBufferView(2, perFrameBuffer_->GetGPUVirtualAddress());
@@ -356,13 +442,16 @@ void GPUParticleManager::Update() {
     //---------------------------------------------------------
     commandList->SetPipelineState(updatePipelineState_.Get());
     
-    // Dispatch (1024 threads)
     commandList->Dispatch(1, 1, 1);
     
     // UAV Barrier
     dxCommon_->UAVBarrier(particleBuffer_.Get());
     dxCommon_->UAVBarrier(freeListIndexBuffer_.Get());
     dxCommon_->UAVBarrier(freeListBuffer_.Get());
+    dxCommon_->UAVBarrier(aliveListBuffer_.Get());
+    dxCommon_->UAVBarrier(indirectArgsBuffer_.Get());
+
+    // Readback is now handled entirely in Draw() to capture final state
 }
 
 void GPUParticleManager::Draw(const MyMath::Matrix4x4& viewProjection, const MyMath::Matrix4x4& billboardMatrix) {
@@ -377,7 +466,7 @@ void GPUParticleManager::Draw(const MyMath::Matrix4x4& viewProjection, const MyM
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
     commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 
-    // RootParam 0: Particle SRV Table
+    // RootParam 0: Particle and AliveList SRV Table
     srvManager_->SetGraphicsRootDescriptorTable(0, particleSrvIndex_);
     
     // RootParam 1: PerView CBV
@@ -386,6 +475,108 @@ void GPUParticleManager::Draw(const MyMath::Matrix4x4& viewProjection, const MyM
     // RootParam 2: Texture SRV Table
     srvManager_->SetGraphicsRootDescriptorTable(2, textureSrvIndex_);
 
-    // Draw Instanced
-    commandList->DrawInstanced(4, kMaxParticles, 0, 0);
+    // Transition Buffers for drawing
+    D3D12_RESOURCE_BARRIER barriers[3] = {};
+    
+    // IndirectArgs Buffer to INDIRECT_ARGUMENT
+    barriers[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barriers[0].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barriers[0].Transition.pResource = indirectArgsBuffer_.Get();
+    barriers[0].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
+    
+    // Particle Buffer to NON_PIXEL_SHADER_RESOURCE
+    barriers[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barriers[1].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barriers[1].Transition.pResource = particleBuffer_.Get();
+    barriers[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    
+    // AliveList Buffer to NON_PIXEL_SHADER_RESOURCE
+    barriers[2].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barriers[2].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barriers[2].Transition.pResource = aliveListBuffer_.Get();
+    barriers[2].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barriers[2].Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    barriers[2].Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+
+    commandList->ResourceBarrier(3, barriers);
+
+    // Draw Instanced Indirect
+    commandList->ExecuteIndirect(commandSignature_.Get(), 1, indirectArgsBuffer_.Get(), 0, nullptr, 0);
+
+    // Transition Buffers back to UNORDERED_ACCESS
+    barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
+    barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+
+    barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+
+    barriers[2].Transition.StateBefore = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    barriers[2].Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+
+    commandList->ResourceBarrier(3, barriers);
+
+    // --- Copy status to Readback Buffer ---
+    if (readbackBuffer_) {
+        D3D12_RESOURCE_BARRIER copyBarriers[2] = {};
+        copyBarriers[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        copyBarriers[0].Transition.pResource = freeListIndexBuffer_.Get();
+        copyBarriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        copyBarriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+
+        copyBarriers[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        copyBarriers[1].Transition.pResource = indirectArgsBuffer_.Get();
+        copyBarriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        copyBarriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+        commandList->ResourceBarrier(2, copyBarriers);
+
+        // Fix: Read back the exact indirectArgs buffer correctly without overwriting!
+        commandList->CopyBufferRegion(readbackBuffer_.Get(), 0, indirectArgsBuffer_.Get(), 0, sizeof(uint32_t) * 4);
+        commandList->CopyBufferRegion(readbackBuffer_.Get(), 16, freeListIndexBuffer_.Get(), 0, sizeof(int32_t));
+
+        // Revert to UNORDERED_ACCESS
+        copyBarriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+        copyBarriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        copyBarriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+        copyBarriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        commandList->ResourceBarrier(2, copyBarriers);
+    }
+}
+
+void GPUParticleManager::DrawImGui() {
+#ifdef USE_IMGUI
+    ImGui::Begin("GPU Particle System");
+
+    if (ImGui::CollapsingHeader("Status", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Text("Max Particles: %d", kMaxParticles);
+        
+        // Use the readback values
+        int32_t activeParticles = debugInstanceCount_;
+        int32_t freeParticles = debugFreeListIndex_ + 1; // since index is 0-based, +1 is the count
+        
+        ImGui::Text("Alive Particles: %d", activeParticles);
+        ImGui::Text("Free Particles: %d", freeParticles);
+        
+        // Progress bar for utilization
+        float util = static_cast<float>(activeParticles) / static_cast<float>(kMaxParticles);
+        ImGui::ProgressBar(util, ImVec2(0.f, 0.f), std::to_string(activeParticles).c_str());
+    }
+
+    if (ImGui::CollapsingHeader("Emitter Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::DragFloat3("Translate", &guiEmitTranslate_.x, 0.1f);
+        ImGui::SliderInt("Count", &guiEmitCount_, 1, kMaxParticles);
+        ImGui::DragFloat("Radius", &guiEmitRadius_, 0.1f, 0.0f, 50.0f);
+        ImGui::DragFloat("Frequency (s)", &guiEmitFrequency_, 0.01f, 0.0f, 5.0f);
+
+        if (ImGui::Button("Manual Emit")) {
+            SetEmitParams(guiEmitTranslate_, static_cast<uint32_t>(guiEmitCount_), guiEmitRadius_, guiEmitFrequency_);
+            Emit();
+        }
+    }
+
+    ImGui::End();
+#endif
 }

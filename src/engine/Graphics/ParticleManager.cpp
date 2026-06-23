@@ -205,19 +205,19 @@ void ParticleManager::Draw() {
 	// VBVの設定
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 
-	// --- Soft Particle 用の深度バッファ準備 ---
-	// 深度バッファを SRV 用 (PIXEL_SHADER_RESOURCE) に遷移させる
+	// 深度バッファを SRV 用 (PIXEL_SHADER_RESOURCE | DEPTH_READ) に遷移させる
 	D3D12_RESOURCE_BARRIER barrier = {};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Transition.pResource = dxCommon_->GetDepthStencilBuffer();
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	commandList->ResourceBarrier(1, &barrier);
 
-	// DSVを外す (OMSetRenderTargetsでDSVをnullptrに)
+	// DSVをRead-Onlyに設定
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = dxCommon_->GetRenderTextureRTVHandle(0);
-	commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
+	D3D12_CPU_DESCRIPTOR_HANDLE readOnlyDsvHandle = dxCommon_->GetReadOnlyDSVHandle();
+	commandList->OMSetRenderTargets(1, &rtvHandle, false, &readOnlyDsvHandle);
 
 	// 全てのパーティクルグループについて処理
 	BlendMode currentBlendMode = BlendMode::kCountOf; // 初期値として無効な値をセット
@@ -251,9 +251,13 @@ void ParticleManager::Draw() {
 	}
 
 	// 深度バッファの状態を DEPTH_WRITE に戻す
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 	commandList->ResourceBarrier(1, &barrier);
+
+	// DSVを通常に戻す
+	D3D12_CPU_DESCRIPTOR_HANDLE normalDsvHandle = dxCommon_->GetDSVHandle();
+	commandList->OMSetRenderTargets(1, &rtvHandle, false, &normalDsvHandle);
 
 	// DSVを元に戻す
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
@@ -530,7 +534,7 @@ void ParticleManager::CreateGraphicsPipeline() {
 	graphicsPipelineStateDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 
 	// デプスステンシル
-	graphicsPipelineStateDesc.DepthStencilState.DepthEnable = false;
+	graphicsPipelineStateDesc.DepthStencilState.DepthEnable = TRUE;
 	graphicsPipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 	graphicsPipelineStateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
