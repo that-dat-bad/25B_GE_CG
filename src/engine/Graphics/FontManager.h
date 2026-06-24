@@ -8,7 +8,7 @@
 using namespace MyMath;
 
 struct CharacterInfo {
-    stbtt_bakedchar cdata[96]; // ASCII 32..126 is 96 chars
+    std::unordered_map<char32_t, stbtt_packedchar> glyphs;
     std::string textureName;
     uint32_t textureIndex;
     float size;

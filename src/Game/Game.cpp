@@ -32,7 +32,7 @@ void Game::Initialize() {
 
 	FontManager::GetInstance()->Initialize();
 	TextRenderer::GetInstance()->Initialize(SpriteCommon::GetInstance());
-	FontManager::GetInstance()->LoadFont("Roboto", "assets/fonts/Roboto-Regular.ttf", 32.0f);
+	FontManager::GetInstance()->LoadFont("Roboto", "C:/Windows/Fonts/msgothic.ttc", 32.0f);
 
 	imguiManager = std::make_unique<ImGuiManager>();
 	imguiManager->Initialize(winApp.get(), DirectXCommon::GetInstance(), srvManager.get());

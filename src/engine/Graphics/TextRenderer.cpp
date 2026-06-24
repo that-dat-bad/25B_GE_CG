@@ -32,9 +32,32 @@ void TextRenderer::Print(const std::string& fontName, const std::string& text, f
     float startX = x;
     float startY = y;
 
-    for (char c : text) {
-        if (c >= 32 && c < 128) {
-            const stbtt_bakedchar* b = &info->cdata[c - 32];
+    for (size_t i = 0; i < text.length(); ) {
+        char32_t codepoint = 0;
+        unsigned char c = text[i];
+        if (c <= 0x7F) {
+            codepoint = c;
+            i += 1;
+        } else if ((c & 0xE0) == 0xC0) {
+            if (i + 1 >= text.length()) break;
+            codepoint = ((c & 0x1F) << 6) | (text[i+1] & 0x3F);
+            i += 2;
+        } else if ((c & 0xF0) == 0xE0) {
+            if (i + 2 >= text.length()) break;
+            codepoint = ((c & 0x0F) << 12) | ((text[i+1] & 0x3F) << 6) | (text[i+2] & 0x3F);
+            i += 3;
+        } else if ((c & 0xF8) == 0xF0) {
+            if (i + 3 >= text.length()) break;
+            codepoint = ((c & 0x07) << 18) | ((text[i+1] & 0x3F) << 12) | ((text[i+2] & 0x3F) << 6) | (text[i+3] & 0x3F);
+            i += 4;
+        } else {
+            i += 1; // Invalid UTF-8
+            continue;
+        }
+
+        auto it = info->glyphs.find(codepoint);
+        if (it != info->glyphs.end()) {
+            const stbtt_packedchar* b = &it->second;
             
             // 四角形の生成
             float xpos = startX + b->xoff * scale;

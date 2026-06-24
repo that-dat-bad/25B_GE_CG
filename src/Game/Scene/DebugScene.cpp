@@ -127,8 +127,8 @@ void DebugScene::Update() {
 	}
 
 	// テキスト描画のテスト
-	TextRenderer::GetInstance()->Print("Roboto", "Hello Antigravity Engine!", 50.0f, 50.0f, 32.0f, {0.2f, 1.0f, 0.2f, 1.0f});
-	TextRenderer::GetInstance()->Print("Roboto", "Font System using stb_truetype", 50.0f, 90.0f, 24.0f, {1.0f, 1.0f, 1.0f, 1.0f});
+	TextRenderer::GetInstance()->Print("Roboto", "hello!world!", 50.0f, 50.0f, 32.0f, {0.2f, 1.0f, 0.2f, 1.0f});
+	TextRenderer::GetInstance()->Print("Roboto", reinterpret_cast<const char*>(u8"ハロー！ワールド"), 50.0f, 90.0f, 24.0f, {1.0f, 1.0f, 1.0f, 1.0f});
 
 	// エフェクトマネージャーの更新
 	EffectManager::GetInstance()->Update();
