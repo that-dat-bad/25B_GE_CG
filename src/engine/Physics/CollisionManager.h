@@ -23,6 +23,7 @@ public:
 	static void CheckBulletEnemyCollisions(
 		std::vector<Bullet>& bullets,
 		const std::vector<Enemy*>& enemies,
-		float bulletDamage
+		float bulletDamage,
+		std::vector<MyMath::Vector3>& outHitPositions
 	);
 };

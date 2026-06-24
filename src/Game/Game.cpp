@@ -4,6 +4,8 @@
 #include "PostProcess/PostEffect.h"
 
 #include "../../engine/Graphics/GPUParticleManager.h"
+#include "../../engine/Graphics/FontManager.h"
+#include "../../engine/Graphics/TextRenderer.h"
 
 void Game::Initialize() {
 	// 1. 基盤システムの初期化
@@ -27,6 +29,10 @@ void Game::Initialize() {
 	SkyboxCommon::GetInstance()->Initialize(DirectXCommon::GetInstance(), srvManager.get());
 	PrimitiveModel::GetInstance()->Initialize(DirectXCommon::GetInstance());
 	AudioManager::GetInstance()->Initialize();
+
+	FontManager::GetInstance()->Initialize();
+	TextRenderer::GetInstance()->Initialize(SpriteCommon::GetInstance());
+	FontManager::GetInstance()->LoadFont("Roboto", "assets/fonts/Roboto-Regular.ttf", 32.0f);
 
 	imguiManager = std::make_unique<ImGuiManager>();
 	imguiManager->Initialize(winApp.get(), DirectXCommon::GetInstance(), srvManager.get());
@@ -97,6 +103,10 @@ void Game::Draw() {
 	sceneManager->Draw();
 	ParticleManager::GetInstance()->Draw();
 
+	// UI・テキスト描画 (Sprite描画のセットアップを行ってから描画)
+	SpriteCommon::GetInstance()->SetupCommonState();
+	TextRenderer::GetInstance()->Draw();
+
 	// 描画後処理（ポストエフェクト適用、バックバッファに描画）
 	DirectXCommon::GetInstance()->PostDraw();
 
@@ -149,6 +159,9 @@ void Game::Finalize() {
 	CameraManager::GetInstance()->Finalize();
 	ParticleManager::GetInstance()->Finalize();
 	GPUParticleManager::GetInstance()->Finalize();
+
+	TextRenderer::GetInstance()->Finalize();
+	FontManager::GetInstance()->Finalize();
 
 	PrimitiveModel::GetInstance()->Finalize();
 	SkyboxCommon::GetInstance()->Finalize();

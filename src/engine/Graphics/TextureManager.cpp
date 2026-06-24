@@ -166,6 +166,51 @@ void TextureManager::LoadTextureFromMemory(const std::string& textureName, const
 	);
 }
 
+void TextureManager::LoadTextureFromRawPixels(const std::string& textureName, uint32_t width, uint32_t height, DXGI_FORMAT format, const void* pixels) {
+	// 既に読み込み済みならスキップ
+	if (textureDatas_.contains(textureName)) {
+		return;
+	}
+
+	assert(srvManager_->CanAllocate());
+
+	DirectX::Image img;
+	img.width = width;
+	img.height = height;
+	img.format = format;
+	img.rowPitch = (width * DirectX::BitsPerPixel(format)) / 8;
+	img.slicePitch = img.rowPitch * height;
+	img.pixels = (uint8_t*)pixels;
+
+	DirectX::ScratchImage scratchImage;
+	HRESULT hr = scratchImage.InitializeFromImage(img);
+	assert(SUCCEEDED(hr));
+
+	// --- テクスチャデータを追加 ---
+	TextureData& textureData = textureDatas_[textureName];
+
+	// --- テクスチャデータ書き込み ---
+	textureData.filePath = textureName;
+	textureData.metadata = scratchImage.GetMetadata();
+	textureData.resource = dxCommon_->CreateTextureResource(dxCommon_->GetDevice(), textureData.metadata);
+
+	// --- テクスチャデータ転送 ---
+	textureData.intermediateResource = dxCommon_->UploadTextureData(textureData.resource.Get(), scratchImage);
+
+	// --- デスクリプタハンドルの計算 ---
+	textureData.srvIndex = srvManager_->Allocate();
+	textureData.srvHandleCPU = srvManager_->GetCPUDescriptorHandle(textureData.srvIndex);
+	textureData.srvHandleGPU = srvManager_->GetGPUDescriptorHandle(textureData.srvIndex);
+
+	// SRV生成
+	srvManager_->CreateSRVforTexture2D(
+		textureData.srvIndex,
+		textureData.resource.Get(),
+		textureData.metadata.format,
+		1 // mipLevels = 1 for raw pixels
+	);
+}
+
 D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetSrvHandleGPU(uint32_t textureIndex) {
 	return srvManager_->GetGPUDescriptorHandle(textureIndex);
 }

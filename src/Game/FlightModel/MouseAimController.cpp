@@ -170,23 +170,23 @@ void MouseAimController::CalculateSteeringInput(
 
 	if (absYawError > coordinatedTurnThreshold_) {
 		// =============================================
-		// コーディネートターン: バンク＆プル
+		// コーディネートターン: バンク＆プル (ロールしてピッチで引く)
 		// =============================================
 
-		float targetBank = std::clamp(-yawAngleError * 1.5f, -kMaxBankAngle, kMaxBankAngle);
+		// ヨーの誤差に応じて目標バンク角を決定。横移動に素早く反応させるため係数を大きめにする。
+		float targetBank = std::clamp(-yawAngleError * 3.5f, -kMaxBankAngle, kMaxBankAngle);
 
 		float bankError = targetBank - currentBankIndicator;
 		float rollOutput = rollPID_.Update(bankError, deltaTime);
 		outRoll = std::clamp(rollOutput, -1.0f, 1.0f);
 
-		float bankRatio = std::fabs(currentBankIndicator) / kMaxBankAngle;
-		bankRatio = std::clamp(bankRatio, 0.0f, 1.0f);
-
+		// ピッチは純粋に目標方向（レティクル）へ向けるための誤差から直接計算
 		float pitchOutput = pitchPID_.Update(pitchAngleError, deltaTime);
-		float pullUp = bankRatio * 0.8f;
-		outPitch = std::clamp(-(pullUp + pitchOutput * (1.0f - bankRatio * 0.5f)), -1.0f, 1.0f);
+		outPitch = std::clamp(-pitchOutput, -1.0f, 1.0f);
 
-		outYaw = std::clamp(yawAngleError * yawPID_.kP * 0.3f, -1.0f, 1.0f);
+		// ヨー（ラダー）は機首の横滑りを抑えつつ追従を補助する程度に
+		float yawOutput = yawPID_.Update(yawAngleError, deltaTime);
+		outYaw = std::clamp(yawOutput * 0.4f, -1.0f, 1.0f);
 
 	} else {
 		// =============================================

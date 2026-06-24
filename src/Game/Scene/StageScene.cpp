@@ -537,21 +537,25 @@ void StageScene::Update() {
 	enemyManager_.Update();
 	EffectManager::GetInstance()->Update();
 
-	// Test GPU Particles emitting at the front of the aircraft
-	Vector3 emitPos = flightModel_.GetPosition();
-	emitPos = Add(emitPos, Multiply(10.0f, flightModel_.GetForwardDirection()));
-	GPUParticleManager::GetInstance()->SetEmitParams(emitPos, 10, 0.5f, 0.05f); // 10 particles every 0.05 seconds
+
 
 	// --- 弾丸 × 敵 の衝突判定 ---
 	{
 		auto aliveEnemies = enemyManager_.GetAliveEnemies();
 		int prevAlive = static_cast<int>(aliveEnemies.size());
 
+		std::vector<MyMath::Vector3> hitPositions;
 		CollisionManager::CheckBulletEnemyCollisions(
 			bulletManager_.GetBullets(),
 			aliveEnemies,
-			10.0f  // 弾丸ダメージ
+			10.0f,  // 弾丸ダメージ
+			hitPositions
 		);
+
+		// ヒットエフェクトの発生 (Planeの回転やRing, Cylinderなどをゲームに活用)
+		for (const auto& hitPos : hitPositions) {
+			EffectManager::GetInstance()->EmitHitEffect(hitPos);
+		}
 
 		// 敵が新たに破壊されたら破壊演出を発生
 		for (auto* enemy : aliveEnemies) {

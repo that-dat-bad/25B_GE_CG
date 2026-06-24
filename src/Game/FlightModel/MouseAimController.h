@@ -105,7 +105,7 @@ private:
 	MyMath::Vector3 targetDirection_ = { 0.0f, 0.0f, 1.0f };
 
 	// コーディネートターンの閾値（ラジアン）
-	float coordinatedTurnThreshold_ = 0.26f;  // ≈ 15度
+	float coordinatedTurnThreshold_ = 0.03f;  // ≈ 1.7度
 
 	// === PIDコントローラー（各軸） ===
 	PIDController pitchPID_;   // ピッチ誤差 → ピッチ入力

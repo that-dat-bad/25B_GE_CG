@@ -29,6 +29,8 @@ public:
 
 	void LoadTextureFromMemory(const std::string& textureName, const void* data, size_t size);
 
+	void LoadTextureFromRawPixels(const std::string& textureName, uint32_t width, uint32_t height, DXGI_FORMAT format, const void* pixels);
+
 	// SRVハンドル(GPU)を取得
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(uint32_t textureIndex);
 

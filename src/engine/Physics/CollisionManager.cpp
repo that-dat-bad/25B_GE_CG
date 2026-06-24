@@ -19,7 +19,8 @@ bool CollisionManager::CheckGroundCollision(const MyMath::Vector3& position, flo
 void CollisionManager::CheckBulletEnemyCollisions(
 	std::vector<Bullet>& bullets,
 	const std::vector<Enemy*>& enemies,
-	float bulletDamage
+	float bulletDamage,
+	std::vector<MyMath::Vector3>& outHitPositions
 ) {
 	for (auto& bullet : bullets) {
 		if (!bullet.IsAlive()) continue;
@@ -37,6 +38,7 @@ void CollisionManager::CheckBulletEnemyCollisions(
 				// ヒット：弾丸を消滅させ、敵にダメージを与える
 				bullet.Kill();
 				enemy->TakeDamage(bulletDamage);
+				outHitPositions.push_back(bullet.GetPosition());
 				break; // 1発の弾が複数の敵にヒットしない
 			}
 		}

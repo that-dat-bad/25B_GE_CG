@@ -15,6 +15,7 @@
 #include "../../engine/Graphics/EffectManager.h"
 #include "../../engine/Graphics/ParticleManager.h"
 #include "../../engine/Graphics/GPUParticleManager.h"
+#include "../../engine/Graphics/TextRenderer.h"
 
 void DebugScene::Initialize() {
 	sceneID = SCENE::DEBUG;
@@ -124,6 +125,10 @@ void DebugScene::Update() {
 	if (skybox_) {
 		skybox_->Update();
 	}
+
+	// テキスト描画のテスト
+	TextRenderer::GetInstance()->Print("Roboto", "Hello Antigravity Engine!", 50.0f, 50.0f, 32.0f, {0.2f, 1.0f, 0.2f, 1.0f});
+	TextRenderer::GetInstance()->Print("Roboto", "Font System using stb_truetype", 50.0f, 90.0f, 24.0f, {1.0f, 1.0f, 1.0f, 1.0f});
 
 	// エフェクトマネージャーの更新
 	EffectManager::GetInstance()->Update();
