@@ -112,7 +112,6 @@ public:
 	float GetAspectRatio() const { return aspectRatio_; }
 	float GetOswaldEfficiency() const { return oswaldEfficiency_; }
 
-	// G制限
 	float GetPositiveGLimit() const { return positiveGLimit_; }
 	float GetNegativeGLimit() const { return negativeGLimit_; }
 
@@ -135,7 +134,6 @@ private:
 	float aspectRatio_;
 	float oswaldEfficiency_;
 
-	// G制限
 	float positiveGLimit_;
 	float negativeGLimit_;
 

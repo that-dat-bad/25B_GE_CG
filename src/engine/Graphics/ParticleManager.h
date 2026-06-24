@@ -68,13 +68,11 @@ struct ParticleParameters {
 	Vector3 stretchDir = { 0.0f, 0.0f, 0.0f };
 };
 
-// GPUに送るインスタンシングデータ (StructuredBuffer用)
 struct ParticleInstancingData {
 	Matrix4x4 WVP;
 	Vector4 color;
 };
 
-// AABB (Axis Aligned Bounding Box)
 struct AABB {
 	Vector3 min; // 最小点
 	Vector3 max; // 最大点

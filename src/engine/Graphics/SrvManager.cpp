@@ -28,7 +28,6 @@ uint32_t SrvManager::Allocate() {
 	//上限に達していないかチェックしてassert
 	assert(useIndex_ < kMaxSRVCount_);
 
-	//returnする番号をいったん記録しておく
 	int index = useIndex_;
 	//次のために番号を1進める
 	useIndex_++;

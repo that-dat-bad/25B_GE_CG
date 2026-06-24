@@ -65,7 +65,6 @@ public:
 	void SetDirY(float dirY) { dirY_ = dirY; }
 	float GetDirY() const { return dirY_; }
 
-	// Dissolve パラメータ
 	void SetDissolveThreshold(float t) { dissolveThreshold_ = t; }
 	float GetDissolveThreshold() const { return dissolveThreshold_; }
 
@@ -106,13 +105,12 @@ private:
 	float dirX_ = 0.0f;
 	float dirY_ = 0.0f;
 
-	// Dissolve 用
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> dissolveRootSignature_;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> dissolvePSO_;
-	std::vector<uint32_t> dissolveMaskSrvIndices_; // noise texture SRV indices
+	std::vector<uint32_t> dissolveMaskSrvIndices_;
 	float dissolveThreshold_ = 0.5f;
 	float dissolveEdgeWidth_ = 0.05f;
-	int dissolveMaskIndex_ = 0; // 0=noise0, 1=noise1
+	int dissolveMaskIndex_ = 0;
 
 	float time_ = 0.0f;
 

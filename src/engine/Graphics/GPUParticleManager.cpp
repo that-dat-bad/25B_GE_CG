@@ -24,7 +24,6 @@ void GPUParticleManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvMana
 }
 
 void GPUParticleManager::Finalize() {
-    // Release resources
     particleBuffer_.Reset();
     freeListIndexBuffer_.Reset();
     freeListBuffer_.Reset();
@@ -127,16 +126,14 @@ void GPUParticleManager::CreateBuffers() {
 void GPUParticleManager::CreateComputePipeline() {
     auto device = dxCommon_->GetDevice();
 
-    // Root Signature
     D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
     descriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
 
     D3D12_ROOT_PARAMETER rootParameters[3] = {};
     
-    // Param 0: Descriptor Table for UAVs
     D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
-    descriptorRange[0].BaseShaderRegister = 0; // u0
-    descriptorRange[0].NumDescriptors = 5;     // u0, u1, u2, u3, u4
+    descriptorRange[0].BaseShaderRegister = 0;
+    descriptorRange[0].NumDescriptors = 5;
     descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
     descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
@@ -145,15 +142,13 @@ void GPUParticleManager::CreateComputePipeline() {
     rootParameters[0].DescriptorTable.pDescriptorRanges = descriptorRange;
     rootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
 
-    // Param 1: CBV for Emitter (b0)
     rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-    rootParameters[1].Descriptor.ShaderRegister = 0; // b0
+    rootParameters[1].Descriptor.ShaderRegister = 0;
 
-    // Param 2: CBV for PerFrame (b1)
     rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-    rootParameters[2].Descriptor.ShaderRegister = 1; // b1
+    rootParameters[2].Descriptor.ShaderRegister = 1;
 
     descriptionRootSignature.pParameters = rootParameters;
     descriptionRootSignature.NumParameters = 3;
@@ -168,26 +163,21 @@ void GPUParticleManager::CreateComputePipeline() {
     hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&computeRootSignature_));
     assert(SUCCEEDED(hr));
 
-    // Compile Shaders
     Microsoft::WRL::ComPtr<IDxcBlob> initCS = dxCommon_->CompileShader(L"assets/shaders/InitializeParticle.CS.hlsl", L"cs_6_0");
     Microsoft::WRL::ComPtr<IDxcBlob> emitCS = dxCommon_->CompileShader(L"assets/shaders/EmitParticle.CS.hlsl", L"cs_6_0");
     Microsoft::WRL::ComPtr<IDxcBlob> updateCS = dxCommon_->CompileShader(L"assets/shaders/UpdateParticle.CS.hlsl", L"cs_6_0");
 
-    // Pipeline States
     D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc{};
     psoDesc.pRootSignature = computeRootSignature_.Get();
     
-    // Init
     psoDesc.CS = { initCS->GetBufferPointer(), initCS->GetBufferSize() };
     hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&initPipelineState_));
     assert(SUCCEEDED(hr));
 
-    // Emit
     psoDesc.CS = { emitCS->GetBufferPointer(), emitCS->GetBufferSize() };
     hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&emitPipelineState_));
     assert(SUCCEEDED(hr));
 
-    // Update
     psoDesc.CS = { updateCS->GetBufferPointer(), updateCS->GetBufferSize() };
     hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&updatePipelineState_));
     assert(SUCCEEDED(hr));
@@ -196,13 +186,11 @@ void GPUParticleManager::CreateComputePipeline() {
 void GPUParticleManager::CreateGraphicsPipeline() {
     auto device = dxCommon_->GetDevice();
 
-    // Root Signature
     D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
     descriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
     D3D12_ROOT_PARAMETER rootParameters[3] = {};
     
-    // SRV for Particles and AliveList (t0, t1)
     D3D12_DESCRIPTOR_RANGE descriptorRangeSRV[1] = {};
     descriptorRangeSRV[0].BaseShaderRegister = 0;
     descriptorRangeSRV[0].NumDescriptors = 2;
@@ -214,12 +202,10 @@ void GPUParticleManager::CreateGraphicsPipeline() {
     rootParameters[0].DescriptorTable.pDescriptorRanges = descriptorRangeSRV;
     rootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
 
-    // CBV for PerView (b0)
     rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
     rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
     rootParameters[1].Descriptor.ShaderRegister = 0;
 
-    // SRV for Texture (t0 in PS)
     D3D12_DESCRIPTOR_RANGE descriptorRangeTex[1] = {};
     descriptorRangeTex[0].BaseShaderRegister = 0;
     descriptorRangeTex[0].NumDescriptors = 1;
@@ -256,14 +242,12 @@ void GPUParticleManager::CreateGraphicsPipeline() {
     hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&graphicsRootSignature_));
     assert(SUCCEEDED(hr));
 
-    // Input Layout
     D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
         { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
     };
 
-    // Compile Shaders
     Microsoft::WRL::ComPtr<IDxcBlob> vsBlob = dxCommon_->CompileShader(L"assets/shaders/GPUParticle.VS.hlsl", L"vs_6_0");
     Microsoft::WRL::ComPtr<IDxcBlob> psBlob = dxCommon_->CompileShader(L"assets/shaders/GPUParticle.PS.hlsl", L"ps_6_0");
 
@@ -275,7 +259,6 @@ void GPUParticleManager::CreateGraphicsPipeline() {
     graphicsPipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
     graphicsPipelineStateDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
     
-    // Additive Blending
     D3D12_RENDER_TARGET_BLEND_DESC blendDesc{};
     blendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
     blendDesc.BlendEnable = TRUE;
@@ -288,7 +271,7 @@ void GPUParticleManager::CreateGraphicsPipeline() {
 
     graphicsPipelineStateDesc.BlendState.RenderTarget[0] = blendDesc;
     graphicsPipelineStateDesc.DepthStencilState.DepthEnable = TRUE;
-    graphicsPipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO; // Disable depth write for particles
+    graphicsPipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
     graphicsPipelineStateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
     graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
     graphicsPipelineStateDesc.NumRenderTargets = 1;
@@ -311,11 +294,10 @@ void GPUParticleManager::CreateModel() {
     VertexData* vertexData = nullptr;
     vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
     
-    // Quad (Triangle Strip)
-    vertexData[0] = { {-0.5f, -0.5f, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f} }; // Bottom Left
-    vertexData[1] = { {-0.5f,  0.5f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f} }; // Top Left
-    vertexData[2] = { { 0.5f, -0.5f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f} }; // Bottom Right
-    vertexData[3] = { { 0.5f,  0.5f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f} }; // Top Right
+    vertexData[0] = { {-0.5f, -0.5f, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, -1.0f} };
+    vertexData[1] = { {-0.5f,  0.5f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, -1.0f} };
+    vertexData[2] = { { 0.5f, -0.5f, 0.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, -1.0f} };
+    vertexData[3] = { { 0.5f,  0.5f, 0.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, -1.0f} };
 }
 
 void GPUParticleManager::CreateCommandSignature() {
@@ -339,13 +321,10 @@ void GPUParticleManager::InitializeParticles() {
     commandList->SetPipelineState(initPipelineState_.Get());
     commandList->SetComputeRootSignature(computeRootSignature_.Get());
     
-    // Bind UAVs (particleUavIndex_ is the start of the contiguous descriptor table for u0, u1, u2)
     srvManager_->SetComputeRootDescriptorTable(0, particleUavIndex_);
 
-    // Dispatch
-    commandList->Dispatch(1, 1, 1); // Only 1 thread group needed (1024 threads inside)
+    commandList->Dispatch(1, 1, 1);
     
-    // Wait for UAV writes to complete
     dxCommon_->UAVBarrier(particleBuffer_.Get());
     dxCommon_->UAVBarrier(freeListIndexBuffer_.Get());
     dxCommon_->UAVBarrier(freeListBuffer_.Get());
@@ -372,7 +351,6 @@ void GPUParticleManager::Update() {
         isFirstFrame = false;
     }
 
-    // Readback status from GPU
     uint32_t* mappedData = nullptr;
     if (readbackBuffer_ && SUCCEEDED(readbackBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedData)))) {
         uint32_t vertexCount = mappedData[0];
@@ -397,13 +375,11 @@ void GPUParticleManager::Update() {
     	time_ += perFrameData_->deltaTime;
 	perFrameData_->time = time_;
 
-	// Switch buffer
 	uint32_t nextBufferIndex = (currentBufferIndex_ + 1) % 2;
 	*emitterSphereData_[nextBufferIndex] = *emitterSphereData_[currentBufferIndex_];
 	currentBufferIndex_ = nextBufferIndex;
 	EmitterSphere* currentEmitterData = emitterSphereData_[currentBufferIndex_];
 
-	// Emit Logic (CPU side)
 	bool shouldEmit = manualEmitRequested_;
 	manualEmitRequested_ = false; // フラグを消費
 
@@ -417,48 +393,38 @@ void GPUParticleManager::Update() {
 
     auto commandList = dxCommon_->GetCommandList();
     
-    // EMIT PASS
     commandList->SetPipelineState(emitPipelineState_.Get());
     commandList->SetComputeRootSignature(computeRootSignature_.Get());
     
-    // RootParam 0: UAV Table
     srvManager_->SetComputeRootDescriptorTable(0, particleUavIndex_);
     
-    // RootParam 1: Emitter CBV
     commandList->SetComputeRootConstantBufferView(1, emitterSphereBuffer_[currentBufferIndex_]->GetGPUVirtualAddress());
     
-    // RootParam 2: PerFrame CBV
     commandList->SetComputeRootConstantBufferView(2, perFrameBuffer_->GetGPUVirtualAddress());
     
-    // Dispatch
     commandList->Dispatch(1, 1, 1);
     
-    // UAV Barrier
     dxCommon_->UAVBarrier(particleBuffer_.Get());
     dxCommon_->UAVBarrier(freeListIndexBuffer_.Get());
     dxCommon_->UAVBarrier(freeListBuffer_.Get());
 
     //---------------------------------------------------------
-    // UPDATE PASS
     //---------------------------------------------------------
     commandList->SetPipelineState(updatePipelineState_.Get());
     
     commandList->Dispatch(1, 1, 1);
     
-    // UAV Barrier
     dxCommon_->UAVBarrier(particleBuffer_.Get());
     dxCommon_->UAVBarrier(freeListIndexBuffer_.Get());
     dxCommon_->UAVBarrier(freeListBuffer_.Get());
     dxCommon_->UAVBarrier(aliveListBuffer_.Get());
     dxCommon_->UAVBarrier(indirectArgsBuffer_.Get());
 
-    // Readback is now handled entirely in Draw() to capture final state
 }
 
 void GPUParticleManager::Draw(const MyMath::Matrix4x4& viewProjection, const MyMath::Matrix4x4& billboardMatrix) {
     auto commandList = dxCommon_->GetCommandList();
 
-    // Update PerView Buffer
     perViewData_->viewProjection = viewProjection;
     perViewData_->billboardMatrix = billboardMatrix;
 
@@ -467,19 +433,14 @@ void GPUParticleManager::Draw(const MyMath::Matrix4x4& viewProjection, const MyM
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
     commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 
-    // RootParam 0: Particle and AliveList SRV Table
     srvManager_->SetGraphicsRootDescriptorTable(0, particleSrvIndex_);
     
-    // RootParam 1: PerView CBV
     commandList->SetGraphicsRootConstantBufferView(1, perViewBuffer_->GetGPUVirtualAddress());
     
-    // RootParam 2: Texture SRV Table
     srvManager_->SetGraphicsRootDescriptorTable(2, textureSrvIndex_);
 
-    // Transition Buffers for drawing
     D3D12_RESOURCE_BARRIER barriers[3] = {};
     
-    // IndirectArgs Buffer to INDIRECT_ARGUMENT
     barriers[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barriers[0].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     barriers[0].Transition.pResource = indirectArgsBuffer_.Get();
@@ -487,7 +448,6 @@ void GPUParticleManager::Draw(const MyMath::Matrix4x4& viewProjection, const MyM
     barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
     barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
     
-    // Particle Buffer to NON_PIXEL_SHADER_RESOURCE
     barriers[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barriers[1].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     barriers[1].Transition.pResource = particleBuffer_.Get();
@@ -495,7 +455,6 @@ void GPUParticleManager::Draw(const MyMath::Matrix4x4& viewProjection, const MyM
     barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
     barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
     
-    // AliveList Buffer to NON_PIXEL_SHADER_RESOURCE
     barriers[2].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barriers[2].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     barriers[2].Transition.pResource = aliveListBuffer_.Get();
@@ -505,10 +464,8 @@ void GPUParticleManager::Draw(const MyMath::Matrix4x4& viewProjection, const MyM
 
     commandList->ResourceBarrier(3, barriers);
 
-    // Draw Instanced Indirect
     commandList->ExecuteIndirect(commandSignature_.Get(), 1, indirectArgsBuffer_.Get(), 0, nullptr, 0);
 
-    // Transition Buffers back to UNORDERED_ACCESS
     barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
     barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 
@@ -534,11 +491,9 @@ void GPUParticleManager::Draw(const MyMath::Matrix4x4& viewProjection, const MyM
         copyBarriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
         commandList->ResourceBarrier(2, copyBarriers);
 
-        // Fix: Read back the exact indirectArgs buffer correctly without overwriting!
         commandList->CopyBufferRegion(readbackBuffer_.Get(), 0, indirectArgsBuffer_.Get(), 0, sizeof(uint32_t) * 4);
         commandList->CopyBufferRegion(readbackBuffer_.Get(), 16, freeListIndexBuffer_.Get(), 0, sizeof(int32_t));
 
-        // Revert to UNORDERED_ACCESS
         copyBarriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
         copyBarriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
         copyBarriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
@@ -554,14 +509,12 @@ void GPUParticleManager::DrawImGui() {
     if (ImGui::CollapsingHeader("Status", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Text("Max Particles: %d", kMaxParticles);
         
-        // Use the readback values
         int32_t activeParticles = debugInstanceCount_;
-        int32_t freeParticles = debugFreeListIndex_ + 1; // since index is 0-based, +1 is the count
+        int32_t freeParticles = debugFreeListIndex_ + 1;
         
         ImGui::Text("Alive Particles: %d", activeParticles);
         ImGui::Text("Free Particles: %d", freeParticles);
         
-        // Progress bar for utilization
         float util = static_cast<float>(activeParticles) / static_cast<float>(kMaxParticles);
         ImGui::ProgressBar(util, ImVec2(0.f, 0.f), std::to_string(activeParticles).c_str());
     }

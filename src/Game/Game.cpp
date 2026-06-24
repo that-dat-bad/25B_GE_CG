@@ -73,7 +73,6 @@ void Game::Update() {
 		Vector3 rotate = camera->GetRotate();
 		Vector3 translate = camera->GetTranslate();
 
-		// ImGuiで値を操作 (DragFloat3)
 		// 第3引数は感度（ドラッグ時の変化量）です
 		ImGui::DragFloat3("Rotate", &rotate.x, 0.01f);
 		ImGui::DragFloat3("Translate", &translate.x, 0.1f);
@@ -103,14 +102,12 @@ void Game::Draw() {
 	sceneManager->Draw();
 	ParticleManager::GetInstance()->Draw();
 
-	// UI・テキスト描画 (Sprite描画のセットアップを行ってから描画)
 	SpriteCommon::GetInstance()->SetupCommonState();
 	TextRenderer::GetInstance()->Draw();
 
 	// 描画後処理（ポストエフェクト適用、バックバッファに描画）
 	DirectXCommon::GetInstance()->PostDraw();
 
-	// ImGui描画（ポストエフェクトの影響を受けないようバックバッファに直接描画）
 	imguiManager->End();
 
 	// フレーム終了処理（PRESENTに遷移、submit、present）
@@ -120,7 +117,6 @@ void Game::Draw() {
 void Game::Run() {
 	// メインループ
 	while (true) {
-		// Windows メッセージの処理
 		if (winApp->ProcessMessage()) {
 			break;
 		}

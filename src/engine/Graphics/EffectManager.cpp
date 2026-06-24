@@ -3,7 +3,6 @@
 #include "Object3dCommon.h"
 
 // ============================================
-// RingEffect
 // ============================================
 RingEffect::RingEffect(const Vector3& pos, const Vector4& color, float lifeTime, float maxRadius) {
 	position_ = pos;
@@ -29,14 +28,12 @@ void RingEffect::Update() {
 }
 
 void RingEffect::Draw(Camera* camera) {
-	if (isDead_) return;
-	// X軸方向に90度回転(床に平行にする)
+	if (isDead_) { return; }
 	Vector3 rot = { 3.141592f / 2.0f, 0.0f, 0.0f };
 	PrimitiveModel::GetInstance()->DrawRing(scale_, rot, position_, color_, textureIndex_, camera, BlendMode::kAdd);
 }
 
 // ============================================
-// CylinderEffect
 // ============================================
 CylinderEffect::CylinderEffect(const Vector3& pos, const Vector4& color, float lifeTime, float maxScaleY, float maxScaleX) {
 	position_ = pos;
@@ -63,12 +60,11 @@ void CylinderEffect::Update() {
 }
 
 void CylinderEffect::Draw(Camera* camera) {
-	if (isDead_) return;
+	if (isDead_) { return; }
 	PrimitiveModel::GetInstance()->DrawCylinder(scale_, {0,0,0}, position_, color_, textureIndex_, camera, BlendMode::kAdd);
 }
 
 // ============================================
-// HitRotPlaneEffect
 // ============================================
 HitRotPlaneEffect::HitRotPlaneEffect(const Vector3& pos, const Vector4& color, float lifeTime, float size) {
 	position_ = pos;
@@ -108,12 +104,11 @@ void HitRotPlaneEffect::Update() {
 }
 
 void HitRotPlaneEffect::Draw(Camera* camera) {
-	if (isDead_) return;
+	if (isDead_) { return; }
 	PrimitiveModel::GetInstance()->DrawPlane(scale_, rotationEulers_, position_, color_, textureIndex_, camera, BlendMode::kAdd);
 }
 
 // ============================================
-// BillboardParticleEffect
 // ============================================
 BillboardParticleEffect::BillboardParticleEffect(const Vector3& pos, const std::string& groupName, uint32_t count) {
 	position_ = pos;
@@ -122,7 +117,7 @@ BillboardParticleEffect::BillboardParticleEffect(const Vector3& pos, const std::
 }
 void BillboardParticleEffect::Update() {
 	currentTime_ += 1.0f / 60.0f;
-	if (currentTime_ >= lifeTime_) isDead_ = true;
+	if (currentTime_ >= lifeTime_) { isDead_ = true; }
 }
 void BillboardParticleEffect::Draw(Camera* camera) {
 	// 描画自体はParticleManagerが担当するため何もしない
@@ -249,7 +244,7 @@ ExplosionParticleEffect::ExplosionParticleEffect(const Vector3& pos) {
 		
 		// ランダムな初期回転と、ゆっくりとした回転を与える
 		smokeParams.minRotation = 0.0f;
-		smokeParams.maxRotation = 6.28f; // 2PI
+		smokeParams.maxRotation = 6.28f;
 		smokeParams.minRotationSpeed = -0.5f;
 		smokeParams.maxRotationSpeed = 0.5f;
 
@@ -284,19 +279,19 @@ void ExplosionParticleEffect::Update() {
 	if (flashAlpha_ > 0.0f) {
 		flashScale_ += 80.0f * dt;
 		flashAlpha_ -= 8.0f * dt; 
-		if (flashAlpha_ < 0.0f) flashAlpha_ = 0.0f;
+		if (flashAlpha_ < 0.0f) { flashAlpha_ = 0.0f; }
 	}
 
 	// --- Light (環境光) ---
 	if (lightIntensity_ > 0.0f) {
 		lightIntensity_ -= 600.0f * dt; 
-		if (lightIntensity_ < 0.0f) lightIntensity_ = 0.0f;
+		if (lightIntensity_ < 0.0f) { lightIntensity_ = 0.0f; }
 	}
 
 	// --- Debris & Trails (破片と煙の尾) ---
 	ParticleManager* pm = ParticleManager::GetInstance();
 	for (auto& d : debris_) {
-		if (d.pos.y < -10.0f) continue; 
+		if (d.pos.y < -10.0f) { continue; }
 
 		d.pos = Add(d.pos, Multiply(dt, d.vel));
 		d.vel.y -= 9.81f * 4.0f * dt; // 非常に強い重力で急落下する
@@ -352,7 +347,6 @@ void ExplosionParticleEffect::Draw(Camera* camera) {
 }
 
 // ============================================
-// MuzzleFlashEffect (発砲時の閃光 + 火花)
 // ============================================
 MuzzleFlashEffect::MuzzleFlashEffect(const Vector3& pos, const Vector3& direction) {
 	position_ = pos;
@@ -446,7 +440,7 @@ MuzzleFlashEffect::MuzzleFlashEffect(const Vector3& pos, const Vector3& directio
 
 void MuzzleFlashEffect::Update() {
 	currentTime_ += 1.0f / 60.0f;
-	if (currentTime_ >= lifeTime_) isDead_ = true;
+	if (currentTime_ >= lifeTime_) { isDead_ = true; }
 }
 
 void MuzzleFlashEffect::Draw(Camera* camera) {
@@ -455,7 +449,6 @@ void MuzzleFlashEffect::Draw(Camera* camera) {
 }
 
 // ============================================
-// EffectManager
 // ============================================
 std::unique_ptr<EffectManager> EffectManager::instance_ = nullptr;
 
@@ -519,7 +512,6 @@ void EffectManager::EmitHitEffect(const Vector3& position) {
 }
 
 void EffectManager::EmitHitPlaneEffect(const Vector3& position) {
-	// Plane（板ポリ）のみのヒットエフェクト
 	Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	
 	// ランダムな角度で3つ発生させる

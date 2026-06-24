@@ -9,29 +9,22 @@
 void Sprite::Initialize(SpriteCommon* spriteCommon, std::string textureFilePath)
 {
 	spriteCommon_ = spriteCommon;
-	// SpriteCommonからDirectXCommonを取得
 	DirectXCommon* dxCommon = spriteCommon_->GetDirectXCommon();
 	assert(dxCommon != nullptr && "dxCommon is NULL! SpriteCommon::Initialize was not called.");
 	assert(dxCommon->GetDevice() != nullptr && "D3D12Device is NULL!");
-	//vertexResource(vertexBuffer)を作る
 	vertexBuffer_ = dxCommon->CreateBufferResource(sizeof(VertexData) * 4);
-	//IndexResource(indexBuffer)を作る
 	indexBuffer_ = dxCommon->CreateBufferResource(sizeof(uint32_t) * 6);
 
-	//VertexBufferViewの作成
 	vertexBufferView.BufferLocation = vertexBuffer_->GetGPUVirtualAddress();
 	vertexBufferView.SizeInBytes = sizeof(VertexData) * 4;
 	vertexBufferView.StrideInBytes = sizeof(VertexData);
 
-	//IndexBufferViewの作成
 	indexBufferView.BufferLocation = indexBuffer_->GetGPUVirtualAddress();
 	indexBufferView.SizeInBytes = sizeof(uint32_t) * 6;
 	indexBufferView.Format = DXGI_FORMAT_R32_UINT;
 
-	//VertexResourceにデータを書き込む
 	vertexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&vertexData_));
 
-	//IndexResourceにデータを書き込む
 	uint32_t* indexDataLocal = nullptr;
 	indexBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&indexDataLocal));
 	indexDataLocal[0] = 0; indexDataLocal[1] = 1; indexDataLocal[2] = 2;
@@ -71,8 +64,8 @@ void Sprite::Update()
 	// テクスチャサイズが0除算にならないようガード（念のため）
 	float texWidth = static_cast<float>(metaData.width);
 	float texHeight = static_cast<float>(metaData.height);
-	if (texWidth == 0) texWidth = 1.0f;
-	if (texHeight == 0) texHeight = 1.0f;
+	if (texWidth == 0) { texWidth = 1.0f; }
+	if (texHeight == 0) { texHeight = 1.0f; }
 
 	float texLeft = textureLeftTop_.x / texWidth;
 	float texRight = (textureLeftTop_.x + textureSize_.x) / texWidth;
@@ -109,7 +102,6 @@ void Sprite::Update()
 
 void Sprite::Draw()
 {
-	// SpriteCommonから dxCommon を取得
 	DirectXCommon* dxCommon = spriteCommon_->GetDirectXCommon();
 	ID3D12GraphicsCommandList* commandList = dxCommon->GetCommandList();
 	

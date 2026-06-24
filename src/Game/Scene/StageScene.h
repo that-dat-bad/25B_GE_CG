@@ -34,11 +34,9 @@ private:
 	// 地面グリッド描画
 	void DrawGround();
 
-	// Skybox
 	std::unique_ptr<Skybox> skybox_ = nullptr;
 
 	// ============================
-	// War Thunder風 追従カメラ
 	// ============================
 	MyMath::Vector3 cameraCurrentPos_;   // カメラの現在位置（補間済み）
 	MyMath::Vector3 cameraLookTarget_;   // カメラの注視点（補間済み）

@@ -104,7 +104,6 @@ std::vector<PrimitiveModel::VertexData> PrimitiveGenerator::CreateCone(int segme
 		MyMath::Vector3 n = { cosf(midAngle), 0.5f, sinf(midAngle) };
 		n = MyMath::Normalize(n);
 
-		// UV座標（円形テクスチャのグラデーションを活かすため、先端をテクスチャ中心（0.5, 0.5）に、底面を円周上にマッピング）
 		Vector2 uvTop = { 0.5f, 0.5f };
 		Vector2 uvB1 = { 0.5f + 0.5f * cosf(a1), 0.5f + 0.5f * sinf(a1) };
 		Vector2 uvB2 = { 0.5f + 0.5f * cosf(a2), 0.5f + 0.5f * sinf(a2) };

@@ -21,7 +21,6 @@ public:
     void Initialize();
     void Finalize();
 
-    // Load a TTF font and bake an atlas for ASCII characters (32-126)
     void LoadFont(const std::string& fontName, const std::string& filePath, float pixelHeight);
 
     const CharacterInfo* GetCharacterInfo(const std::string& fontName) const;

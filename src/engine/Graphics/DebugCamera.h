@@ -36,7 +36,7 @@ private:
 	float distance_ = 10.0f;
 
 	// 水平・垂直の回転角度
-	Vector2 rotation_ = { -0.3f, 1.57f }; // (pitch, yaw)
+	Vector2 rotation_ = { -0.3f, 1.57f };
 
 	// 前フレームのマウス位置
 	Vector2 prevMousePos_ = { 0.0f, 0.0f };

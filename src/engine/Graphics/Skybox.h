@@ -14,7 +14,6 @@ class SrvManager;
 class Skybox
 {
 public:
-	// Skybox専用の頂点構造体 (positionのみ)
 	struct SkyboxVertex {
 		Vector4 position;
 	};

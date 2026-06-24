@@ -13,7 +13,7 @@ void FlightInstructor::ApplyCorrection(
 	outRoll = rawRoll;
 	outYaw = rawYaw;
 
-	if (!enabled_) return;
+	if (!enabled_) { return; }
 
 	// --- ロール補正（翼を水平に戻す） ---
 	// プレイヤーがロール入力をしていないときだけ補正
@@ -36,7 +36,6 @@ void FlightInstructor::ApplyCorrection(
 	if (std::fabs(rawPitch) < 0.01f) {
 		MyMath::Vector3 forward = GetForwardFromOrientation(orientation);
 
-		// forward.y が正 = 機首上げ、負 = 機首下げ
 		float pitchError = forward.y;
 
 		// 補正: 機首が上がっているなら下げる方向に入力

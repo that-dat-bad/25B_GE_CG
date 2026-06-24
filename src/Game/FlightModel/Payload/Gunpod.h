@@ -18,7 +18,6 @@ public:
 
 	void Initialize(const GunPodData& data);
 
-	// IPayloadの仮想関数を実装
 	void Update(float dt) override;
 	float GetWeight() const override;
 	float GetDragCoeff() const override;

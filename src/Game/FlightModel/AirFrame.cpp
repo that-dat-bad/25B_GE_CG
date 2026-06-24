@@ -74,11 +74,11 @@ void Airframe::UpdateFlap(float deltaTime, float speed) {
 	if (canDeploy) {
 		// 展開
 		flapPosition_ += flapDeploySpeed_ * deltaTime;
-		if (flapPosition_ > 1.0f) flapPosition_ = 1.0f;
+		if (flapPosition_ > 1.0f) { flapPosition_ = 1.0f; }
 	} else {
 		// 収納
 		flapPosition_ -= flapDeploySpeed_ * deltaTime;
-		if (flapPosition_ < 0.0f) flapPosition_ = 0.0f;
+		if (flapPosition_ < 0.0f) { flapPosition_ = 0.0f; }
 	}
 }
 
@@ -89,10 +89,10 @@ void Airframe::UpdateFlap(float deltaTime, float speed) {
 void Airframe::UpdateAirBrake(float deltaTime) {
 	if (airBrakeDesired_) {
 		airBrakePosition_ += airBrakeDeploySpeed_ * deltaTime;
-		if (airBrakePosition_ > 1.0f) airBrakePosition_ = 1.0f;
+		if (airBrakePosition_ > 1.0f) { airBrakePosition_ = 1.0f; }
 	} else {
 		airBrakePosition_ -= airBrakeDeploySpeed_ * deltaTime;
-		if (airBrakePosition_ < 0.0f) airBrakePosition_ = 0.0f;
+		if (airBrakePosition_ < 0.0f) { airBrakePosition_ = 0.0f; }
 	}
 }
 
@@ -102,10 +102,10 @@ void Airframe::UpdateAirBrake(float deltaTime) {
 // ===========================================================
 void Airframe::ApplyZoneDamage(DamageZone zone, float amount) {
 	int idx = static_cast<int>(zone);
-	if (idx < 0 || idx >= static_cast<int>(DamageZone::Count)) return;
+	if (idx < 0 || idx >= static_cast<int>(DamageZone::Count)) { return; }
 
 	damageState_[idx] += amount;
-	if (damageState_[idx] > 1.0f) damageState_[idx] = 1.0f;
+	if (damageState_[idx] > 1.0f) { damageState_[idx] = 1.0f; }
 }
 
 

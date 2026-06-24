@@ -31,13 +31,10 @@ namespace MyMath {
 	Matrix4x4 MakeScaleMatrix(const Vector3& scale);
 
 
-	// X軸回転行列
 	Matrix4x4 MakeRotateXMatrix(float angle);
 
-	// Y軸回転行列
 	Matrix4x4 MakeRotateYMatrix(float angle);
 
-	// Z軸回転行列
 	Matrix4x4 MakeRotateZMatrix(float angle);
 
 	//アフィン変換行列

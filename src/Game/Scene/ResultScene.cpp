@@ -14,7 +14,6 @@ void ResultScene::Initialize() {
 }
 
 void ResultScene::Update() {
-	// SPACEでタイトルへ遷移
 	if (IScene::IsKeyTriggered(DIK_SPACE)) {
 		sceneID = SCENE::TITLE;
 	}

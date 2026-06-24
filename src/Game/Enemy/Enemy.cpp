@@ -27,20 +27,20 @@ void Enemy::Initialize(const MyMath::Vector3& position, const std::string& model
 }
 
 void Enemy::Update() {
-	if (!isAlive_) return;
+	if (!isAlive_) { return; }
 
 	object3d_->Update();
 }
 
 void Enemy::Draw() {
-	if (!isAlive_) return;
-	if (!object3d_) return;
+	if (!isAlive_) { return; }
+	if (!object3d_) { return; }
 
 	object3d_->Draw();
 }
 
 void Enemy::TakeDamage(float damage) {
-	if (!isAlive_) return;
+	if (!isAlive_) { return; }
 
 	health_ -= damage;
 	if (health_ <= 0.0f) {

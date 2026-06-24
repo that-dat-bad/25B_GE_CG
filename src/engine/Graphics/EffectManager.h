@@ -93,22 +93,18 @@ public:
 	void Draw(Camera* camera) override;
 
 private:
-	// Flash用
 	float flashScale_ = 1.0f;
 	float flashAlpha_ = 1.0f;
 	
-	// Shockwave用
 	float shockwaveScale_ = 1.0f;
 	float shockwaveAlpha_ = 1.0f;
 
-	// Debris & Trails用
 	struct Debris {
 		Vector3 pos;
 		Vector3 vel;
 	};
 	std::vector<Debris> debris_;
 	
-	// Light用
 	float lightIntensity_ = 0.0f;
 };
 
@@ -140,7 +136,6 @@ public:
 
 	// 複数のエフェクトを組み合わせた関数
 	void EmitHitEffect(const Vector3& position);
-	// planeのみ
 	void EmitHitPlaneEffect(const Vector3& position);
 
 	// 敵破壊時の大きな爆発エフェクト

@@ -32,8 +32,8 @@ void DebugCamera::Update(const BYTE* key, const DIMOUSESTATE2& mouseState) {
 
         // ピッチ角を制限（真上や真下に行きすぎないように）
         float pitchLimit = 3.141592f * 0.49f; // 約89.9度
-        if (rotation_.x > pitchLimit) rotation_.x = pitchLimit;
-        if (rotation_.x < -pitchLimit) rotation_.x = -pitchLimit;
+        if (rotation_.x > pitchLimit) { rotation_.x = pitchLimit; }
+        if (rotation_.x < -pitchLimit) { rotation_.x = -pitchLimit; }
     }
 
     // --- ズーム処理 (マウスホイール) ---

@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 
-// Media Foundation 関連
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
@@ -22,11 +21,8 @@ using namespace Microsoft::WRL;
 std::unique_ptr<AudioManager> AudioManager::instance = nullptr;
 
 // ============================
-// VoiceCallback 実装
 // ============================
 void VoiceCallback::OnStreamEnd() {
-	// XAudio2 のコールバックスレッドから呼ばれる
-	// SourceVoice を停止してフラグを立てる
 	// (DestroyVoice はコールバック内で呼ぶとデッドロックの恐れがあるため、
 	//  メインスレッドの Update() で回収する)
 	if (sourceVoice) {
@@ -35,21 +31,18 @@ void VoiceCallback::OnStreamEnd() {
 }
 
 // ============================
-// AudioManager 実装
 // ============================
 AudioManager* AudioManager::GetInstance() {
-	if (instance == nullptr) instance.reset(new AudioManager());
+	if (instance == nullptr) { instance.reset(new AudioManager()); }
 	return instance.get();
 }
 
 void AudioManager::Initialize() {
 	HRESULT result;
 
-	// Media Foundation の初期化
 	result = MFStartup(MF_VERSION, MFSTARTUP_NOSOCKET);
 	assert(SUCCEEDED(result));
 
-	// XAudio2の初期化
 	result = XAudio2Create(&xAudio2_, 0, XAUDIO2_DEFAULT_PROCESSOR);
 	assert(SUCCEEDED(result));
 
@@ -69,7 +62,6 @@ void AudioManager::Finalize() {
 		xAudio2_->Release();
 		xAudio2_ = nullptr;
 	}
-	// MFの終了
 	MFShutdown();
 }
 
@@ -81,7 +73,6 @@ void AudioManager::Update() {
 	while (it != playingVoices_.end()) {
 		auto& pv = *it;
 
-		// Voice の状態を問い合わせて、バッファが空なら再生完了
 		XAUDIO2_VOICE_STATE state{};
 		pv->sourceVoice->GetState(&state);
 
@@ -127,7 +118,6 @@ SoundData AudioManager::SoundLoadFile(const char* filename) {
 	// 構造体にフォーマット情報をコピー
 	soundData.wfex = *waveFormat;
 
-	// MFで確保したフォーマットメモリを解放
 	CoTaskMemFree(waveFormat);
 
 	// 5. PCM波形データの取得
@@ -140,9 +130,8 @@ SoundData AudioManager::SoundLoadFile(const char* filename) {
 		assert(SUCCEEDED(result));
 
 		// ストリームの末尾に達したら抜ける
-		if (flags & MF_SOURCE_READERF_ENDOFSTREAM) break;
+		if (flags & MF_SOURCE_READERF_ENDOFSTREAM) { break; }
 
-		// pSampleが有効な場合、バッファを取り出す
 		if (pSample) {
 			ComPtr<IMFMediaBuffer> pBuffer;
 			pSample->ConvertToContiguousBuffer(&pBuffer);

@@ -53,18 +53,16 @@ void MouseAimController::Initialize()
 // ===========================================================
 void MouseAimController::UpdateTargetDirection(long deltaX, long deltaY, const MyMath::Vector3& camRight, const MyMath::Vector3& camUp)
 {
-	if (!enabled_) return;
-	if (deltaX == 0 && deltaY == 0) return;
+	if (!enabled_) { return; }
+	if (deltaX == 0 && deltaY == 0) { return; }
 
 	float yawDelta = static_cast<float>(deltaX) * sensitivity_ * kAngleScale;
 	float pitchDelta = static_cast<float>(deltaY) * sensitivity_ * kAngleScale;
 
-	// X移動：カメラの「上」軸まわりに回転（ヨー）
 	if (std::fabs(yawDelta) > 0.00001f) {
 		targetDirection_ = RotateAroundAxis(targetDirection_, camUp, yawDelta);
 	}
 
-	// Y移動：カメラの「右」軸まわりに回転（ピッチ）
 	if (std::fabs(pitchDelta) > 0.00001f) {
 		targetDirection_ = RotateAroundAxis(targetDirection_, camRight, pitchDelta);
 	}
@@ -97,7 +95,6 @@ void MouseAimController::ResetToDirection(const MyMath::Vector3& forward)
 		targetDirection_ = { 0.0f, 0.0f, 1.0f };
 	}
 
-	// PIDの内部状態もリセット
 	pitchPID_.Reset();
 	rollPID_.Reset();
 	yawPID_.Reset();
@@ -106,7 +103,6 @@ void MouseAimController::ResetToDirection(const MyMath::Vector3& forward)
 
 
 // ===========================================================
-// PID制御による操舵入力の計算
 // ===========================================================
 void MouseAimController::CalculateSteeringInput(
 	const MyMath::Quaternion& orientation,
@@ -121,7 +117,6 @@ void MouseAimController::CalculateSteeringInput(
 		return;
 	}
 
-	// targetDirection_ はワールド空間で既に計算済み
 
 	// =====================================================
 	// 機体前方方向と目標方向の差分を計算
@@ -149,7 +144,6 @@ void MouseAimController::CalculateSteeringInput(
 	}
 
 	// =====================================================
-	// PID制御による操舵入力生成
 	// =====================================================
 	float absYawError = std::fabs(yawAngleError);
 

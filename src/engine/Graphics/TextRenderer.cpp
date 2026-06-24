@@ -26,7 +26,7 @@ Sprite* TextRenderer::GetNextSprite() {
 
 void TextRenderer::Print(const std::string& fontName, const std::string& text, float x, float y, float size, const Vector4& color) {
     const CharacterInfo* info = FontManager::GetInstance()->GetCharacterInfo(fontName);
-    if (!info) return;
+    if (!info) { return; }
 
     float scale = size / info->size;
     float startX = x;
@@ -39,19 +39,19 @@ void TextRenderer::Print(const std::string& fontName, const std::string& text, f
             codepoint = c;
             i += 1;
         } else if ((c & 0xE0) == 0xC0) {
-            if (i + 1 >= text.length()) break;
+            if (i + 1 >= text.length()) { break; }
             codepoint = ((c & 0x1F) << 6) | (text[i+1] & 0x3F);
             i += 2;
         } else if ((c & 0xF0) == 0xE0) {
-            if (i + 2 >= text.length()) break;
+            if (i + 2 >= text.length()) { break; }
             codepoint = ((c & 0x0F) << 12) | ((text[i+1] & 0x3F) << 6) | (text[i+2] & 0x3F);
             i += 3;
         } else if ((c & 0xF8) == 0xF0) {
-            if (i + 3 >= text.length()) break;
+            if (i + 3 >= text.length()) { break; }
             codepoint = ((c & 0x07) << 18) | ((text[i+1] & 0x3F) << 12) | ((text[i+2] & 0x3F) << 6) | (text[i+3] & 0x3F);
             i += 4;
         } else {
-            i += 1; // Invalid UTF-8
+            i += 1;
             continue;
         }
 

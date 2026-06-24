@@ -42,7 +42,6 @@ void PrimitiveModel::Initialize(DirectXCommon* dxCommon) {
 	transformBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&transformMappedData_));
 	materialBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&materialMappedData_));
 	
-	// UV用などのデフォルトテクスチャを読み込んでおく
 	TextureManager::GetInstance()->LoadTexture("assets/textures/uvChecker.png");
 
 	Reset();
@@ -73,10 +72,9 @@ void PrimitiveModel::DrawCone(const Vector3& scale, const Quaternion& rotate, co
 }
 
 void PrimitiveModel::DrawLine3D(const Vector3& p1, const Vector3& p2, const Vector4& color, Camera* camera) {
-	if (currentDrawCount_ >= kMaxDrawCount) return;
-	if (!camera) return;
+	if (currentDrawCount_ >= kMaxDrawCount) { return; }
+	if (!camera) { return; }
 
-	// X軸方向に1.0の長さを持つ「基本ライン」( (0,0,0)～(1,0,0) ) を、指定されたp1, p2に一致させるワールド行列
 	Matrix4x4 wMatrix = {
 		p2.x - p1.x, p2.y - p1.y, p2.z - p1.z, 0.0f,
 		0.0f, 1.0f, 0.0f, 0.0f,
@@ -119,8 +117,8 @@ void PrimitiveModel::DrawLine3D(const Vector3& p1, const Vector3& p2, const Vect
 }
 
 void PrimitiveModel::CallDrawCommand(D3D12_VERTEX_BUFFER_VIEW& vbView, uint32_t vertexCount, const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode) {
-	if (currentDrawCount_ >= kMaxDrawCount) return; // 描画上限
-	if (vertexCount == 0 || !camera) return;        // ガード
+	if (currentDrawCount_ >= kMaxDrawCount) { return; }
+	if (vertexCount == 0 || !camera) { return; }
 
 	// 行列計算
 	Matrix4x4 wMatrix = MakeAffineMatrix(scale, rotate, translate);
@@ -130,13 +128,11 @@ void PrimitiveModel::CallDrawCommand(D3D12_VERTEX_BUFFER_VIEW& vbView, uint32_t 
 	uint32_t index = currentDrawCount_;
 	currentDrawCount_++;
 
-	// Transform の書き込み
 	TransformationMatrix* transformData = reinterpret_cast<TransformationMatrix*>(&transformMappedData_[index * kCbAlignment]);
 	transformData->WVP = wvpMatrix;
 	transformData->World = wMatrix;
 	transformData->WorldInverseTranspose = wMatrix; // PSで法線計算が不要なためWorldをそのまま入れる（簡易実装）
 
-	// Material の書き込み
 	MaterialData* materialData = reinterpret_cast<MaterialData*>(&materialMappedData_[index * kCbAlignment]);
 	materialData->color = color;
 	materialData->enableLighting = 0; // 今回は常に0（Unlit）
@@ -154,15 +150,12 @@ void PrimitiveModel::CallDrawCommand(D3D12_VERTEX_BUFFER_VIEW& vbView, uint32_t 
 	// 頂点バッファの設定
 	commandList->IASetVertexBuffers(0, 1, &vbView);
 
-	// RootParameter 0: Material (b0)
 	commandList->SetGraphicsRootConstantBufferView(0, materialBuffer_->GetGPUVirtualAddress() + (index * kCbAlignment));
 	
-	// RootParameter 1: Transform (b1)
 	commandList->SetGraphicsRootConstantBufferView(1, transformBuffer_->GetGPUVirtualAddress() + (index * kCbAlignment));
 
-	// RootParameter 2: Texture (t0) fallback
 	uint32_t texIndex = textureIndex;
-	if (texIndex == 0) texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/uvChecker.png");
+	if (texIndex == 0) { texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/uvChecker.png"); }
 	if (texIndex != 0) {
 		commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(texIndex));
 	}
@@ -172,8 +165,8 @@ void PrimitiveModel::CallDrawCommand(D3D12_VERTEX_BUFFER_VIEW& vbView, uint32_t 
 }
 
 void PrimitiveModel::CallDrawCommand(D3D12_VERTEX_BUFFER_VIEW& vbView, uint32_t vertexCount, const Vector3& scale, const Quaternion& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode) {
-	if (currentDrawCount_ >= kMaxDrawCount) return; // 描画上限
-	if (vertexCount == 0 || !camera) return;        // ガード
+	if (currentDrawCount_ >= kMaxDrawCount) { return; }
+	if (vertexCount == 0 || !camera) { return; }
 
 	// 行列計算 (クォータニオンを使用する MakeAffineMatrix)
 	Matrix4x4 wMatrix = MakeAffineMatrix(scale, rotate, translate);
@@ -183,13 +176,11 @@ void PrimitiveModel::CallDrawCommand(D3D12_VERTEX_BUFFER_VIEW& vbView, uint32_t 
 	uint32_t index = currentDrawCount_;
 	currentDrawCount_++;
 
-	// Transform の書き込み
 	TransformationMatrix* transformData = reinterpret_cast<TransformationMatrix*>(&transformMappedData_[index * kCbAlignment]);
 	transformData->WVP = wvpMatrix;
 	transformData->World = wMatrix;
 	transformData->WorldInverseTranspose = wMatrix; 
 
-	// Material の書き込み
 	MaterialData* materialData = reinterpret_cast<MaterialData*>(&materialMappedData_[index * kCbAlignment]);
 	materialData->color = color;
 	materialData->enableLighting = 0; // 常に0
@@ -207,15 +198,12 @@ void PrimitiveModel::CallDrawCommand(D3D12_VERTEX_BUFFER_VIEW& vbView, uint32_t 
 	// 頂点バッファの設定
 	commandList->IASetVertexBuffers(0, 1, &vbView);
 
-	// RootParameter 0: Material (b0)
 	commandList->SetGraphicsRootConstantBufferView(0, materialBuffer_->GetGPUVirtualAddress() + (index * kCbAlignment));
 	
-	// RootParameter 1: Transform (b1)
 	commandList->SetGraphicsRootConstantBufferView(1, transformBuffer_->GetGPUVirtualAddress() + (index * kCbAlignment));
 
-	// RootParameter 2: Texture (t0) fallback
 	uint32_t texIndex = textureIndex;
-	if (texIndex == 0) texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/uvChecker.png");
+	if (texIndex == 0) { texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/uvChecker.png"); }
 	if (texIndex != 0) {
 		commandList->SetGraphicsRootDescriptorTable(2, TextureManager::GetInstance()->GetSrvHandleGPU(texIndex));
 	}
@@ -229,21 +217,20 @@ void PrimitiveModel::CreateRootSignature() {
 	descriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
-	descriptorRange[0].BaseShaderRegister = 0; // t0
+	descriptorRange[0].BaseShaderRegister = 0;
 	descriptorRange[0].NumDescriptors = 1;
 	descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	// b0(Material), b1(Transform), t0(Texture)
 	D3D12_ROOT_PARAMETER rootParameters[3] = {};
 	
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[0].Descriptor.ShaderRegister = 0; // b0
+	rootParameters[0].Descriptor.ShaderRegister = 0;
 	
 	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-	rootParameters[1].Descriptor.ShaderRegister = 1; // b1
+	rootParameters[1].Descriptor.ShaderRegister = 1;
 
 	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;

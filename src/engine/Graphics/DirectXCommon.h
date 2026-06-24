@@ -26,7 +26,6 @@ public:
 	static const uint32_t kRtvHeapDescriptorNum_ = 5; // ダブルバッファ(2) + レンダーテクスチャ用(3)
 	static const uint32_t kDsvHeapDescriptorNum_ = 2; // 深度バッファ用(R/W と ReadOnly)
 	static const uint32_t kSwapChainBufferCount_ = 2;
-	//static const uint32_t kMaxSRVCount_;//最大SRV数(最大テクスチャ枚数)
 
 
 	// 初期化
@@ -134,7 +133,6 @@ private:
 
 	// デスクリプタサイズ
 	uint32_t rtvDescriptorSize_;
-	//uint32_t srvDescriptorSize_;
 	uint32_t dsvDescriptorSize_;
 
 	D3D12_RECT scissorRect_{};
@@ -210,12 +208,9 @@ private:
 	//シザー矩形の初期化
 	void SetScissorRect();
 
-	//DXCコンパイラの初期化
 	void InitializeDxcCompiler();
 
-	//FPS固定初期化
 	void InitializeFixFPS();
 
-	//FPS固定更新
 	void UpdateFixFPS();
 };

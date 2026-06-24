@@ -21,9 +21,8 @@ void FontManager::Finalize() {
 }
 
 void FontManager::LoadFont(const std::string& fontName, const std::string& filePath, float pixelHeight) {
-    if (fonts_.contains(fontName)) return;
+    if (fonts_.contains(fontName)) { return; }
 
-    // TTFファイルをバイナリモードで読み込む
     std::ifstream file(filePath, std::ios::binary | std::ios::ate);
     assert(file.is_open() && "Failed to open font file.");
     std::streamsize size = file.tellg();
@@ -96,17 +95,12 @@ void FontManager::LoadFont(const std::string& fontName, const std::string& fileP
     for (int i = 0; i < 240; ++i) info.glyphs[0xFF00 + i] = fullwidthData[i];
     for (int i = 0; i < 64; ++i) info.glyphs[0x3000 + i] = cjkSymbolsData[i];
 
-    // stb_truetypeは8bitアルファのビットマップを生成するので、
-    // DirectXTexで扱いやすい32bit RGBA (R8G8B8A8_UNORM) に変換する
-    // R, G, B は 255(白) にして、Alpha値のみ適用する
     std::vector<uint32_t> rgbaBitmap(texWidth * texHeight);
     for (int i = 0; i < texWidth * texHeight; ++i) {
         uint8_t alpha = tempBitmap[i];
-        // RGBA (Little-endian: A B G R)
         rgbaBitmap[i] = (alpha << 24) | (255 << 16) | (255 << 8) | 255;
     }
 
-    // TextureManagerに直接ピクセルデータを渡してテクスチャをロード
     TextureManager::GetInstance()->LoadTextureFromRawPixels(
         info.textureName, texWidth, texHeight, DXGI_FORMAT_R8G8B8A8_UNORM, rgbaBitmap.data()
     );

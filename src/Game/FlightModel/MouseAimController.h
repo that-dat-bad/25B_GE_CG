@@ -25,8 +25,8 @@ struct PIDController {
 
 		// 積分項（台形法 + アンチワインドアップ）
 		integral += error * dt;
-		if (integral > maxIntegral) integral = maxIntegral;
-		if (integral < -maxIntegral) integral = -maxIntegral;
+		if (integral > maxIntegral) { integral = maxIntegral; }
+		if (integral < -maxIntegral) { integral = -maxIntegral; }
 		float iTerm = kI * integral;
 
 		// 微分項（誤差の変化率）

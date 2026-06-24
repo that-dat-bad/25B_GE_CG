@@ -23,7 +23,7 @@ void PostEffect::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager) {
 	CreateGraphicsPipelines();
 
 	size_t cbAlignedSize = (sizeof(PostEffectParams) + 0xff) & ~0xff;
-	postEffectParamsBuffer_ = dxCommon_->CreateBufferResource(cbAlignedSize * 10); // max 10 passes
+	postEffectParamsBuffer_ = dxCommon_->CreateBufferResource(cbAlignedSize * 10);
 	HRESULT hr = postEffectParamsBuffer_->Map(0, nullptr, reinterpret_cast<void**>(&mappedPostEffectParams_));
 	assert(SUCCEEDED(hr));
 }
@@ -35,7 +35,7 @@ void PostEffect::Finalize() {
 void PostEffect::CreateRootSignature() {
 	// ルートシグネチャ: t0 にテクスチャ、s0 にサンプラー
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
-	descriptorRange[0].BaseShaderRegister = 0;                              // t0
+	descriptorRange[0].BaseShaderRegister = 0;
 	descriptorRange[0].NumDescriptors = 1;
 	descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -48,7 +48,7 @@ void PostEffect::CreateRootSignature() {
 
 	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[1].Descriptor.ShaderRegister = 0; // b0
+	rootParameters[1].Descriptor.ShaderRegister = 0;
 
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
 	staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -57,7 +57,7 @@ void PostEffect::CreateRootSignature() {
 	staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	staticSamplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 	staticSamplers[0].MaxLOD = D3D12_FLOAT32_MAX;
-	staticSamplers[0].ShaderRegister = 0;                                   // s0
+	staticSamplers[0].ShaderRegister = 0;
 	staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_ROOT_SIGNATURE_DESC desc{};
@@ -79,30 +79,26 @@ void PostEffect::CreateRootSignature() {
 }
 
 void PostEffect::CreateDissolveRootSignature() {
-	// Dissolve用: t0(シーンテクスチャ) + t1(マスクテクスチャ) + b0(パラメータ)
 	D3D12_DESCRIPTOR_RANGE descriptorRange0[1] = {};
-	descriptorRange0[0].BaseShaderRegister = 0; // t0
+	descriptorRange0[0].BaseShaderRegister = 0;
 	descriptorRange0[0].NumDescriptors = 1;
 	descriptorRange0[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriptorRange0[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	D3D12_DESCRIPTOR_RANGE descriptorRange1[1] = {};
-	descriptorRange1[0].BaseShaderRegister = 1; // t1
+	descriptorRange1[0].BaseShaderRegister = 1;
 	descriptorRange1[0].NumDescriptors = 1;
 	descriptorRange1[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriptorRange1[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	D3D12_ROOT_PARAMETER rootParameters[3] = {};
-	// Root 0: t0 scene texture
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[0].DescriptorTable.pDescriptorRanges = descriptorRange0;
 	rootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
-	// Root 1: b0 cbuffer
 	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[1].Descriptor.ShaderRegister = 0; // b0
-	// Root 2: t1 mask texture
+	rootParameters[1].Descriptor.ShaderRegister = 0;
 	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange1;
@@ -115,7 +111,7 @@ void PostEffect::CreateDissolveRootSignature() {
 	staticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	staticSamplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 	staticSamplers[0].MaxLOD = D3D12_FLOAT32_MAX;
-	staticSamplers[0].ShaderRegister = 0; // s0
+	staticSamplers[0].ShaderRegister = 0;
 	staticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_ROOT_SIGNATURE_DESC desc{};
@@ -172,10 +168,9 @@ void PostEffect::CreateGraphicsPipelines() {
 	pixelShaders[static_cast<size_t>(PostEffectType::kGaussBlur)] = psGaussBlur;
 	pixelShaders[static_cast<size_t>(PostEffectType::kKawaseBlur)] = psKawaseBlur;
 	pixelShaders[static_cast<size_t>(PostEffectType::kRadialBlur)] = psRadialBlur;
-	pixelShaders[static_cast<size_t>(PostEffectType::kDissolve)] = psDissolve;  // placeholder for loop
+	pixelShaders[static_cast<size_t>(PostEffectType::kDissolve)] = psDissolve;
 	pixelShaders[static_cast<size_t>(PostEffectType::kRandom)] = psRandom;
 
-	// PSO のベース設定
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
 	psoDesc.pRootSignature = rootSignature_.Get();
 
@@ -208,13 +203,12 @@ void PostEffect::CreateGraphicsPipelines() {
 
 	// 各エフェクト用の PSO を生成 (Dissolveは別root signatureなのでスキップ)
 	for (size_t i = 0; i < static_cast<size_t>(PostEffectType::kCountOfPostEffects); ++i) {
-		if (i == static_cast<size_t>(PostEffectType::kDissolve)) continue;
+		if (i == static_cast<size_t>(PostEffectType::kDissolve)) { continue; }
 		psoDesc.PS = { pixelShaders[i]->GetBufferPointer(), pixelShaders[i]->GetBufferSize() };
 		HRESULT hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineStates_[i]));
 		assert(SUCCEEDED(hr));
 	}
 
-	// Dissolve PSO (別のルートシグネチャを使用)
 	psoDesc.pRootSignature = dissolveRootSignature_.Get();
 	psoDesc.PS = { psDissolve->GetBufferPointer(), psDissolve->GetBufferSize() };
 	HRESULT hrDissolve = dxCommon_->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&dissolvePSO_));
@@ -226,14 +220,12 @@ void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderText
 
 	time_ += 0.016f;
 
-	// PSO とルートシグネチャをセット (Dissolveは別処理)
 	size_t effectIndex = static_cast<size_t>(currentEffect_);
 	if (currentEffect_ != PostEffectType::kDissolve) {
 		commandList->SetGraphicsRootSignature(rootSignature_.Get());
 		commandList->SetPipelineState(pipelineStates_[effectIndex].Get());
 	}
 
-	// SRV ヒープを設定（SrvManager が管理するヒープ）
 	ID3D12DescriptorHeap* heaps[] = { srvManager_->descriptorHeap_.Get() };
 	commandList->SetDescriptorHeaps(1, heaps);
 
@@ -297,15 +289,14 @@ void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderText
 	}
 	else if (currentEffect_ == PostEffectType::kKawaseBlur) {
 		int passes = kernelSize_;
-		if (passes < 1) passes = 1;
-		if (passes > 10) passes = 10;
+		if (passes < 1) { passes = 1; }
+		if (passes > 10) { passes = 10; }
 
 		for (int i = 0; i < passes; ++i) {
 			bool isLastPass = (i == passes - 1);
 			int srcIndex = (i % 2 == 0) ? 0 : 1;
 			int dstIndex = (i % 2 == 0) ? 1 : 0;
 
-			// Set Render Target
 			if (!isLastPass) {
 				D3D12_RESOURCE_BARRIER barrierRT = {};
 				barrierRT.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -322,22 +313,19 @@ void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderText
 				commandList->OMSetRenderTargets(1, &destRtv, false, nullptr);
 			}
 
-			// Set SRV Input
 			uint32_t srvIndex = dxCommon_->GetRenderTextureSrvIndex(srcIndex);
 			commandList->SetGraphicsRootDescriptorTable(0, srvManager_->GetGPUDescriptorHandle(srvIndex));
 
-			// Set Parameters
 			size_t offset = cbAlignedSize * i;
 			PostEffectParams* param = reinterpret_cast<PostEffectParams*>(reinterpret_cast<uint8_t*>(mappedPostEffectParams_) + offset);
 			param->kernelSize = kernelSize_;
-			param->intensity = (float)i + 0.5f; // Kawase offset increases per pass
+			param->intensity = (float)i + 0.5f;
 			param->dirX = 0.0f;
 			param->dirY = 0.0f;
 			commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress() + offset);
 
 			commandList->DrawInstanced(3, 1, 0, 0);
 
-			// Revert Render Target back to SRV if not last pass
 			if (!isLastPass) {
 				D3D12_RESOURCE_BARRIER barrierSRV = {};
 				barrierSRV.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -350,24 +338,20 @@ void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderText
 		}
 	}
 	else if (currentEffect_ == PostEffectType::kDissolve) {
-		// Dissolve: 別のルートシグネチャとPSOを使用
 		commandList->SetGraphicsRootSignature(dissolveRootSignature_.Get());
 		commandList->SetPipelineState(dissolvePSO_.Get());
 
-		// Root 0: t0 scene texture
 		commandList->SetGraphicsRootDescriptorTable(0, srvManager_->GetGPUDescriptorHandle(renderTextureSrvIndex));
 
-		// Root 1: b0 params
 		PostEffectParams* param0 = reinterpret_cast<PostEffectParams*>(reinterpret_cast<uint8_t*>(mappedPostEffectParams_) + 0);
-		param0->kernelSize = 0; // unused
+		param0->kernelSize = 0;
 		param0->intensity = dissolveThreshold_;
 		param0->dirX = dissolveEdgeWidth_;
 		param0->dirY = 0.0f;
 		commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress());
 
-		// Root 2: t1 mask texture
 		int maskIdx = dissolveMaskIndex_;
-		if (maskIdx < 0 || maskIdx >= static_cast<int>(dissolveMaskSrvIndices_.size())) maskIdx = 0;
+		if (maskIdx < 0 || maskIdx >= static_cast<int>(dissolveMaskSrvIndices_.size())) { maskIdx = 0; }
 		commandList->SetGraphicsRootDescriptorTable(2, srvManager_->GetGPUDescriptorHandle(dissolveMaskSrvIndices_[maskIdx]));
 
 		commandList->DrawInstanced(3, 1, 0, 0);

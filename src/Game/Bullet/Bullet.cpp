@@ -18,7 +18,7 @@ void Bullet::Spawn(const Vector3& position, const Vector3& direction, float spee
 }
 
 void Bullet::Update(float dt) {
-	if (!isAlive_) return;
+	if (!isAlive_) { return; }
 
 	// 履歴の更新
 	for (int i = kMaxHistory - 1; i > 0; --i) {

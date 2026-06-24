@@ -9,7 +9,7 @@ std::unique_ptr<TextureManager> TextureManager::instance_ = nullptr;
 
 
 std::wstring ConvertString(const std::string& str) {
-	if (str.empty()) return std::wstring();
+	if (str.empty()) { return std::wstring(); }
 	int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
 	std::wstring wstrTo(size_needed, 0);
 	MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
@@ -94,7 +94,6 @@ void TextureManager::LoadTexture(const std::string& filePath) {
 	textureData.srvHandleCPU = srvManager_->GetCPUDescriptorHandle(textureData.srvIndex);
 	textureData.srvHandleGPU = srvManager_->GetGPUDescriptorHandle(textureData.srvIndex);
 
-	//SRV生成 - metadataからcubemapかどうかを判定して分岐
 	if (textureData.metadata.IsCubemap()) {
 		srvManager_->CreateSRVforTextureCube(
 			textureData.srvIndex,
@@ -139,7 +138,6 @@ void TextureManager::LoadTextureFromMemory(const std::string& textureName, const
 	}
 
 	// --- テクスチャデータを追加 ---
-	// textureName をキーとして追加する
 	TextureData& textureData = textureDatas_[textureName];
 
 	// --- テクスチャデータ書き込み ---
@@ -157,7 +155,6 @@ void TextureManager::LoadTextureFromMemory(const std::string& textureName, const
 	textureData.srvHandleCPU = srvManager_->GetCPUDescriptorHandle(textureData.srvIndex);
 	textureData.srvHandleGPU = srvManager_->GetGPUDescriptorHandle(textureData.srvIndex);
 
-	// SRV生成
 	srvManager_->CreateSRVforTexture2D(
 		textureData.srvIndex,
 		textureData.resource.Get(),
@@ -202,7 +199,6 @@ void TextureManager::LoadTextureFromRawPixels(const std::string& textureName, ui
 	textureData.srvHandleCPU = srvManager_->GetCPUDescriptorHandle(textureData.srvIndex);
 	textureData.srvHandleGPU = srvManager_->GetGPUDescriptorHandle(textureData.srvIndex);
 
-	// SRV生成
 	srvManager_->CreateSRVforTexture2D(
 		textureData.srvIndex,
 		textureData.resource.Get(),

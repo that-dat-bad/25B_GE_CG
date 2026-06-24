@@ -36,7 +36,6 @@ void DebugScene::Initialize() {
 	ModelManager::GetInstance()->LoadModel("models/terrain.obj");
 	terrainObject->SetModel("models/terrain.obj");
 	
-	// Position terrain slightly lower
 	terrainObject->SetTranslate({ 0.0f, -1.0f, 0.0f });
 
 	// テクスチャ読み込み
@@ -65,13 +64,11 @@ void DebugScene::Initialize() {
 	// ヒットエフェクト用ビルボードのパーティクルグループ作成
 	ParticleManager::GetInstance()->CreateParticleGroup("HitSpark", "assets/textures/white1x1.png");
 
-	// GPUParticleManagerのテクスチャ設定
 	uint32_t gpuParticleTexIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/white1x1.png");
 	GPUParticleManager::GetInstance()->SetTexture(gpuParticleTexIndex);
 }
 
 void DebugScene::Update() {
-	// Camera Controls
 	Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
 	if (camera) {
 		Vector3 rotate = camera->GetRotate();
@@ -80,13 +77,11 @@ void DebugScene::Update() {
 		const float kRotSpeed = 0.02f;
 		const float kMoveSpeed = 0.1f;
 
-		// Rotation
-		if (Input::GetInstance()->PushKey(DIK_UP)) rotate.x -= kRotSpeed;
-		if (Input::GetInstance()->PushKey(DIK_DOWN)) rotate.x += kRotSpeed;
-		if (Input::GetInstance()->PushKey(DIK_LEFT)) rotate.y -= kRotSpeed;
-		if (Input::GetInstance()->PushKey(DIK_RIGHT)) rotate.y += kRotSpeed;
+		if (Input::GetInstance()->PushKey(DIK_UP)) { rotate.x -= kRotSpeed; }
+		if (Input::GetInstance()->PushKey(DIK_DOWN)) { rotate.x += kRotSpeed; }
+		if (Input::GetInstance()->PushKey(DIK_LEFT)) { rotate.y -= kRotSpeed; }
+		if (Input::GetInstance()->PushKey(DIK_RIGHT)) { rotate.y += kRotSpeed; }
 
-		// Mouse Rotation
 		// 0: Left, 1: Right, 2: Middle
 		if (Input::GetInstance()->PushMouse(1)) {
 			Input::MouseMove mouseMove = Input::GetInstance()->GetMouseMove();
@@ -95,18 +90,16 @@ void DebugScene::Update() {
 			rotate.x += mouseMove.lY * kMouseSensitivity;
 		}
 
-		// Movement (Relative to Y rotation)
 		Matrix4x4 matRot = MakeRotateYMatrix(rotate.y);
 		Vector3 moveDir = { 0.0f, 0.0f, 0.0f };
 
-		if (Input::GetInstance()->PushKey(DIK_W)) moveDir.z += kMoveSpeed;
-		if (Input::GetInstance()->PushKey(DIK_S)) moveDir.z -= kMoveSpeed;
-		if (Input::GetInstance()->PushKey(DIK_A)) moveDir.x -= kMoveSpeed;
-		if (Input::GetInstance()->PushKey(DIK_D)) moveDir.x += kMoveSpeed;
-		if (Input::GetInstance()->PushKey(DIK_E)) moveDir.y += kMoveSpeed;
-		if (Input::GetInstance()->PushKey(DIK_Q)) moveDir.y -= kMoveSpeed;
+		if (Input::GetInstance()->PushKey(DIK_W)) { moveDir.z += kMoveSpeed; }
+		if (Input::GetInstance()->PushKey(DIK_S)) { moveDir.z -= kMoveSpeed; }
+		if (Input::GetInstance()->PushKey(DIK_A)) { moveDir.x -= kMoveSpeed; }
+		if (Input::GetInstance()->PushKey(DIK_D)) { moveDir.x += kMoveSpeed; }
+		if (Input::GetInstance()->PushKey(DIK_E)) { moveDir.y += kMoveSpeed; }
+		if (Input::GetInstance()->PushKey(DIK_Q)) { moveDir.y -= kMoveSpeed; }
 
-		// Transform moveDir by rotation matrix
 		moveDir = TransformNormal(moveDir, matRot);
 
 		translate = Add(translate, moveDir);
@@ -239,9 +232,9 @@ void DebugScene::Update() {
 
 	if (changed) {
 		int lightType = 0;
-		if (enableDirectional) lightType |= 1;
-		if (enablePoint) lightType |= 2;
-		if (enableSpot) lightType |= 4;
+		if (enableDirectional) { lightType |= 1; }
+		if (enablePoint) { lightType |= 2; }
+		if (enableSpot) { lightType |= 4; }
 		
 		Object3dCommon::GetInstance()->SetLightType(lightType);
 	}
@@ -363,9 +356,6 @@ void DebugScene::Draw() {
 		GPUParticleManager::GetInstance()->Draw(camera->GetViewProjectionMatrix(), camera->GetWorldMatrix());
 	}
 	
-	// GPUパーティクルの更新と描画
-	// DX12の制約上、Compute ShaderのDispatchコマンドも開かれたコマンドリストに積む必要があるため、
-	// PreDraw() 以降であるここに Update() を配置する。
 	GPUParticleManager::GetInstance()->Update();
 }
 

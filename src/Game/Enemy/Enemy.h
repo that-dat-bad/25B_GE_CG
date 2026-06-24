@@ -40,7 +40,6 @@ private:
 	// 座標
 	MyMath::Vector3 position_{};
 
-	// HP
 	float health_ = 0.0f;
 	float maxHealth_ = 0.0f;
 	bool isAlive_ = true;

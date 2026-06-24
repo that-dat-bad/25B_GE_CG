@@ -87,7 +87,6 @@ void ParticleManager::Update() {
 			// フィールドの影響計算
 			Vector3 fieldAcceleration = { 0.0f, 0.0f, 0.0f };
 			for (const auto& [fieldName, field] : accelerationFields_) {
-				// AABB内判定
 				if (it->transform.translate.x >= field.area.min.x && it->transform.translate.x <= field.area.max.x &&
 					it->transform.translate.y >= field.area.min.y && it->transform.translate.y <= field.area.max.y &&
 					it->transform.translate.z >= field.area.min.z && it->transform.translate.z <= field.area.max.z) {
@@ -109,7 +108,7 @@ void ParticleManager::Update() {
 			// ライフタイムベースのアニメーション
 			// ============================
 			float t = it->currentTime / it->lifeTime; // 0.0 ~ 1.0
-			if (t > 1.0f) t = 1.0f;
+			if (t > 1.0f) { t = 1.0f; }
 
 			// スケール補間（イージング付き）
 			float easedT = std::pow(t, it->scaleEasing);
@@ -164,18 +163,15 @@ void ParticleManager::Update() {
 								finalBillboard.m[2][1] = -camToParticle.y;
 								finalBillboard.m[2][2] = -camToParticle.z;
 								
-								// Y軸（進行方向）にスケールを引き伸ばす
 								scaleMatrix.m[1][1] *= (1.0f + stretchAmount * it->stretchFactor);
 							}
 						}
 					}
 				}
 
-				// Z軸回転行列をビルボードに適用
 				Matrix4x4 rotateZMatrix = MakeRotateZMatrix(it->transform.rotate.z);
 				Matrix4x4 worldMatrix = Multiply(scaleMatrix, Multiply(rotateZMatrix, Multiply(finalBillboard, translateMatrix)));
 
-				// WVP行列の計算
 				Matrix4x4 wvp = Multiply(worldMatrix, viewProjectionMatrix);
 
 				// インスタンシングデータへの書き込み
@@ -196,13 +192,10 @@ void ParticleManager::Draw() {
 	// ルートシグネチャの設定
 	commandList->SetGraphicsRootSignature(rootSignature_.Get());
 
-	// PSOの設定 (グループごとに変更するのでここでは設定しない、あるいはデフォルトを設定)
-	// commandList->SetPipelineState(graphicsPipelineState_.Get());
 
 	// プリミティブトポロジーの設定
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	// VBVの設定
 	commandList->IASetVertexBuffers(0, 1, &vertexBufferView_);
 
 	// 深度バッファを SRV 用 (PIXEL_SHADER_RESOURCE | DEPTH_READ) に遷移させる
@@ -214,7 +207,6 @@ void ParticleManager::Draw() {
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	commandList->ResourceBarrier(1, &barrier);
 
-	// DSVをRead-Onlyに設定
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = dxCommon_->GetRenderTextureRTVHandle(0);
 	D3D12_CPU_DESCRIPTOR_HANDLE readOnlyDsvHandle = dxCommon_->GetReadOnlyDSVHandle();
 	commandList->OMSetRenderTargets(1, &rtvHandle, false, &readOnlyDsvHandle);
@@ -223,7 +215,7 @@ void ParticleManager::Draw() {
 	BlendMode currentBlendMode = BlendMode::kCountOf; // 初期値として無効な値をセット
 
 	for (auto& [name, group] : particleGroups_) {
-		if (group.instanceCount == 0) continue;
+		if (group.instanceCount == 0) { continue; }
 
 		// ブレンドモードが切り替わったらPSO再設定
 		if (group.blendMode != currentBlendMode) {
@@ -255,11 +247,9 @@ void ParticleManager::Draw() {
 	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 	commandList->ResourceBarrier(1, &barrier);
 
-	// DSVを通常に戻す
 	D3D12_CPU_DESCRIPTOR_HANDLE normalDsvHandle = dxCommon_->GetDSVHandle();
 	commandList->OMSetRenderTargets(1, &rtvHandle, false, &normalDsvHandle);
 
-	// DSVを元に戻す
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxCommon_->GetDSVDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
 	commandList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
 }
@@ -298,7 +288,6 @@ void ParticleManager::CreateParticleGroup(const std::string& name, const std::st
 
 	// テクスチャ読み込み
 	TextureManager::GetInstance()->LoadTexture(textureFilePath);
-	// SRVインデックス取得
 	group.textureSrvIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath(textureFilePath);
 
 	// インスタンシング用リソースの生成 (StructuredBuffer)
@@ -312,7 +301,6 @@ void ParticleManager::CreateParticleGroup(const std::string& name, const std::st
 	// インスタンシング用にSRVを確保
 	group.instancingSrvIndex = srvManager_->Allocate();
 
-	// StructuredBufferとしてSRV生成
 	srvManager_->CreateSRVforStructuredBuffer(
 		group.instancingSrvIndex,
 		group.instancingResource.Get(),
@@ -401,7 +389,6 @@ void ParticleManager::CreateModel() {
 	Vector4 rightBottom = { 0.5f, -0.5f, 0.0f, 1.0f };
 	Vector4 rightTop = { 0.5f,  0.5f, 0.0f, 1.0f };
 
-	// UV
 	Vector2 uvLeftBottom = { 0.0f, 1.0f };
 	Vector2 uvLeftTop = { 0.0f, 0.0f };
 	Vector2 uvRightBottom = { 1.0f, 1.0f };
@@ -418,7 +405,6 @@ void ParticleManager::CreateModel() {
 
 	vertexBuffer_ = dxCommon_->CreateBufferResource(sizeInBytes);
 
-	// VBV設定
 	vertexBufferView_.BufferLocation = vertexBuffer_->GetGPUVirtualAddress();
 	vertexBufferView_.SizeInBytes = sizeInBytes;
 	vertexBufferView_.StrideInBytes = sizeof(VertexData);
@@ -448,7 +434,7 @@ void ParticleManager::CreateRootSignature() {
 	descriptorRangeInstancing[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	D3D12_DESCRIPTOR_RANGE descriptorRangeDepth[1] = {};
-	descriptorRangeDepth[0].BaseShaderRegister = 2; // t2
+	descriptorRangeDepth[0].BaseShaderRegister = 2;
 	descriptorRangeDepth[0].NumDescriptors = 1;
 	descriptorRangeDepth[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriptorRangeDepth[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -511,7 +497,6 @@ void ParticleManager::CreateGraphicsPipeline() {
 	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = dxCommon_->CompileShader(L"./assets/shaders/Particle.VS.hlsl", L"vs_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = dxCommon_->CompileShader(L"./assets/shaders/Particle.PS.hlsl", L"ps_6_0");
 
-	// InputLayout
 	D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
 	inputElementDescs[0].SemanticName = "POSITION";
 	inputElementDescs[0].SemanticIndex = 0;
@@ -522,7 +507,6 @@ void ParticleManager::CreateGraphicsPipeline() {
 	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
 	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
 
-	// PSO設定
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
 	graphicsPipelineStateDesc.pRootSignature = rootSignature_.Get();
 	graphicsPipelineStateDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };

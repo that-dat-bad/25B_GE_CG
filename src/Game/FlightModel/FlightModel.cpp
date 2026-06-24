@@ -123,7 +123,6 @@ void FlightModel::Update(float deltaTime)
 	position_ = MyMath::Add(position_, MyMath::Multiply(deltaTime, velocity_));
 
 	// 11. G計算
-	// G = (速度変化量 / dt) のうち、重力を除いた成分 / 重力加速度
 	if (deltaTime > 0.0001f) {
 		MyMath::Vector3 deltaV = MyMath::Substract(velocity_, prevVelocity);
 		MyMath::Vector3 accelNoGravity = MyMath::Multiply(1.0f / deltaTime, deltaV);
@@ -176,7 +175,6 @@ float FlightModel::GetTotalMass() const
 
 
 // ===========================================================
-// ISA標準大気モデル（簡易版）による空気密度計算
 // ===========================================================
 float FlightModel::CalculateAirDensity(float altitude) const
 {
@@ -193,12 +191,11 @@ float FlightModel::CalculateAirDensity(float altitude) const
 float FlightModel::CalculateAoA() const
 {
 	float speed = MyMath::Length(velocity_);
-	if (speed < 1.0f) return 0.0f;
+	if (speed < 1.0f) { return 0.0f; }
 
 	MyMath::Vector3 velDir = MyMath::Normalize(velocity_);
 	MyMath::Vector3 forward = GetForwardDirection();
 
-	// forward と velDir の角度差
 	float dot = MyMath::Dot(forward, velDir);
 	dot = std::clamp(dot, -1.0f, 1.0f);
 	float angle = std::acos(dot);
@@ -234,8 +231,7 @@ float FlightModel::CalculateLiftCoefficient(float aoa) const
 		cl = maxCL - (maxCL - stallCL) * overStallRatio;
 	}
 
-	// AoAの符号に合わせて揚力の方向を決定
-	if (aoa < 0.0f) cl = -cl;
+	if (aoa < 0.0f) { cl = -cl; }
 
 	return cl;
 }
@@ -243,15 +239,14 @@ float FlightModel::CalculateLiftCoefficient(float aoa) const
 
 // ===========================================================
 // 速度依存の操舵効率
-// War Thunder風: 低速→弱い、中速→最高、高速→重い
 // ===========================================================
 float FlightModel::CalculateControlEfficiency(float speed) const
 {
-	if (speed < 30.0f)  return speed / 30.0f * 0.3f;           // 低速域: ほぼ効かない
-	if (speed < 100.0f) return 0.3f + (speed - 30.0f) / 70.0f * 0.7f; // 遷移域
-	if (speed < 300.0f) return 1.0f;                            // 最適域
-	if (speed < 500.0f) return 1.0f - (speed - 300.0f) / 200.0f * 0.5f; // 高速域: 重くなる
-	return 0.5f;                                                // 超高速
+	if (speed < 30.0f) { return speed / 30.0f * 0.3f; }
+	if (speed < 100.0f) { return 0.3f + (speed - 30.0f) / 70.0f * 0.7f; }
+	if (speed < 300.0f) { return 1.0f; }
+	if (speed < 500.0f) { return 1.0f - (speed - 300.0f) / 200.0f * 0.5f; }
+	return 0.5f;
 }
 
 
@@ -419,7 +414,6 @@ void FlightModel::UpdateOrientation(float deltaTime)
 	float damping = dampingBase * speedFactor;
 
 	// 角速度を目標値に向けて滑らかに追従（指数的スムージング）
-	// angVel = lerp(angVel, target, 1 - e^(-damping * dt))
 	float smoothT = 1.0f - std::exp(-damping * deltaTime);
 
 	angularVelocity_.x += (targetPitchRate - angularVelocity_.x) * smoothT;
@@ -485,7 +479,6 @@ void FlightModel::UpdateOrientation(float deltaTime)
 
 
 // ===========================================================
-// G効果の更新（ブラックアウト・レッドアウト + 構造ダメージ）
 // ===========================================================
 void FlightModel::UpdateGEffects(float deltaTime)
 {
@@ -510,7 +503,6 @@ void FlightModel::UpdateGEffects(float deltaTime)
 				factor += excess * buildRate * deltaTime;
 			}
 		} else {
-			// Gが収まったら猶予タイマーは急速回復、症状自体はゆっくり回復
 			toleranceTimer -= deltaTime * 2.0f;
 			toleranceTimer = (std::max)(0.0f, toleranceTimer);
 			factor -= kGEffectRecoveryRate * deltaTime;

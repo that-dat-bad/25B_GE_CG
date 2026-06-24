@@ -28,11 +28,10 @@ void StageScene::Initialize() {
 	sceneID = SCENE::STAGE;
 
 	// ============================
-	// FlightModel の初期化
 	// ============================
 	AirframeData airframeData{};
 	airframeData.emptyFrameMass = 3000.0f;   // 3トン
-	airframeData.maxInternalFuel = 800.0f;    // 800kg
+	airframeData.maxInternalFuel = 800.0f;
 	airframeData.baseDrag = 0.02f;            // 基本空気抵抗
 	airframeData.liftCoefficient = 0.2f;      // 揚力係数
 	airframeData.wingArea = 40.0f;            // 翼面積 20m^2
@@ -44,7 +43,6 @@ void StageScene::Initialize() {
 	// 誘導抵抗
 	airframeData.aspectRatio = 6.0f;
 	airframeData.oswaldEfficiency = 0.8f;
-	// G制限
 	airframeData.positiveGLimit = 9.0f;
 	airframeData.negativeGLimit = -3.0f;
 	// フラップ
@@ -71,7 +69,7 @@ void StageScene::Initialize() {
 	flightModel_.SetPosition({ 0.0f, 100.0f, 0.0f });
 
 	// 開始時の速度を250km/hに設定
-	float initialSpeed = 250.0f / 3.6f; // m/s
+	float initialSpeed = 250.0f / 3.6f;
 	flightModel_.SetVelocity(Multiply(initialSpeed, flightModel_.GetForwardDirection()));
 
 	// スロットルを60%に初期化（速度維持のため）
@@ -102,7 +100,6 @@ void StageScene::Initialize() {
 
 
 
-	// Skybox
 	TextureManager::GetInstance()->LoadTexture("assets/textures/cedar_bridge_sunset_1_2k.dds");
 	skybox_ = std::make_unique<Skybox>();
 	skybox_->Initialize(SkyboxCommon::GetInstance());
@@ -122,8 +119,8 @@ void StageScene::Initialize() {
 	}
 	// ライティングモデル設定
 	Object3dCommon::GetInstance()->SetLightType(1);             // Directional Light 有効
-	Object3dCommon::GetInstance()->SetShadingModel(1);          // Half-Lambert
-	Object3dCommon::GetInstance()->SetSpecularModel(2);         // Blinn-Phong
+	Object3dCommon::GetInstance()->SetShadingModel(1);
+	Object3dCommon::GetInstance()->SetSpecularModel(2);
 
 	// ============================
 	// カメラ初期位置（機体の後方）
@@ -160,7 +157,6 @@ void StageScene::Initialize() {
 	// 戦闘システムの初期化
 	// ============================
 
-	// Gunpod 初期化
 	GunPodData gunpodData{};
 	gunpodData.baseMass = 50.0f;
 	gunpodData.drag = 0.005f;
@@ -225,8 +221,8 @@ void StageScene::Update() {
 	if (input->PushKey(DIK_LCONTROL)) {
 		throttle_ -= 0.8f * kDeltaTime;
 	}
-	if (throttle_ < 0.0f) throttle_ = 0.0f;
-	if (throttle_ > 1.0f) throttle_ = 1.0f;
+	if (throttle_ < 0.0f) { throttle_ = 0.0f; }
+	if (throttle_ > 1.0f) { throttle_ = 1.0f; }
 	flightModel_.SetThrottleInput(throttle_);
 
 	// --- 自由視点カメラ (Cキー長押し) ---
@@ -237,13 +233,12 @@ void StageScene::Update() {
 			freeViewActive_ = true;
 			Vector3 camOffset = Substract(cameraCurrentPos_, flightModel_.GetPosition());
 			freeViewDistance_ = Length(camOffset);
-			if (freeViewDistance_ < 1.0f) freeViewDistance_ = cameraDistance_;
+			if (freeViewDistance_ < 1.0f) { freeViewDistance_ = cameraDistance_; }
 			Vector3 dir = Normalize(camOffset);
 			freeViewPitch_ = std::asin(std::clamp(dir.y, -1.0f, 1.0f));
 			freeViewYaw_   = std::atan2(dir.x, dir.z);
 		}
 	} else {
-		// Cを離したらデフォルト視点に戻る
 		freeViewActive_ = false;
 	}
 
@@ -252,17 +247,14 @@ void StageScene::Update() {
 		mouseAimEnabled_ = !mouseAimEnabled_;
 		mouseAimController_.SetEnabled(mouseAimEnabled_);
 		if (mouseAimEnabled_) {
-			// ON に切り替えた時、目標方向を現在の機首方向にリセット & ロック
 			mouseAimController_.ResetToDirection(flightModel_.GetForwardDirection());
 			input->LockCursor();
 		} else {
-			// OFF に切り替えた時、カーソルを再表示
 			input->UnlockCursor();
 		}
 	}
 
 	// --- カーソルロック ON/OFF トグル (P キー) ---
-	// ImGui操作用: エイムを一時停止してカーソルを解放
 	if (input->TriggerKey(DIK_P)) {
 		if (input->IsCursorLocked()) {
 			input->UnlockCursor();
@@ -276,12 +268,12 @@ void StageScene::Update() {
 	float manualRoll = 0.0f;
 	float manualYaw = 0.0f;
 
-	if (input->PushKey(DIK_W)) manualPitch -= 1.0f; // W = 機首上げ
-	if (input->PushKey(DIK_S)) manualPitch += 1.0f; // S = 機首下げ
-	if (input->PushKey(DIK_A)) manualRoll += 1.0f;  // A = 左ロール
-	if (input->PushKey(DIK_D)) manualRoll -= 1.0f;  // D = 右ロール
-	if (input->PushKey(DIK_Q)) manualYaw -= 1.0f;
-	if (input->PushKey(DIK_E)) manualYaw += 1.0f;
+	if (input->PushKey(DIK_W)) { manualPitch -= 1.0f; }
+	if (input->PushKey(DIK_S)) { manualPitch += 1.0f; }
+	if (input->PushKey(DIK_A)) { manualRoll += 1.0f; }
+	if (input->PushKey(DIK_D)) { manualRoll -= 1.0f; }
+	if (input->PushKey(DIK_Q)) { manualYaw -= 1.0f; }
+	if (input->PushKey(DIK_E)) { manualYaw += 1.0f; }
 
 	bool hasManualInput = (std::fabs(manualPitch) > 0.01f ||
 	                       std::fabs(manualRoll) > 0.01f ||
@@ -345,7 +337,6 @@ void StageScene::Update() {
 	if (input->PushMouse(0) && !isMissionCleared_ && !isMissionFailed_) {
 		int ammoBefore = gunpod_.GetCurrentAmmo();
 		gunpod_.Fire();
-		// Fire() が実際に弾を消費した場合のみ弾丸エンティティを生成
 		if (gunpod_.GetCurrentAmmo() < ammoBefore) {
 			Vector3 firePos = flightModel_.GetPosition();
 			Vector3 fireDir = flightModel_.GetForwardDirection();
@@ -438,11 +429,10 @@ void StageScene::Update() {
 	PointLight* pLight = Object3dCommon::GetInstance()->GetPointLightData();
 	if (pLight && pLight->intensity > 0.0f) {
 		pLight->intensity -= 200.0f * kDeltaTime; // 0.15秒程度で消えるペース
-		if (pLight->intensity < 0.0f) pLight->intensity = 0.0f;
+		if (pLight->intensity < 0.0f) { pLight->intensity = 0.0f; }
 	}
 
 	// ============================
-	// FlightModel 物理更新
 	// ============================
 	flightModel_.Update(kDeltaTime);
 
@@ -458,10 +448,9 @@ void StageScene::Update() {
 	Vector3 rightWingTip = Add(Add(aircraftPos, Multiply(6.0f, right)), Multiply(-2.0f, forward));
 
 	if (currentG > 3.0f && flightModel_.GetSpeed() > 50.0f) {
-		// Gの強さに応じて透明度（濃さ）を調整 (3Gで透明度0.0, 6G以上で0.12)
 		float gFactor = (currentG - 3.0f) / 3.0f; // 0.0 ~ 1.0
-		if (gFactor < 0.0f) gFactor = 0.0f;
-		if (gFactor > 1.0f) gFactor = 1.0f;
+		if (gFactor < 0.0f) { gFactor = 0.0f; }
+		if (gFactor > 1.0f) { gFactor = 1.0f; }
 
 		Vector4 baseColor = { 0.95f, 0.98f, 1.0f, 0.35f * gFactor }; // アルファ値を適度に見える濃さに調整
 
@@ -494,8 +483,8 @@ void StageScene::Update() {
 
 			// 0.25m（25cm）間隔で配置するための補間数（ストレッチビルボード化によりステップ数を激減）
 			int steps = static_cast<int>(std::ceil(distL / 0.25f));
-			if (steps < 1) steps = 1;
-			if (steps > 40) steps = 40; // 最大生成数を大幅に削減し負荷軽減（250 -> 40）
+			if (steps < 1) { steps = 1; }
+			if (steps > 40) { steps = 40; }
 
 			// 各ステップの移動ベクトルを計算
 			Vector3 stepDeltaL = Multiply(1.0f / static_cast<float>(steps), deltaL);
@@ -597,7 +586,6 @@ void StageScene::Update() {
 	UpdateChaseCamera(kDeltaTime);
 
 	// ============================
-	// ImGui デバッグ UI
 	// ============================
 #ifdef USE_IMGUI
 	ImGui::Begin("Flight Model Debug");
@@ -667,7 +655,6 @@ void StageScene::Update() {
 		Vector3 tDir = mouseAimController_.GetTargetDirection();
 		ImGui::Text("Target Dir: (%.2f, %.2f, %.2f)", tDir.x, tDir.y, tDir.z);
 
-		// PIDチューニングUI
 		if (ImGui::TreeNode("PID Tuning")) {
 			auto pidSliders = [](const char* label, PIDController& pid) {
 				if (ImGui::TreeNode(label)) {
@@ -714,7 +701,7 @@ void StageScene::Update() {
 				float cX = worldPos.x * vpMat.m[0][0] + worldPos.y * vpMat.m[1][0] + worldPos.z * vpMat.m[2][0] + vpMat.m[3][0];
 				float cY = worldPos.x * vpMat.m[0][1] + worldPos.y * vpMat.m[1][1] + worldPos.z * vpMat.m[2][1] + vpMat.m[3][1];
 				float cW = worldPos.x * vpMat.m[0][3] + worldPos.y * vpMat.m[1][3] + worldPos.z * vpMat.m[2][3] + vpMat.m[3][3];
-				if (cW <= 0.001f) return false;
+				if (cW <= 0.001f) { return false; }
 				outX = (cX / cW * 0.5f + 0.5f) * screenW;
 				outY = (-cY / cW * 0.5f + 0.5f) * screenH;
 				return true;
@@ -776,8 +763,6 @@ void StageScene::Update() {
 	// ブラックアウト & レッドアウト ポストエフェクト（既存ビネットを拡張）
 	// ============================
 	// 常にビネットを有効にし、Gフォースに応じて強度を滑らかに変化させる
-	// intensity(ブラックアウト): 0.0(透明) → 5.0(ほぼ真っ暗)
-	// dirX(レッドアウト): 0.0(透明) → 1.0以上(真っ赤)
 	float blackout = flightModel_.GetBlackoutFactor();
 	float redout = flightModel_.GetRedoutFactor();
 	
@@ -789,7 +774,6 @@ void StageScene::Update() {
 
 
 void StageScene::Draw() {
-	// Skybox (最初に描画)
 	if (skybox_) {
 		SkyboxCommon::GetInstance()->SetupCommonState();
 		skybox_->Draw();
@@ -934,8 +918,8 @@ void StageScene::Draw() {
 		Vector3 muzzlePos = Add(aircraftPos, Multiply(8.0f, forward));
 		
 		float t = 1.0f - (muzzleFlashTimer_ / 0.08f); // 0.0(開始) -> 1.0(終了)
-		if (t < 0.0f) t = 0.0f;
-		if (t > 1.0f) t = 1.0f;
+		if (t < 0.0f) { t = 0.0f; }
+		if (t > 1.0f) { t = 1.0f; }
 		
 		// 機体の回転を取得（オイラー角）
 		Vector3 aircraftRot = QuaternionToEuler(flightModel_.GetOrientation());
@@ -949,7 +933,6 @@ void StageScene::Draw() {
 		uint32_t flashTex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/circle2.png");
 		Vector4 flashColor = { 1.0f, 0.7f, 0.2f, randomAlpha }; // 燃えるようなオレンジイエロー
 		
-		// Z軸方向（長さ）と幅の調整
 		float flashLength = 4.0f * muzzleFlashRandomScale_ * (1.0f - t);
 		float flashWidth = 1.0f * muzzleFlashRandomScale_ * (1.0f - t);
 		Vector3 flashScale = { flashWidth, flashLength, 1.0f }; // Y軸方向に長くする（あとでX軸回転でZ軸方向に向ける）
@@ -1006,7 +989,7 @@ void StageScene::Finalize() {
 
 void StageScene::DrawGround() {
 	Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
-	if (!camera) return;
+	if (!camera) { return; }
 
 	Vector3 aircraftPos = flightModel_.GetPosition();
 
@@ -1051,7 +1034,6 @@ void StageScene::DrawGround() {
 	const float lineExtent = tileRange * tileSize;
 	const Vector4 lineColor = { 0.15f, 0.15f, 0.15f, 0.8f };
 
-	// X方向のライン（Z軸に平行）
 	for (int i = -tileRange; i <= tileRange; i++) {
 		float x = snapX + i * tileSize;
 		PrimitiveModel::GetInstance()->DrawLine3D(
@@ -1061,7 +1043,6 @@ void StageScene::DrawGround() {
 		);
 	}
 
-	// Z方向のライン（X軸に平行）
 	for (int i = -tileRange; i <= tileRange; i++) {
 		float z = snapZ + i * tileSize;
 		PrimitiveModel::GetInstance()->DrawLine3D(
@@ -1074,7 +1055,6 @@ void StageScene::DrawGround() {
 
 
 // ===========================================================
-// War Thunder風 追従カメラ
 // ===========================================================
 //
 // ・機体の後方 + 上方にカメラの「理想位置」を計算
@@ -1099,8 +1079,8 @@ void StageScene::UpdateChaseCamera(float dt) {
 
 		// ピッチを制限（真上・真下を超えないように）
 		const float pitchLimit = 3.141592f * 0.49f;
-		if (freeViewPitch_ > pitchLimit)  freeViewPitch_ = pitchLimit;
-		if (freeViewPitch_ < -pitchLimit) freeViewPitch_ = -pitchLimit;
+		if (freeViewPitch_ > pitchLimit) { freeViewPitch_ = pitchLimit; }
+		if (freeViewPitch_ < -pitchLimit) { freeViewPitch_ = -pitchLimit; }
 
 		// 球面座標で機体中心からのオフセットを計算
 		Vector3 offset;
@@ -1141,7 +1121,6 @@ void StageScene::UpdateChaseCamera(float dt) {
 	Vector3 desiredLookTarget = Add(aircraftPos, Multiply(5.0f, forward));
 
 	// --- 滑らかに補間（Exponential Smoothing） ---
-	// t = 1 - e^(-speed * dt) で、速度に依存しない滑らかな補間を実現
 	float posT = 1.0f - std::exp(-cameraPosLag_ * dt);
 	float lookT = 1.0f - std::exp(-cameraLookLag_ * dt);
 
@@ -1196,9 +1175,7 @@ MyMath::Vector3 StageScene::QuaternionToEuler(const MyMath::Quaternion& q) {
 
 
 // ===========================================================
-// LookAt 回転の計算
 // カメラ位置(from) → 注視点(to) を向くオイラー角を返す
-// Camera::Update は MakeAffineMatrix(scale, rotate, translate) を使うので
 // そのrotateに合致するオイラー角(XYZ順)を逆算する
 // ジンバルロック対策: 真上・真下付近ではヨーを前フレームの値で維持
 // ===========================================================
@@ -1212,13 +1189,10 @@ MyMath::Vector3 StageScene::LookAtRotation(const MyMath::Vector3& from, const My
 	// 正規化
 	dir = Normalize(dir);
 
-	// X軸回りの回転 (ピッチ) : -asin(y)
 	// クランプしてasinの定義域を守る
 	float clampedY = std::clamp(dir.y, -0.999f, 0.999f);
 	float pitch = -std::asin(clampedY);
 
-	// Y軸回りの回転 (ヨー) : atan2(x, z)
-	// dir.yが±1に近い（真上・真下）とき、xとzがほぼ0でatan2が不安定になる
 	// → 水平成分の大きさが閾値以下ならヨーを前フレームの値で維持
 	float horizontalLen = std::sqrt(dir.x * dir.x + dir.z * dir.z);
 	float yaw;

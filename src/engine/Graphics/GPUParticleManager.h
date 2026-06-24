@@ -11,14 +11,13 @@
 
 class GPUParticleManager {
 public:
-	// CPU側からサイズ計算に使うため定義
 	struct ParticleCS {
 		Vector3 translate;
-		float padding1; // 16-byte alignment
+		float padding1;
 		Vector3 scale;
-		float lifeTime; // 16-byte alignment
+		float lifeTime;
 		Vector3 velocity;
-		float currentTime; // 16-byte alignment
+		float currentTime;
 		Vector4 color;
 	};
 
@@ -28,18 +27,15 @@ public:
 	void Finalize();
 
 	void Update();
-	// viewProjection と billboardMatrix を受け取って描画
 	void Draw(const Matrix4x4& viewProjection, const Matrix4x4& billboardMatrix);
 
 	void SetTexture(uint32_t srvIndex) { textureSrvIndex_ = srvIndex; }
 	
-	// Emit用のパラメータ設定
 	void SetEmitParams(const Vector3& position, uint32_t count, float radius, float frequency);
 	
 	// 強制的に発生させるフラグ（毎フレーム呼び出すと発生し続ける）
 	void Emit();
 
-	// ImGuiを描画する
 	void DrawImGui();
 
 public:
@@ -55,7 +51,6 @@ private:
 	DirectXCommon* dxCommon_ = nullptr;
 	SrvManager* srvManager_ = nullptr;
 
-	// Root Signatures and PSOs
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> computeRootSignature_;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> initPipelineState_;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> emitPipelineState_;
@@ -65,7 +60,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> graphicsPipelineState_;
 	Microsoft::WRL::ComPtr<ID3D12CommandSignature> commandSignature_;
 
-	// Buffers
 	static const uint32_t kMaxParticles = 1024;
 	Microsoft::WRL::ComPtr<ID3D12Resource> particleBuffer_;
 	Microsoft::WRL::ComPtr<ID3D12Resource> freeListIndexBuffer_;
@@ -82,7 +76,6 @@ private:
 	uint32_t aliveListUavIndex_ = 0;
 	uint32_t indirectArgsUavIndex_ = 0;
 
-	// Constant Buffers
 	Microsoft::WRL::ComPtr<ID3D12Resource> emitterSphereBuffer_[2];
 	struct EmitterSphere {
 		Vector3 translate;
@@ -109,7 +102,6 @@ private:
 	};
 	PerView* perViewData_ = nullptr;
 
-	// Drawing resources
 	struct VertexData {
 		Vector4 position;
 		Vector2 texcoord;
@@ -134,7 +126,6 @@ private:
 	int32_t debugFreeListIndex_ = 0;
 	uint32_t debugInstanceCount_ = 0;
 
-	// GUI Controls
 	Vector3 guiEmitTranslate_ = { 0.0f, 0.0f, 0.0f };
 	int guiEmitCount_ = 1024;
 	float guiEmitRadius_ = 5.0f;

@@ -37,10 +37,8 @@ void DirectXCommon::Finalize() {
 }
 
 void DirectXCommon::WaitForGPU() {
-	// Signal
 	fenceValue_++;
 	commandQueue_->Signal(fence_.Get(), fenceValue_);
-	// Wait
 	if (fence_->GetCompletedValue() < fenceValue_) {
 		fence_->SetEventOnCompletion(fenceValue_, fenceEvent_);
 		WaitForSingleObject(fenceEvent_, INFINITE);
@@ -49,10 +47,8 @@ void DirectXCommon::WaitForGPU() {
 
 void DirectXCommon::Initialize(WinApp* winApp) {
 
-	//FPS固定初期化
 	InitializeFixFPS();
 
-	//NULLチェック
 	assert(winApp);
 	//メンバ変数にセット
 	winApp_ = winApp;
@@ -77,7 +73,6 @@ void DirectXCommon::Initialize(WinApp* winApp) {
 	SetViewport();
 	//シザー矩形の設定
 	SetScissorRect();
-	//DxcCompilerの初期化
 	InitializeDxcCompiler();
 	
 	CreateRenderTargetTextures();
@@ -102,7 +97,6 @@ void DirectXCommon::PreDraw()
 	hr = commandList_->Reset(commandAllocators_[currentFrameIndex_].Get(), nullptr);
 	assert(SUCCEEDED(hr));
 
-	// renderTextures_[0] をレンダーターゲットに遷移してクリア
 	D3D12_RESOURCE_BARRIER barrierRT = {};
 	barrierRT.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrierRT.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -128,7 +122,6 @@ void DirectXCommon::PostDraw()
 {
 	UINT backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
 
-	// renderTextures_[0]: RENDER_TARGET -> PIXEL_SHADER_RESOURCE（PS でサンプリング可能に）
 	D3D12_RESOURCE_BARRIER barrierRTtoSRV = {};
 	barrierRTtoSRV.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrierRTtoSRV.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -137,7 +130,6 @@ void DirectXCommon::PostDraw()
 	barrierRTtoSRV.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	barrierRTtoSRV.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
-	// swapChainResources_[backBufferIndex]: PRESENT -> RENDER_TARGET
 	D3D12_RESOURCE_BARRIER barrierBackToRT = {};
 	barrierBackToRT.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrierBackToRT.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -149,13 +141,11 @@ void DirectXCommon::PostDraw()
 	D3D12_RESOURCE_BARRIER barriers[] = { barrierRTtoSRV, barrierBackToRT };
 	commandList_->ResourceBarrier(_countof(barriers), barriers);
 
-	// swap chain をレンダーターゲットに設定（深度なし）
 	commandList_->OMSetRenderTargets(1, &rtvHandles_[backBufferIndex], false, nullptr);
 
 	// ポストエフェクトのフルスクリーン描画
 	PostEffect::GetInstance()->Draw(renderTextures_[0].Get(), renderTextureSrvIndex_);
 
-	// renderTextures_[0] は既に PIXEL_SHADER_RESOURCE 状態（PreDraw が期待する状態）
 	// バックバッファは RENDER_TARGET のまま — ImGui がここに描画できる
 }
 
@@ -163,7 +153,6 @@ void DirectXCommon::EndFrame()
 {
 	UINT backBufferIndex = swapChain_->GetCurrentBackBufferIndex();
 
-	// swapChain -> PRESENT に戻す
 	D3D12_RESOURCE_BARRIER barrierBackToPresent = {};
 	barrierBackToPresent.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrierBackToPresent.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -203,7 +192,6 @@ void DirectXCommon::CreateDevice()
 	}
 #endif
 
-	// DXGIファクトリーの生成
 	dxgiFactory_ = nullptr;
 	hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory_));
 	assert(SUCCEEDED(hr));
@@ -224,7 +212,6 @@ void DirectXCommon::CreateDevice()
 	}
 	assert(useAdapter_ != nullptr);
 
-	// D3D12Deviceの生成
 	device_ = nullptr;
 	D3D_FEATURE_LEVEL featureLevels[] = {
 		D3D_FEATURE_LEVEL_12_2, D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_12_0
@@ -323,7 +310,6 @@ void DirectXCommon::CreateDepthStencilBuffer()
 void DirectXCommon::CreateDepthStencilView()
 {
 
-	// DSVディスクリプタヒープとリソースの生成
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
 	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
@@ -336,18 +322,14 @@ void DirectXCommon::CreateDepthStencilView()
 void DirectXCommon::CreateDescriptorHeaps()
 {
 	//デスクリプタサイズを取得
-	// RTV
 	rtvDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	//DSV
 	dsvDescriptorSize_ = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
 
 
 	//ディスクリプタヒープの生成
-	//RTV
 	rtvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, kRtvHeapDescriptorNum_, false);
 
-	//DSV
 	dsvDescriptorHeap_ = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, kDsvHeapDescriptorNum_, false);
 }
 
@@ -397,7 +379,6 @@ void DirectXCommon::InitializeDxcCompiler()
 {
 	HRESULT hr;
 
-	// dxcCompilerの初期化
 	dxcUtils_ = nullptr;
 	dxcCompiler_ = nullptr;
 	hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils_));
@@ -475,7 +456,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateUAVBufferResource(si
 		&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc,
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, IID_PPV_ARGS(&resource));
 	assert(SUCCEEDED(hr));
-	if (FAILED(hr)) return nullptr;
+	if (FAILED(hr)) { return nullptr; }
 
 	return resource;
 }
@@ -702,7 +683,6 @@ void DirectXCommon::FlushTextureUploads()
 	ID3D12CommandList* commandLists[] = { uploadCommandList_.Get() };
 	commandQueue_->ExecuteCommandLists(1, commandLists);
 
-	// GPU完了を待つ
 	WaitForGPU();
 
 	// 中間リソースを解放
@@ -726,7 +706,6 @@ void DirectXCommon::CreateRenderTargetTextures()
         // リソース作成（初期状態は SRV 相当）
         renderTextures_[i] = CreateRenderTextureResource(device_.Get(), winApp_->kClientWidth, winApp_->kClientHeight, rtvFormat_, defaultClear);
 
-        // RTV ハンドルは swapchain 用 RTV スロットの後ろに配置（インデックス: kSwapChainBufferCount_ + i）
         uint32_t descriptorIndex = kSwapChainBufferCount_ + i;
         renderTextureRtvHandles_[i] = GetCPUDescriptorHandle(rtvDescriptorHeap_.Get(), descriptorSize, descriptorIndex);
 
@@ -735,10 +714,8 @@ void DirectXCommon::CreateRenderTargetTextures()
 }
 
 void DirectXCommon::SetupRenderTextureSRV(SrvManager* srvManager) {
-	// renderTextures_[0] の SRV を SrvManager に登録
 	renderTextureSrvIndex_ = srvManager->Allocate();
 
-	// SRV を作成
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
 	srvDesc.Format = rtvFormat_;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -751,7 +728,6 @@ void DirectXCommon::SetupRenderTextureSRV(SrvManager* srvManager) {
 		srvManager->GetCPUDescriptorHandle(renderTextureSrvIndex_)
 	);
 
-	// renderTextures_[1] の SRV も登録 (2パス用)
 	renderTextureSrvIndex1_ = srvManager->Allocate();
 	device_->CreateShaderResourceView(
 		renderTextures_[1].Get(),

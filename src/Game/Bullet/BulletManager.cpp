@@ -19,13 +19,13 @@ void BulletManager::Update(float dt) {
 }
 
 void BulletManager::Draw(Camera* camera) {
-	if (!camera) return;
+	if (!camera) { return; }
 
 	// 丸いパーティクル用テクスチャ
 	uint32_t texIndex = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/circle2.png");
 
 	for (const auto& bullet : bullets_) {
-		if (!bullet.IsAlive()) continue;
+		if (!bullet.IsAlive()) { continue; }
 
 		const Vector3* history = bullet.GetHistory();
 		int count = bullet.GetHistoryCount();
@@ -44,14 +44,14 @@ void BulletManager::Draw(Camera* camera) {
 void BulletManager::DrawTracerSegment(const Vector3& p1, const Vector3& p2, int segmentIndex, Camera* camera, uint32_t texIndex) {
 	Vector3 toP1 = Substract(p1, p2);
 	float length = Length(toP1);
-	if (length < 0.01f) return;
+	if (length < 0.01f) { return; }
 
 	Vector3 pos = Multiply(0.5f, Add(p1, p2));
 	Vector3 dir = Normalize(toP1);
 
 	Vector3 rotate = { 0.0f, 0.0f, 0.0f };
-	rotate.y = std::atan2(dir.x, dir.z); // Yaw
-	rotate.x = std::asin(-dir.y);        // Pitch
+	rotate.y = std::atan2(dir.x, dir.z);
+	rotate.x = std::asin(-dir.y);
 
 	// セグメントインデックスに応じた減衰（先端ほど太く明るく、後ろに行くほど細くフェード）
 	float widthFactor = 1.0f;

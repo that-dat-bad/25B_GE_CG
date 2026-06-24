@@ -23,12 +23,12 @@ void CollisionManager::CheckBulletEnemyCollisions(
 	std::vector<MyMath::Vector3>& outHitPositions
 ) {
 	for (auto& bullet : bullets) {
-		if (!bullet.IsAlive()) continue;
+		if (!bullet.IsAlive()) { continue; }
 
 		SphereCollider bulletCollider = bullet.GetCollider();
 
 		for (auto* enemy : enemies) {
-			if (!enemy->IsAlive()) continue;
+			if (!enemy->IsAlive()) { continue; }
 
 			SphereCollider enemyCollider;
 			enemyCollider.center = enemy->GetPosition();

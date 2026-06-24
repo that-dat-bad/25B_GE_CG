@@ -49,9 +49,9 @@ void Object3dCommon::Initialize(DirectXCommon* dxCommon)
 
 	lightingSettingsResource_ = DirectXCommon::GetInstance()->CreateBufferResource(sizeof(LightingSettings));
 	lightingSettingsResource_->Map(0, nullptr, reinterpret_cast<void**>(&lightingSettingsData));
-	lightingSettingsData->shadingModel = 0; // Lambert
-	lightingSettingsData->specularModel = 0; // None
-	lightingSettingsData->lightType = 0; // Directional
+	lightingSettingsData->shadingModel = 0;
+	lightingSettingsData->specularModel = 0;
+	lightingSettingsData->lightType = 0;
 	CreateRootSignature(dxCommon_);
 	CreateGraphicsPipeline(dxCommon_);
 }
@@ -71,7 +71,6 @@ void Object3dCommon::SetupCommonState()
 
 void Object3dCommon::CreateRootSignature(DirectXCommon* dxCommon)
 {
-	// RootSignature
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
 	descriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
@@ -84,32 +83,32 @@ void Object3dCommon::CreateRootSignature(DirectXCommon* dxCommon)
 	D3D12_ROOT_PARAMETER rootParameters[9] = {};
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[0].Descriptor.ShaderRegister = 0; // for Material (PS b0)
+	rootParameters[0].Descriptor.ShaderRegister = 0;
 	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL; // VS + GS both need TransformationMatrix
-	rootParameters[1].Descriptor.ShaderRegister = 1; // for WVP (ALL b1)
+	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootParameters[1].Descriptor.ShaderRegister = 1;
 	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;
 	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);
 	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[3].Descriptor.ShaderRegister = 2; // for DirectionalLight
+	rootParameters[3].Descriptor.ShaderRegister = 2;
 	rootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[4].Descriptor.ShaderRegister = 3; // for LightingSettings
+	rootParameters[4].Descriptor.ShaderRegister = 3;
 	rootParameters[5].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameters[5].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[5].Descriptor.ShaderRegister = 4; // for PointLight
+	rootParameters[5].Descriptor.ShaderRegister = 4;
 	rootParameters[6].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameters[6].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	rootParameters[6].Descriptor.ShaderRegister = 5; // for SpotLight
+	rootParameters[6].Descriptor.ShaderRegister = 5;
 	rootParameters[7].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameters[7].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // 頂点シェーダーで使う
 	rootParameters[7].Descriptor.ShaderRegister = 2;
 	
 	D3D12_DESCRIPTOR_RANGE envDescriptorRange[1] = {};
-	envDescriptorRange[0].BaseShaderRegister = 1; // t1 for TextureCube
+	envDescriptorRange[0].BaseShaderRegister = 1;
 	envDescriptorRange[0].NumDescriptors = 1;
 	envDescriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	envDescriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;

@@ -10,7 +10,6 @@
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
 	Dump::Install();
 
-	// Media Foundation 初期化
 	HRESULT hr = MFStartup(MF_VERSION, MFSTARTUP_NOSOCKET);
 	assert(SUCCEEDED(hr));
 

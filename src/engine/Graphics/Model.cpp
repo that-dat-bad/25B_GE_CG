@@ -24,9 +24,9 @@
 
 // 時間に合わせて「移動」を計算する
 Vector3 CalculateTranslate(const std::vector<Model::KeyframeVector3>& keys, float time) {
-	if (keys.empty()) return { 0,0,0 };
-	if (keys.size() == 1 || time <= keys.front().time) return keys.front().value;
-	if (time >= keys.back().time) return keys.back().value;
+	if (keys.empty()) { return { 0,0,0 }; }
+	if (keys.size() == 1 || time <= keys.front().time) { return keys.front().value; }
+	if (time >= keys.back().time) { return keys.back().value; }
 
 	for (size_t i = 0; i < keys.size() - 1; ++i) {
 		if (time >= keys[i].time && time <= keys[i + 1].time) {
@@ -39,9 +39,9 @@ Vector3 CalculateTranslate(const std::vector<Model::KeyframeVector3>& keys, floa
 
 // 時間に合わせて「回転」を計算する
 Quaternion CalculateRotate(const std::vector<Model::KeyframeQuaternion>& keys, float time) {
-	if (keys.empty()) return { 0,0,0,1 };
-	if (keys.size() == 1 || time <= keys.front().time) return keys.front().value;
-	if (time >= keys.back().time) return keys.back().value;
+	if (keys.empty()) { return { 0,0,0,1 }; }
+	if (keys.size() == 1 || time <= keys.front().time) { return keys.front().value; }
+	if (time >= keys.back().time) { return keys.back().value; }
 
 	for (size_t i = 0; i < keys.size() - 1; ++i) {
 		if (time >= keys[i].time && time <= keys[i + 1].time) {
@@ -54,9 +54,9 @@ Quaternion CalculateRotate(const std::vector<Model::KeyframeQuaternion>& keys, f
 
 // 時間に合わせて「拡縮」を計算する
 Vector3 CalculateScale(const std::vector<Model::KeyframeVector3>& keys, float time) {
-	if (keys.empty()) return { 1,1,1 };
-	if (keys.size() == 1 || time <= keys.front().time) return keys.front().value;
-	if (time >= keys.back().time) return keys.back().value;
+	if (keys.empty()) { return { 1,1,1 }; }
+	if (keys.size() == 1 || time <= keys.front().time) { return keys.front().value; }
+	if (time >= keys.back().time) { return keys.back().value; }
 
 	for (size_t i = 0; i < keys.size() - 1; ++i) {
 		if (time >= keys[i].time && time <= keys[i + 1].time) {
@@ -88,7 +88,6 @@ void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypat
 
 	vertexBuffer_ = dxCommon->CreateBufferResource(sizeof(VertexData) * modelData_.vertices.size());
 
-	// VertexBufferViewの作成
 	vertexBufferView_.BufferLocation = vertexBuffer_->GetGPUVirtualAddress();
 	vertexBufferView_.SizeInBytes = UINT(sizeof(VertexData) * modelData_.vertices.size());
 	vertexBufferView_.StrideInBytes = sizeof(VertexData);
@@ -142,7 +141,7 @@ void Model::Initialize(ModelCommon* modelCommon, const std::string& directorypat
 }
 
 void Model::Draw() {
-	if (modelData_.vertices.empty()) return;
+	if (modelData_.vertices.empty()) { return; }
 
 	// コマンドリストの取得
 	ID3D12GraphicsCommandList* commandList = modelCommon_->GetDirectXCommon()->GetCommandList();
@@ -176,7 +175,7 @@ void Model::Draw() {
 Model::Node ReadNode(aiNode* node) {
 	Model::Node result;
 	aiMatrix4x4 aiLocalMatrix = node->mTransformation;
-	aiLocalMatrix.Transpose(); // Row-major conversion
+	aiLocalMatrix.Transpose();
 
 	for (int i = 0; i < 4; ++i) {
 		for (int j = 0; j < 4; ++j) {
@@ -212,7 +211,6 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 		return modelData;
 	}
 
-	// Mesh Analysis
 	std::function<void(aiNode*, const aiMatrix4x4&)> processNode = [&](aiNode* node, const aiMatrix4x4& parentTransform) {
 		// 行列の掛け合わせの順序は (ローカル * 親)
 		aiMatrix4x4 globalTransform = node->mTransformation * parentTransform;
@@ -222,7 +220,6 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 			bool hasNormals = mesh->HasNormals();
 			bool hasTexCoords = mesh->HasTextureCoords(0);
 
-			// Assimpの頂点番号ごとに (ボーンのインデックス, ウェイト値) を保存するリスト
 			std::vector<std::vector<std::pair<uint32_t, float>>> vertexWeightMap(mesh->mNumVertices);
 
 			if (mesh->HasBones()) {
@@ -265,8 +262,6 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 			for (uint32_t vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex) {
 				aiVector3D position = mesh->mVertices[vertexIndex];
 
-				// Apply absolute node transformation
-				//position *= globalTransform;
 
 				VertexData vertex;
 				vertex.position = { position.x, position.y, position.z, 1.0f };
@@ -274,7 +269,6 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 				if (hasNormals) {
 					aiVector3D normal = mesh->mNormals[vertexIndex];
 					aiMatrix3x3 normalMatrix = aiMatrix3x3(globalTransform);
-					//normal *= normalMatrix;
 					normal.Normalize();
 					vertex.normal = { normal.x, normal.y, normal.z };
 				} else {
@@ -288,7 +282,6 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 					vertex.texcoord = { 0.0f, 0.0f };
 				}
 
-				// RH -> LH
 				vertex.position.x *= -1.0f;
 				vertex.normal.x *= -1.0f;
 
@@ -301,7 +294,7 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 
 				auto& weights = vertexWeightMap[vertexIndex];
 				for (size_t w = 0; w < weights.size(); ++w) {
-					if (w >= 4) break; // 最大4つまで
+					if (w >= 4) { break; }
 
 					if (w == 0) { vertex.weight.x = weights[w].second; vertex.indices[0] = weights[w].first; } else if (w == 1) { vertex.weight.y = weights[w].second; vertex.indices[1] = weights[w].first; } else if (w == 2) { vertex.weight.z = weights[w].second; vertex.indices[2] = weights[w].first; } else if (w == 3) { vertex.weight.w = weights[w].second; vertex.indices[3] = weights[w].first; }
 				}
@@ -329,7 +322,6 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 	aiMatrix4x4 identity;
 	processNode(scene->mRootNode, identity);
 
-	// Log bounding box to see if it's too small/big
 	if (!modelData.vertices.empty()) {
 		float minX = modelData.vertices[0].position.x;
 		float maxX = minX;
@@ -338,12 +330,12 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 		float minZ = modelData.vertices[0].position.z;
 		float maxZ = minZ;
 		for (const auto& v : modelData.vertices) {
-			if (v.position.x < minX) minX = v.position.x;
-			if (v.position.x > maxX) maxX = v.position.x;
-			if (v.position.y < minY) minY = v.position.y;
-			if (v.position.y > maxY) maxY = v.position.y;
-			if (v.position.z < minZ) minZ = v.position.z;
-			if (v.position.z > maxZ) maxZ = v.position.z;
+			if (v.position.x < minX) { minX = v.position.x; }
+			if (v.position.x > maxX) { maxX = v.position.x; }
+			if (v.position.y < minY) { minY = v.position.y; }
+			if (v.position.y > maxY) { maxY = v.position.y; }
+			if (v.position.z < minZ) { minZ = v.position.z; }
+			if (v.position.z > maxZ) { maxZ = v.position.z; }
 		}
 		char buf[256];
 		sprintf_s(buf, "[Model.cpp] Bound Box for %s: X[%.3f, %.3f], Y[%.3f, %.3f], Z[%.3f, %.3f], Verts:%zu\n",
@@ -357,7 +349,6 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 		baseDirectory = filePath.substr(0, pos);
 	}
 
-	// Material Analysis
 	if (scene->HasMaterials()) {
 		// 最初のメッシュが使用しているマテリアルを取得する
 		aiMaterial* material = nullptr;
@@ -373,7 +364,6 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 			aiString textureFilePath;
 			material->GetTexture(aiTextureType_DIFFUSE, 0, &textureFilePath);
 
-			// ★ 追加: 埋め込みテクスチャかどうかの判定 (先頭が '*' なら埋め込み)
 			if (textureFilePath.C_Str()[0] == '*') {
 				// "*0" のような文字列から数値インデックスを取得
 				uint32_t textureIndex = static_cast<uint32_t>(std::stoi(textureFilePath.C_Str() + 1));
@@ -384,7 +374,6 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 					// テクスチャに一意の識別子(名前)をつける (例: "Duck.glb_tex0")
 					std::string embeddedTexName = absolutePath + "_tex" + std::to_string(textureIndex);
 
-					// Assimpでは圧縮画像(PNG等)が埋め込まれている場合、mHeightが0になり、mWidthにデータサイズが入る
 					if (embeddedTexture->mHeight == 0) {
 						// 1. ここでメモリから直接テクスチャを作ってVRAMに送る！
 						TextureManager::GetInstance()->LoadTextureFromMemory(
@@ -426,7 +415,6 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 		if (AI_SUCCESS == material->Get(AI_MATKEY_BASE_COLOR, color)) {
 			modelData.material.baseColor = { color.r, color.g, color.b, color.a };
 		} else if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_DIFFUSE, color)) {
-			// glTF以外の形式(objなど)へのフォールバック
 			modelData.material.baseColor = { color.r, color.g, color.b, color.a };
 		}
 
@@ -438,22 +426,20 @@ Model::ModelData Model::LoadModelFile(const std::string& directoryPath, const st
 			} else {
 				// 粗さが低い(ツルツル)ほどShininessを高くする変換
 				modelData.material.shininess = 2.0f / powf(roughness, 4.0f) - 2.0f;
-				if (modelData.material.shininess < 1.0f) modelData.material.shininess = 1.0f;
-				if (modelData.material.shininess > 256.0f) modelData.material.shininess = 256.0f;
+				if (modelData.material.shininess < 1.0f) { modelData.material.shininess = 1.0f; }
+				if (modelData.material.shininess > 256.0f) { modelData.material.shininess = 256.0f; }
 			}
 		} else {
-			// OBJ形式のNs値（Shininess直値）へのフォールバック
 			float shininess = 0.0f;
 			if (AI_SUCCESS == material->Get(AI_MATKEY_SHININESS, shininess)) {
-				if (shininess < 1.0f) shininess = 1.0f;
-				if (shininess > 256.0f) shininess = 256.0f;
+				if (shininess < 1.0f) { shininess = 1.0f; }
+				if (shininess > 256.0f) { shininess = 256.0f; }
 				modelData.material.shininess = shininess;
 			}
 		}
 	}
 
 
-	// Read Node Hierarchy
 	modelData.rootNode = ReadNode(scene->mRootNode);
 
 	return modelData;
@@ -475,7 +461,7 @@ Model::Animation Model::LoadAnimationFile(const std::string& directoryPath, cons
 		errorOut += importer.GetErrorString();
 		errorOut += "\nFailed to load: " + absolutePath;
 		MessageBoxA(nullptr, errorOut.c_str(), "Animation Load Error", MB_OK | MB_ICONERROR);
-		return animation; // Return empty
+		return animation;
 	}
 
 	aiAnimation* aiAnimation = nullptr;
@@ -507,7 +493,6 @@ Model::Animation Model::LoadAnimationFile(const std::string& directoryPath, cons
 			aiVectorKey& key = nodeAnim->mPositionKeys[keyframeIndex];
 			KeyframeVector3 keyframe;
 			keyframe.time = float(key.mTime) / ticksPerSecond;
-			// RH -> LH (Flip X)
 			keyframe.value = { float(key.mValue.x), float(key.mValue.y), float(key.mValue.z) };
 			nodeAnimation.translate.push_back(keyframe);
 		}
@@ -516,7 +501,6 @@ Model::Animation Model::LoadAnimationFile(const std::string& directoryPath, cons
 			aiQuatKey& key = nodeAnim->mRotationKeys[keyframeIndex];
 			KeyframeQuaternion keyframe;
 			keyframe.time = float(key.mTime) / ticksPerSecond;
-			// RH -> LH for Quaternion when flipping X axis: x = x, y = -y, z = -z, w = w.
 			keyframe.value = { float(key.mValue.x), float(key.mValue.y), float(key.mValue.z), float(key.mValue.w) };
 			nodeAnimation.rotate.push_back(keyframe);
 		}
@@ -561,7 +545,7 @@ void Model::PlayAnimation(Animation* animation) {
 }
 
 void Model::Update(float deltaTime) {
-	if (!playingAnimation_) return;
+	if (!playingAnimation_) { return; }
 
 	// 1. 時間を進める
 	animationTime_ += deltaTime;
@@ -603,7 +587,7 @@ void Model::UpdateNodeAnimation(const Node& node, const Matrix4x4& parentMatrix)
 }
 
 void Model::DebugDrawSkeleton(const Matrix4x4& objectWorldMatrix, Camera* camera, const Vector4& color) {
-	if (modelData_.rootNode.children.empty()) return;
+	if (modelData_.rootNode.children.empty()) { return; }
 	// ルートノードから再帰的に描画
 	DebugDrawNodeSkeleton(modelData_.rootNode, Identity4x4(), objectWorldMatrix, camera, color);
 }
@@ -643,4 +627,4 @@ void Model::DebugDrawNodeSkeleton(const Node& node, const Matrix4x4& parentMatri
 	for (const auto& child : node.children) {
 		DebugDrawNodeSkeleton(child, globalMatrix, objectWorldMatrix, camera, color);
 	}
-}
+}

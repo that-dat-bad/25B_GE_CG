@@ -115,9 +115,8 @@ void Skybox::CreateBox() {
 }
 
 void Skybox::Update() {
-	if (!camera_) return;
+	if (!camera_) { return; }
 
-	// Skyboxはカメラの位置に追従する（常にカメラを中心に描画）
 	transform_.translate = camera_->GetTranslate();
 
 	Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);

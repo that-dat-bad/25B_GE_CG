@@ -39,9 +39,9 @@ struct SpotLight {
 };
 
 struct LightingSettings {
-	int32_t shadingModel; // 0: Lambert, 1: Half-Lambert
-	int32_t specularModel; // 0: None, 1: Phong, 2: Blinn-Phong
-	int32_t lightType; // 0: Directional, 1: Point, 2: Both
+	int32_t shadingModel;
+	int32_t specularModel;
+	int32_t lightType;
 	float padding;
 	Vector3 cameraPosition;
 	float padding2;

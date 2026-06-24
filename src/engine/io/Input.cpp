@@ -52,7 +52,6 @@ void Input::Initialize(HINSTANCE hInstance,HWND hwnd)
 	mouse_->SetCooperativeLevel(hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
 	assert(SUCCEEDED(result));
 
-	// HWND を保存（カーソルロック用）
 	hwnd_ = hwnd;
 }
 
@@ -129,7 +128,6 @@ void Input::LockCursor()
 {
 	if (!cursorLocked_) {
 		cursorLocked_ = true;
-		// ShowCursor は内部カウンタ方式: 負で非表示
 		while (::ShowCursor(FALSE) >= 0) {}
 	}
 }

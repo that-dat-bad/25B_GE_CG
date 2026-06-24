@@ -40,7 +40,6 @@ void GunPod::Fire() {
 	// クールダウンを発射間隔分セット
 	cooldownTimer_ = fireInterval_;
 
-	// TODO: 弾丸エンティティの生成や発射エフェクトの呼び出しをここに追加
 }
 
 float GunPod::GetWeight() const {
