@@ -12,6 +12,8 @@
 #include "../../../external/DirectXTex/d3dx12.h"
 #include"../Graphics/SrvManager.h"
 #include "PostProcess/PostEffect.h"
+#include <filesystem>
+#include <fstream>
 
 using namespace logger;
 using namespace StringUtility;
@@ -485,6 +487,32 @@ D3D12_GPU_DESCRIPTOR_HANDLE DirectXCommon::GetGPUDescriptorHandle(ID3D12Descript
 
 
 Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring& filePath, const wchar_t* profile) {
+	std::filesystem::path hlslPath = filePath;
+	std::filesystem::path csoPath = hlslPath.parent_path() / "compiled";
+	if (!std::filesystem::exists(csoPath)) {
+		std::filesystem::create_directories(csoPath);
+	}
+	csoPath /= hlslPath.filename();
+	csoPath.replace_extension(".cso");
+
+	bool needsCompile = true;
+	if (std::filesystem::exists(csoPath)) {
+		auto hlslTime = std::filesystem::last_write_time(hlslPath);
+		auto csoTime = std::filesystem::last_write_time(csoPath);
+		if (csoTime >= hlslTime) {
+			needsCompile = false;
+		}
+	}
+
+	if (!needsCompile) {
+		Log(ConvertString(std::format(L"Load Cached Shader, Path :{}\n", csoPath.wstring())));
+		Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderBlob = nullptr;
+		HRESULT hr = dxcUtils_->LoadFile(csoPath.c_str(), nullptr, &shaderBlob);
+		if (SUCCEEDED(hr)) {
+			return shaderBlob;
+		}
+	}
+
 	Log(ConvertString(std::format(L"Begin CompileShader, Path :{}, profile : {}\n", filePath, profile)));
 	Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource = nullptr;
 	HRESULT hr = dxcUtils_->LoadFile(filePath.c_str(), nullptr, &shaderSource);
@@ -523,9 +551,14 @@ Microsoft::WRL::ComPtr<IDxcBlob> DirectXCommon::CompileShader(const std::wstring
 	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
 	assert(SUCCEEDED(hr));
 
+	std::ofstream out(csoPath, std::ios::binary);
+	if (out.is_open()) {
+		out.write(reinterpret_cast<const char*>(shaderBlob->GetBufferPointer()), shaderBlob->GetBufferSize());
+	}
+
 	Log(ConvertString(std::format(L"Compile Succeeded, Path :{}, profile : {}\n", filePath, profile)));
 	return shaderBlob;
-};
+}
 
 Microsoft::WRL::ComPtr<ID3D12Resource> DirectXCommon::CreateBufferResource(size_t sizeInBytes) {
 	D3D12_HEAP_PROPERTIES heapProperties = {};
