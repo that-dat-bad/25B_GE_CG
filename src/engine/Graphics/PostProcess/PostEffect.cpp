@@ -218,10 +218,9 @@ void PostEffect::LoadDissolveMasks() {
 }
 
 void PostEffect::CreateGraphicsPipelines() {
-	// 共通の頂点シェーダー（フルスクリーン三角形）
 	Microsoft::WRL::ComPtr<IDxcBlob> vsBlob = dxCommon_->CompileShader(L"./assets/shaders/FullScreen.VS.hlsl", L"vs_6_0");
 
-	// エフェクトごとのピクセルシェーダー
+	// ピクセルシェーダーのコンパイル（各種エフェクト）
 	Microsoft::WRL::ComPtr<IDxcBlob> psNone = dxCommon_->CompileShader(L"./assets/shaders/CopyImage.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psGray = dxCommon_->CompileShader(L"./assets/shaders/GrayScale.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psVignette = dxCommon_->CompileShader(L"./assets/shaders/Vignette.PS.hlsl", L"ps_6_0");
