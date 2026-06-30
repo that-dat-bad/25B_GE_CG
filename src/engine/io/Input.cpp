@@ -59,6 +59,7 @@ void Input::Update()
 {
 	//キー入力を保存
 	memcpy(preKeys_, keys_, sizeof(keys_));
+	memcpy(&preMouseState_, &mouseState_, sizeof(mouseState_));
 
 	// 入力取得
 	keyboard_->Acquire();
@@ -91,6 +92,15 @@ Input::MouseMove Input::GetMouseMove() {
 bool Input::PushMouse(int buttonNumber)
 {
 	if (mouseState_.rgbButtons[buttonNumber])
+	{
+		return true;
+	}
+	return false;
+}
+
+bool Input::TriggerMouse(int buttonNumber)
+{
+	if (!preMouseState_.rgbButtons[buttonNumber] && mouseState_.rgbButtons[buttonNumber])
 	{
 		return true;
 	}

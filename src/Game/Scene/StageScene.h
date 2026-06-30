@@ -46,6 +46,8 @@ private:
 	float cameraHeight_   = 5.0f;    // 機体の上方向オフセット
 	float cameraPosLag_   = 5.0f;    // 位置の追従速度（大きいほど速い）
 	float cameraLookLag_  = 10.0f;   // 注視点の追従速度
+	float currentFov_     = 0.45f;   // 現在のFOV
+	bool isZoomed_        = false;   // ズーム状態（トグル）
 
 	// カメラ更新
 	void UpdateChaseCamera(float dt);

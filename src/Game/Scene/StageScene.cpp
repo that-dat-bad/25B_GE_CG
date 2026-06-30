@@ -1111,14 +1111,33 @@ void StageScene::UpdateChaseCamera(float dt) {
 	// 通常の追従カメラ
 	// ============================
 
+	Vector3 viewDir = forward;
+	Vector3 cameraUp = up;
+
+	if (mouseAimEnabled_) {
+		// マウスエイム中は、カメラが目標方向（レティクル）を追従するようにする
+		// これによりレティクルが画面外に消えるのを防ぐ (War Thunder風)
+		viewDir = mouseAimController_.GetTargetDirection();
+		
+		// カメラのアップベクトルは、水平を基本としつつ機体のロールも少し混ぜることで、
+		// プレイヤーが酔いにくく、かつ機体の傾きを感じられるようにする
+		Vector3 worldUp = {0.0f, 1.0f, 0.0f};
+		// viewDir が真上や真下を向いている時のジンバルロックを簡易的に防ぐ
+		if (std::fabs(viewDir.y) > 0.95f) {
+			worldUp = up;
+		}
+		cameraUp = Normalize(Lerp(worldUp, up, 0.3f));
+	}
+
 	// --- 理想的なカメラ位置を計算 ---
-	// 機体のローカル後方（-forward）× 距離 + ローカル上方 × 高さ
-	Vector3 backOffset = Multiply(-cameraDistance_, forward);
-	Vector3 upOffset = Multiply(cameraHeight_, up);
+	// viewDir の後方 × 距離 + ローカル上方 × 高さ
+	Vector3 backOffset = Multiply(-cameraDistance_, viewDir);
+	Vector3 upOffset = Multiply(cameraHeight_, cameraUp);
 	Vector3 desiredPos = Add(aircraftPos, Add(backOffset, upOffset));
 
-	// --- 注視点は機体の少し前方 ---
-	Vector3 desiredLookTarget = Add(aircraftPos, Multiply(5.0f, forward));
+	// --- 注視点は少し前方 ---
+	// 注視点を遠くに取ることで、カメラの回転が安定する
+	Vector3 desiredLookTarget = Add(aircraftPos, Multiply(20.0f, viewDir));
 
 	// --- 滑らかに補間（Exponential Smoothing） ---
 	float posT = 1.0f - std::exp(-cameraPosLag_ * dt);
@@ -1139,6 +1158,18 @@ void StageScene::UpdateChaseCamera(float dt) {
 	if (camera) {
 		camera->SetTranslate(cameraCurrentPos_);
 		camera->SetRotate(cameraRotation);
+
+		// --- ズーム（右クリックトグル） ---
+		if (Input::GetInstance()->TriggerMouse(1)) {
+			isZoomed_ = !isZoomed_;
+		}
+		
+		float targetFov = isZoomed_ ? 0.20f : 0.45f;
+		
+		// FOVを滑らかに補間
+		float fovT = 1.0f - std::exp(-15.0f * dt);
+		currentFov_ += (targetFov - currentFov_) * fovT;
+		camera->SetFovY(currentFov_);
 
 		// ライティング用カメラ位置更新
 		Object3dCommon::GetInstance()->SetCameraPosition(cameraCurrentPos_);

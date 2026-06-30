@@ -33,6 +33,7 @@ public:
 	};
 	MouseMove GetMouseMove();
 	bool PushMouse(int buttonNumber);
+	bool TriggerMouse(int buttonNumber);
 
 	// スクリーン座標でのマウス位置取得（クライアント領域基準）
 	struct MousePosition {
@@ -54,6 +55,7 @@ private:
 	BYTE keys_[256] = {};
 	BYTE preKeys_[256] = {};
 	DIMOUSESTATE2 mouseState_ = {};
+	DIMOUSESTATE2 preMouseState_ = {};
 
 	HWND hwnd_ = nullptr;           // ウィンドウハンドル（カーソル制御用）
 	bool cursorLocked_ = false;     // カーソルロック状態
