@@ -355,6 +355,18 @@ void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderText
 
 		commandList->DrawInstanced(3, 1, 0, 0);
 	}
+	else if (currentEffect_ == PostEffectType::kRadialBlur) {
+		commandList->SetGraphicsRootDescriptorTable(0, srvManager_->GetGPUDescriptorHandle(renderTextureSrvIndex));
+
+		PostEffectParams* param0 = reinterpret_cast<PostEffectParams*>(reinterpret_cast<uint8_t*>(mappedPostEffectParams_) + 0);
+		param0->kernelSize = kernelSize_;
+		param0->intensity = intensity_;
+		param0->dirX = dirX_;
+		param0->dirY = dirY_;
+		commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress());
+
+		commandList->DrawInstanced(3, 1, 0, 0);
+	}
 	else {
 		// 通常の1パス描画
 		commandList->SetGraphicsRootDescriptorTable(0, srvManager_->GetGPUDescriptorHandle(renderTextureSrvIndex));
