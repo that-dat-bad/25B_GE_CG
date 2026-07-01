@@ -195,18 +195,14 @@ float FlightModel::CalculateAoA() const
 
 	MyMath::Vector3 velDir = MyMath::Normalize(velocity_);
 	MyMath::Vector3 forward = GetForwardDirection();
-
-	float dot = MyMath::Dot(forward, velDir);
-	dot = std::clamp(dot, -1.0f, 1.0f);
-	float angle = std::acos(dot);
-
-	// 符号判定: 機体の上方向と速度の関係
 	MyMath::Vector3 up = GetUpDirection();
-	if (MyMath::Dot(up, velDir) > 0.0f) {
-		angle = -angle; // 機首下げ方向は負
-	}
 
-	return angle;
+	float localForwardVel = MyMath::Dot(velDir, forward);
+	float localUpVel = MyMath::Dot(velDir, up);
+
+	// ピッチ方向の迎え角を計算
+	// 速度ベクトルが機体の下側(localUpVel < 0)にある場合、正の迎え角となる
+	return std::atan2(-localUpVel, localForwardVel);
 }
 
 
@@ -215,23 +211,32 @@ float FlightModel::CalculateAoA() const
 // ===========================================================
 float FlightModel::CalculateLiftCoefficient(float aoa) const
 {
-	float absAoA = std::fabs(aoa);
 	float criticalAoA = airframe_.GetCriticalAoA();
 	float maxCL = airframe_.GetMaxLiftCoefficient();
 	float stallCL = airframe_.GetStallLiftCoefficient();
+	float baseCL = airframe_.GetLiftCoefficient(); // 迎え角0での揚力係数（キャンバー翼）
 
-	float cl;
-	if (absAoA <= criticalAoA) {
-		// 臨界角以下: AoAに比例して揚力係数が増加
-		cl = maxCL * (absAoA / criticalAoA);
+	float cl = 0.0f;
+	if (aoa >= 0.0f) {
+		if (aoa <= criticalAoA) {
+			cl = baseCL + (maxCL - baseCL) * (aoa / criticalAoA);
+		} else {
+			float overStallRatio = (aoa - criticalAoA) / criticalAoA;
+			overStallRatio = (std::min)(overStallRatio, 1.0f);
+			cl = maxCL - (maxCL - stallCL) * overStallRatio;
+		}
 	} else {
-		// 失速域: 臨界角を超えると急激に低下
-		float overStallRatio = (absAoA - criticalAoA) / criticalAoA;
-		overStallRatio = (std::min)(overStallRatio, 1.0f);
-		cl = maxCL - (maxCL - stallCL) * overStallRatio;
+		// 負の迎え角（背面飛行や機首下げ）
+		float absAoA = -aoa;
+		if (absAoA <= criticalAoA) {
+			// baseCLから始まり、負方向の最大値(-maxCL)へ向かう
+			cl = baseCL - (maxCL + baseCL) * (absAoA / criticalAoA);
+		} else {
+			float overStallRatio = (absAoA - criticalAoA) / criticalAoA;
+			overStallRatio = (std::min)(overStallRatio, 1.0f);
+			cl = -maxCL + (maxCL - stallCL) * overStallRatio;
+		}
 	}
-
-	if (aoa < 0.0f) { cl = -cl; }
 
 	return cl;
 }
@@ -334,6 +339,14 @@ MyMath::Vector3 FlightModel::CalculateTotalForce(float deltaTime)
 		MyMath::Vector3 velDir = MyMath::Normalize(velocity_);
 		MyMath::Vector3 parasiteDrag = MyMath::Multiply(-parasiteDragMag, velDir);
 		totalForce = MyMath::Add(totalForce, parasiteDrag);
+
+		// --- 6. 横滑り抵抗（垂直尾翼による抗力 / 風見鶏効果の力の成分） ---
+		MyMath::Vector3 right = GetRightDirection();
+		float sideVel = MyMath::Dot(velocity_, right);
+		// 横滑り速度に対する強力な抵抗をかける（垂直尾翼の面積を翼面積の約0.2倍と仮定し、高い抗力係数を掛ける）
+		float sideDragMag = dynamicPressure * wingArea * 0.2f * (sideVel / speed) * 5.0f;
+		MyMath::Vector3 sideForce = MyMath::Multiply(-sideDragMag, right);
+		totalForce = MyMath::Add(totalForce, sideForce);
 	}
 
 	return totalForce;

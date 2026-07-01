@@ -42,8 +42,8 @@ private:
 	MyMath::Vector3 cameraLookTarget_;   // カメラの注視点（補間済み）
 
 	// カメラパラメータ
-	float cameraDistance_  = 20.0f;   // 機体からの距離
-	float cameraHeight_   = 5.0f;    // 機体の上方向オフセット
+	float cameraDistance_  = 22.0f;   // 機体からの距離
+	float cameraHeight_   = 8.0f;    // 機体の上方向オフセット
 	float cameraPosLag_   = 5.0f;    // 位置の追従速度（大きいほど速い）
 	float cameraLookLag_  = 10.0f;   // 注視点の追従速度
 	float currentFov_     = 0.45f;   // 現在のFOV

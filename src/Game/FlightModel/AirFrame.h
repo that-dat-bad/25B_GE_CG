@@ -117,35 +117,35 @@ public:
 
 private:
 	// --- 物理スペック（不変データ） ---
-	float emptyFrameMass_;      // 骨組みのみの空虚重量 (kg)
-	float maxInternalFuel_;     // 内蔵燃料の最大容量 (kg)
-	float baseDrag_;            // 基本空気抵抗係数
-	float liftCoefficient_;     // 揚力係数
-	float wingArea_;            // 翼面積 (m^2)
-	float maxHealth_;           // 最大耐久値
-	float centerOfGravityZ_;    // 重心位置
+	float emptyFrameMass_ = 0.0f;      // 骨組みのみの空虚重量 (kg)
+	float maxInternalFuel_ = 0.0f;     // 内蔵燃料の最大容量 (kg)
+	float baseDrag_ = 0.0f;            // 基本空気抵抗係数
+	float liftCoefficient_ = 0.0f;     // 揚力係数
+	float wingArea_ = 0.0f;            // 翼面積 (m^2)
+	float maxHealth_ = 0.0f;           // 最大耐久値
+	float centerOfGravityZ_ = 0.0f;    // 重心位置
 
 	// 揚力・失速
-	float criticalAoA_;
-	float maxLiftCoefficient_;
-	float stallLiftCoefficient_;
+	float criticalAoA_ = 0.0f;
+	float maxLiftCoefficient_ = 0.0f;
+	float stallLiftCoefficient_ = 0.0f;
 
 	// 誘導抵抗
-	float aspectRatio_;
-	float oswaldEfficiency_;
+	float aspectRatio_ = 0.0f;
+	float oswaldEfficiency_ = 0.0f;
 
-	float positiveGLimit_;
-	float negativeGLimit_;
+	float positiveGLimit_ = 0.0f;
+	float negativeGLimit_ = 0.0f;
 
 	// フラップ
-	float flapLiftBonus_;
-	float flapDragBonus_;
-	float flapMaxSpeed_;
-	float flapDeploySpeed_;
+	float flapLiftBonus_ = 0.0f;
+	float flapDragBonus_ = 0.0f;
+	float flapMaxSpeed_ = 0.0f;
+	float flapDeploySpeed_ = 0.0f;
 
 	// エアブレーキ
-	float airBrakeDragBonus_;
-	float airBrakeDeploySpeed_;
+	float airBrakeDragBonus_ = 0.0f;
+	float airBrakeDeploySpeed_ = 0.0f;
 
 	// --- 現在の状態（変動データ） ---
 	float currentInternalFuel_; // 現在の内蔵燃料 (kg)

@@ -33,7 +33,7 @@ void StageScene::Initialize() {
 	airframeData.emptyFrameMass = 3000.0f;   // 3トン
 	airframeData.maxInternalFuel = 800.0f;
 	airframeData.baseDrag = 0.02f;            // 基本空気抵抗
-	airframeData.liftCoefficient = 0.2f;      // 揚力係数
+	airframeData.liftCoefficient = 0.4f;      // 迎え角0時の揚力係数（キャンバー翼）
 	airframeData.wingArea = 40.0f;            // 翼面積 20m^2
 	airframeData.maxHealth = 100.0f;          // 耐久値
 	// 揚力・失速
@@ -56,7 +56,7 @@ void StageScene::Initialize() {
 
 	EngineData engineData{};
 	engineData.mass = 500.0f;                 // エンジン 500kg
-	engineData.baseThrust = 300000.0f;         // 推力 300kN (テスト用に大幅に引き上げ)
+	engineData.baseThrust = 80000.0f;         // 推力 80kN
 	engineData.normalThrottleLimit = 1.0f;
 	engineData.wepThrottleLimit = 1.1f;       // WEPで110%
 	engineData.physicalSpoolSpeed = 0.5f;     // スプール速度
@@ -165,18 +165,25 @@ void StageScene::Initialize() {
 	gunpodData.fireRate = 25.0f;  // 秒間25発（レートアップ）
 	gunpod_.Initialize(gunpodData);
 
-	// 敵の配置（ミッション01仕様）
-	std::vector<EnemySpawnData> mission01Enemies = {
-		{ {  100.0f, 0.0f,  200.0f }, "models/sphere.obj", 50.0f },
-		{ {  -80.0f, 0.0f,  300.0f }, "models/sphere.obj", 50.0f },
-		{ {  200.0f, 0.0f,  450.0f }, "models/sphere.obj", 50.0f },
-		{ { -150.0f, 0.0f,  500.0f }, "models/sphere.obj", 50.0f },
-		{ {   50.0f, 0.0f,  700.0f }, "models/sphere.obj", 50.0f },
-	};
-	enemyManager_.Initialize(mission01Enemies);
-
 	// 弾丸マネージャー初期化
 	bulletManager_.Initialize(512);
+
+	// 敵の配置（ミッション01仕様）
+	std::vector<EnemySpawnData> mission01Enemies = {
+		{ {  100.0f, 100.0f,  200.0f }, "Resources/planeplane.obj", 50.0f },
+		{ {  -80.0f, 100.0f,  300.0f }, "Resources/planeplane.obj", 50.0f },
+		{ {  200.0f, 100.0f,  450.0f }, "Resources/planeplane.obj", 50.0f },
+		{ { -150.0f, 100.0f,  500.0f }, "Resources/planeplane.obj", 50.0f },
+		{ {   50.0f, 100.0f,  700.0f }, "Resources/planeplane.obj", 50.0f },
+	};
+	enemyManager_.Initialize(
+		mission01Enemies,
+		airframeData,
+		engineData,
+		gunpodData,
+		&flightModel_,
+		&bulletManager_
+	);
 
 	// エフェクトマネージャー初期化
 	EffectManager::GetInstance()->Initialize();
@@ -279,28 +286,53 @@ void StageScene::Update() {
 	                       std::fabs(manualRoll) > 0.01f ||
 	                       std::fabs(manualYaw) > 0.01f);
 
+	// フリーカメラ時、マウスエイムの目標が画面外（カメラの向いている方向から外れている）場合は
+	// マウスエイムによる追従を一時停止し、機体がそちらに向かわないようにする
+	bool pauseMouseAim = false;
+	if (mouseAimEnabled_ && freeViewActive_) {
+		Camera* cam = CameraManager::GetInstance()->GetActiveCamera();
+		if (cam) {
+			const Matrix4x4& mat = cam->GetWorldMatrix();
+			Vector3 camForward = { mat.m[2][0], mat.m[2][1], mat.m[2][2] };
+			Vector3 targetDir = mouseAimController_.GetTargetDirection();
+			
+			// 視界（カメラ前方）から一定以上外れているか判定（約36度: cos 0.8）
+			if (MyMath::Dot(camForward, targetDir) < 0.8f) {
+				pauseMouseAim = true;
+			}
+		}
+	}
+
 	// --- 操舵入力の決定 ---
 	float finalPitch = 0.0f;
 	float finalRoll = 0.0f;
 	float finalYaw = 0.0f;
 
-	if (mouseAimEnabled_ && !hasManualInput) {
-		// === マウスエイムモード ===
-		// カーソルロック中のみマウス入力で目標方向を更新
-		// ※自由視点カメラ中はマウス操舵を抑制
-		if (input->IsCursorLocked() && !freeViewActive_) {
-			Input::MouseMove mouseMove = input->GetMouseMove();
-			Camera* cam = CameraManager::GetInstance()->GetActiveCamera();
-			if (cam) {
-				const Matrix4x4& mat = cam->GetWorldMatrix();
-				Vector3 camRight = { mat.m[0][0], mat.m[0][1], mat.m[0][2] };
-				Vector3 camUp = { mat.m[1][0], mat.m[1][1], mat.m[1][2] };
-				mouseAimController_.UpdateTargetDirection(mouseMove.lX, mouseMove.lY, camRight, camUp);
-			}
+	// --- マウス入力による目標方向の更新 ---
+	// カーソルロック中かつ自由視点カメラ(Cキー)でない場合のみ、マウスで目標方向を更新する
+	// ※WASD操作中でもマウスエイム目標の更新は止めない（置いてけぼりになるのを防ぐため）
+	if (mouseAimEnabled_ && input->IsCursorLocked() && !freeViewActive_) {
+		Input::MouseMove mouseMove = input->GetMouseMove();
+		Camera* cam = CameraManager::GetInstance()->GetActiveCamera();
+		if (cam) {
+			const Matrix4x4& mat = cam->GetWorldMatrix();
+			Vector3 camRight = { mat.m[0][0], mat.m[0][1], mat.m[0][2] };
+			Vector3 camUp = { mat.m[1][0], mat.m[1][1], mat.m[1][2] };
+			mouseAimController_.UpdateTargetDirection(mouseMove.lX, mouseMove.lY, camRight, camUp);
 		}
+	}
 
+	// 失速して機首が強制的に落ちている間は、エイム目標が空に取り残されないよう
+	// 機首の方向へ徐々に引き戻す（ドラッグする）
+	if (mouseAimEnabled_ && flightModel_.IsStalling()) {
+		Vector3 currentTarget = mouseAimController_.GetTargetDirection();
+		Vector3 forward = flightModel_.GetForwardDirection();
+		Vector3 newTarget = MyMath::Normalize(MyMath::Lerp(currentTarget, forward, 5.0f * kDeltaTime));
+		mouseAimController_.ResetToDirection(newTarget);
+	}
 
-
+	if (mouseAimEnabled_ && !hasManualInput && !pauseMouseAim) {
+		// === マウスエイムモード ===
 		// マウスエイムコントローラーがPID制御で操舵入力を生成
 		mouseAimController_.CalculateSteeringInput(
 			flightModel_.GetOrientation(),
@@ -308,7 +340,13 @@ void StageScene::Update() {
 			finalPitch, finalRoll, finalYaw
 		);
 	} else {
-		// === 手動操縦モード（WASDオーバーライド or マウスエイムOFF）===
+		// === 手動操縦モード（WASDオーバーライド or マウスエイムOFF or 目標が画面外）===
+
+		// フリーカメラ(Cキー)中に手動でWASD操作をした場合は、
+		// 目標に到達しているかどうかに関わらずエイム目標を現在の機首方向に上書きする
+		if (mouseAimEnabled_ && freeViewActive_ && hasManualInput) {
+			mouseAimController_.ResetToDirection(flightModel_.GetForwardDirection());
+		}
 
 		// インストラクター ON/OFF (I キー)
 		if (input->TriggerKey(DIK_I)) {
@@ -523,7 +561,7 @@ void StageScene::Update() {
 	// ============================
 	gunpod_.Update(kDeltaTime);
 	bulletManager_.Update(kDeltaTime);
-	enemyManager_.Update();
+	enemyManager_.Update(kDeltaTime);
 	EffectManager::GetInstance()->Update();
 
 
@@ -1135,9 +1173,11 @@ void StageScene::UpdateChaseCamera(float dt) {
 	Vector3 upOffset = Multiply(cameraHeight_, cameraUp);
 	Vector3 desiredPos = Add(aircraftPos, Add(backOffset, upOffset));
 
-	// --- 注視点は少し前方 ---
-	// 注視点を遠くに取ることで、カメラの回転が安定する
-	Vector3 desiredLookTarget = Add(aircraftPos, Multiply(20.0f, viewDir));
+	// --- 注視点は少し前方かつ上寄り ---
+	// 注視点を上寄りにすることで、画面内で機体が少し下側に配置され前方が見やすくなる
+	Vector3 lookForward = Multiply(40.0f, viewDir);
+	Vector3 lookUp = Multiply(cameraHeight_ * 0.6f, cameraUp);
+	Vector3 desiredLookTarget = Add(aircraftPos, Add(lookForward, lookUp));
 
 	// --- 滑らかに補間（Exponential Smoothing） ---
 	float posT = 1.0f - std::exp(-cameraPosLag_ * dt);

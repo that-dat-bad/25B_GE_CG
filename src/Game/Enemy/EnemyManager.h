@@ -19,10 +19,17 @@ public:
 	~EnemyManager() = default;
 
 	/// @brief 配置データから敵を一括生成
-	void Initialize(const std::vector<EnemySpawnData>& spawnList);
+	void Initialize(
+		const std::vector<EnemySpawnData>& spawnList,
+		const AirframeData& airframeData,
+		const EngineData& engineData,
+		const GunPodData& gunpodData,
+		FlightModel* playerFlightModel,
+		BulletManager* bulletManager
+	);
 
 	/// @brief 全敵の更新
-	void Update();
+	void Update(float deltaTime);
 
 	/// @brief 全敵の描画
 	void Draw();

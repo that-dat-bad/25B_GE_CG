@@ -33,13 +33,13 @@ public:
 
 private:
 	// --- 物理スペック（不変データ） ---
-	float mass_;                        // エンジン自体の重量
-	float baseThrust_;                  // 定格推力（1.0時の推力）
-	float normalThrottleLimit_;         // 通常スロットル上限（基本1.0）
-	float wepThrottleLimit_;            // WEP時スロットル上限（例: 1.1）
-	float enginePhysicalSpoolSpeed_;    // エンジンの物理的な反応速度
-	float baseFuelFlowRate_;            // 定格推力時(1.0)の燃料消費率
-	float altitudeThrottleFactor_;      // 高度による推力低下率
+	float mass_ = 0.0f;                        // エンジン自体の重量
+	float baseThrust_ = 0.0f;                  // 定格推力（1.0時の推力）
+	float normalThrottleLimit_ = 0.0f;         // 通常スロットル上限（基本1.0）
+	float wepThrottleLimit_ = 0.0f;            // WEP時スロットル上限（例: 1.1）
+	float enginePhysicalSpoolSpeed_ = 0.0f;    // エンジンの物理的な反応速度
+	float baseFuelFlowRate_ = 0.0f;            // 定格推力時(1.0)の燃料消費率
+	float altitudeThrottleFactor_ = 0.0f;      // 高度による推力低下率
 
 	// --- 現在の状態（変動データ） ---
 	float currentThrottle_;             // 現在の実際のエンジン出力（0.0 ～ WEP上限）

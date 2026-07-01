@@ -1,19 +1,30 @@
 #include "EnemyManager.h"
 
-void EnemyManager::Initialize(const std::vector<EnemySpawnData>& spawnList) {
+void EnemyManager::Initialize(
+	const std::vector<EnemySpawnData>& spawnList,
+	const AirframeData& airframeData,
+	const EngineData& engineData,
+	const GunPodData& gunpodData,
+	FlightModel* playerFlightModel,
+	BulletManager* bulletManager
+) {
 	enemies_.clear();
 	enemies_.reserve(spawnList.size());
 
 	for (const auto& data : spawnList) {
 		auto enemy = std::make_unique<Enemy>();
-		enemy->Initialize(data.position, data.modelPath, data.health);
+		enemy->Initialize(
+			data.position, data.modelPath, data.health,
+			airframeData, engineData, gunpodData,
+			playerFlightModel, bulletManager
+		);
 		enemies_.push_back(std::move(enemy));
 	}
 }
 
-void EnemyManager::Update() {
+void EnemyManager::Update(float deltaTime) {
 	for (auto& enemy : enemies_) {
-		enemy->Update();
+		enemy->Update(deltaTime);
 	}
 }
 
