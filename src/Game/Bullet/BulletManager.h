@@ -26,7 +26,8 @@ public:
 	/// @param direction 発射方向（正規化済み）
 	/// @param speed 弾速 (m/s)
 	/// @param damage ダメージ
-	void SpawnBullet(const MyMath::Vector3& position, const MyMath::Vector3& direction, float speed, float damage);
+	/// @param isEnemyBullet 敵の弾かどうか
+	void SpawnBullet(const MyMath::Vector3& position, const MyMath::Vector3& direction, float speed, float damage, bool isEnemyBullet = false);
 
 	/// @brief アクティブな弾丸のリストへの参照を取得
 	std::vector<Bullet>& GetBullets() { return bullets_; }

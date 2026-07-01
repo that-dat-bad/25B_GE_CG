@@ -98,6 +98,11 @@ private:
 	bool isMissionCleared_ = false;
 	bool isMissionFailed_ = false;
 
+	// プレイヤーのステータス
+	float playerMaxHP_ = 100.0f;
+	float playerHP_ = 100.0f;
+	float playerCollisionRadius_ = 2.0f; // プレイヤーの当たり判定の半径
+
 	// スロットル入力状態（メンバー変数化して初期化時にリセットできるようにする）
 	float throttle_ = 0.0f;
 

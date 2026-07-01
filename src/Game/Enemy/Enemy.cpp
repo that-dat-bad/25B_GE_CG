@@ -134,7 +134,7 @@ void Enemy::UpdateAI(float deltaTime) {
 			firePos = MyMath::Add(firePos, MyMath::Multiply(8.0f, forward));
 			
 			if (bulletManager_) {
-				bulletManager_->SpawnBullet(firePos, forward, bulletSpeed, 10.0f);
+				bulletManager_->SpawnBullet(firePos, forward, bulletSpeed, 10.0f, true);
 			}
 
 			// マズルフラッシュ

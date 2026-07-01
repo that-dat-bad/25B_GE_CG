@@ -13,7 +13,8 @@ public:
 	/// @param direction 発射方向（正規化済み）
 	/// @param speed 弾速 (m/s)
 	/// @param damage 1発のダメージ
-	void Spawn(const MyMath::Vector3& position, const MyMath::Vector3& direction, float speed, float damage);
+	/// @param isEnemyBullet 敵の弾丸かどうか（デフォルト false）
+	void Spawn(const MyMath::Vector3& position, const MyMath::Vector3& direction, float speed, float damage, bool isEnemyBullet = false);
 
 	/// @brief 弾丸の位置更新
 	void Update(float dt);
@@ -26,6 +27,7 @@ public:
 	MyMath::Vector3 GetPosition() const { return position_; }
 	MyMath::Vector3 GetVelocity() const { return velocity_; }
 	float GetDamage() const { return damage_; }
+	bool IsEnemyBullet() const { return isEnemyBullet_; }
 	
 	static constexpr int kMaxHistory = 4;
 	const MyMath::Vector3* GetHistory() const { return history_; }
@@ -41,6 +43,7 @@ private:
 	float lifeTime_ = 5.0f;     // 最大生存時間（秒）
 	float currentTime_ = 0.0f;
 	bool isAlive_ = false;
+	bool isEnemyBullet_ = false;
 
 	MyMath::Vector3 history_[kMaxHistory]{};
 	int historyCount_ = 0;

@@ -81,11 +81,11 @@ void BulletManager::DrawTracerSegment(const Vector3& p1, const Vector3& p2, int 
 	);
 }
 
-void BulletManager::SpawnBullet(const Vector3& position, const Vector3& direction, float speed, float damage) {
-	// 非活性の弾丸スロットを探す
+void BulletManager::SpawnBullet(const Vector3& position, const Vector3& direction, float speed, float damage, bool isEnemyBullet) {
+	// 非アクティブな弾丸を探す
 	for (auto& bullet : bullets_) {
 		if (!bullet.IsAlive()) {
-			bullet.Spawn(position, direction, speed, damage);
+			bullet.Spawn(position, direction, speed, damage, isEnemyBullet);
 			return;
 		}
 	}

@@ -2,13 +2,14 @@
 
 using namespace MyMath;
 
-void Bullet::Spawn(const Vector3& position, const Vector3& direction, float speed, float damage) {
+void Bullet::Spawn(const Vector3& position, const Vector3& direction, float speed, float damage, bool isEnemyBullet) {
 	position_ = position;
 	velocity_ = Multiply(speed, direction);
 	damage_ = damage;
 	lifeTime_ = 5.0f;
 	currentTime_ = 0.0f;
 	isAlive_ = true;
+	isEnemyBullet_ = isEnemyBullet;
 
 	// 履歴の初期化
 	for (int i = 0; i < kMaxHistory; ++i) {

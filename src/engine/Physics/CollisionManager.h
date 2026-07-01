@@ -26,4 +26,14 @@ public:
 		float bulletDamage,
 		std::vector<MyMath::Vector3>& outHitPositions
 	);
+
+	/// @brief 弾丸リストとプレイヤーの一括衝突判定
+	/// 敵の弾丸のみを判定し、ヒットした弾丸は消滅する
+	/// @return 受けた総ダメージ量
+	static float CheckBulletPlayerCollisions(
+		std::vector<Bullet>& bullets,
+		const MyMath::Vector3& playerPos,
+		float playerRadius,
+		std::vector<MyMath::Vector3>& outHitPositions
+	);
 };

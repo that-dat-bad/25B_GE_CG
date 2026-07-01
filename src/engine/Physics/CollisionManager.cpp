@@ -23,7 +23,7 @@ void CollisionManager::CheckBulletEnemyCollisions(
 	std::vector<MyMath::Vector3>& outHitPositions
 ) {
 	for (auto& bullet : bullets) {
-		if (!bullet.IsAlive()) { continue; }
+		if (!bullet.IsAlive() || bullet.IsEnemyBullet()) { continue; } // 敵の弾丸は無視
 
 		SphereCollider bulletCollider = bullet.GetCollider();
 
@@ -43,4 +43,32 @@ void CollisionManager::CheckBulletEnemyCollisions(
 			}
 		}
 	}
+}
+
+float CollisionManager::CheckBulletPlayerCollisions(
+	std::vector<Bullet>& bullets,
+	const MyMath::Vector3& playerPos,
+	float playerRadius,
+	std::vector<MyMath::Vector3>& outHitPositions
+) {
+	float totalDamage = 0.0f;
+	SphereCollider playerCollider;
+	playerCollider.center = playerPos;
+	playerCollider.radius = playerRadius;
+
+	for (auto& bullet : bullets) {
+		// 生きている敵の弾丸のみ判定
+		if (!bullet.IsAlive() || !bullet.IsEnemyBullet()) { continue; }
+
+		SphereCollider bulletCollider = bullet.GetCollider();
+
+		if (CheckSphereSphere(bulletCollider, playerCollider)) {
+			// ヒット
+			totalDamage += bullet.GetDamage();
+			bullet.Kill();
+			outHitPositions.push_back(bullet.GetPosition());
+		}
+	}
+
+	return totalDamage;
 }

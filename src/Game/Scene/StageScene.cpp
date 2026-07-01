@@ -323,8 +323,8 @@ void StageScene::Update() {
 	}
 
 	// 失速して機首が強制的に落ちている間は、エイム目標が空に取り残されないよう
-	// 機首の方向へ徐々に引き戻す（ドラッグする）
-	if (mouseAimEnabled_ && flightModel_.IsStalling()) {
+	// 機首の方向へ徐々に引き戻す（ドラッグする）※フリーカメラ時限定
+	if (mouseAimEnabled_ && freeViewActive_ && flightModel_.IsStalling()) {
 		Vector3 currentTarget = mouseAimController_.GetTargetDirection();
 		Vector3 forward = flightModel_.GetForwardDirection();
 		Vector3 newTarget = MyMath::Normalize(MyMath::Lerp(currentTarget, forward, 5.0f * kDeltaTime));
@@ -592,6 +592,32 @@ void StageScene::Update() {
 		}
 	}
 
+	// --- 弾丸 × プレイヤー の衝突判定 ---
+	if (!isMissionFailed_) {
+		std::vector<MyMath::Vector3> playerHitPositions;
+		float damageTaken = CollisionManager::CheckBulletPlayerCollisions(
+			bulletManager_.GetBullets(),
+			flightModel_.GetPosition(),
+			playerCollisionRadius_,
+			playerHitPositions
+		);
+
+		if (damageTaken > 0.0f) {
+			playerHP_ -= damageTaken;
+			for (const auto& hitPos : playerHitPositions) {
+				EffectManager::GetInstance()->EmitHitEffect(hitPos);
+			}
+
+			// HPが0になったらゲームオーバー
+			if (playerHP_ <= 0.0f) {
+				playerHP_ = 0.0f;
+				isMissionFailed_ = true;
+				sceneID = SCENE::RESULT;
+				EffectManager::GetInstance()->EmitDestroyEffect(flightModel_.GetPosition());
+			}
+		}
+	}
+
 	// --- クリア判定 ---
 	if (!isMissionCleared_ && enemyManager_.IsAllDestroyed()) {
 		isMissionCleared_ = true;
@@ -785,6 +811,12 @@ void StageScene::Update() {
 	// === ゲーム情報UI（ImGui仮実装） ===
 #ifdef USE_IMGUI
 	ImGui::Begin("Mission Status");
+	
+	// プレイヤーHPを色を変えて表示
+	ImVec4 hpColor = (playerHP_ > 30.0f) ? ImVec4(0, 1, 0, 1) : ImVec4(1, 0, 0, 1);
+	ImGui::TextColored(hpColor, "PLAYER HP: %.1f / %.1f", playerHP_, playerMaxHP_);
+	ImGui::Separator();
+
 	ImGui::Text("Enemies: %d / %d", enemyManager_.GetDestroyedCount(), enemyManager_.GetTotalCount());
 	ImGui::Text("Ammo: %d / %d", gunpod_.GetCurrentAmmo(), gunpod_.GetMaxAmmo());
 	ImGui::Text("Bullets Active: %u", bulletManager_.GetActiveBulletCount());
