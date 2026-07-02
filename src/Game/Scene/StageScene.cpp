@@ -1,16 +1,16 @@
 #include "StageScene.h"
-#include "CameraManager.h"
-#include "Object3dCommon.h"
-#include "SkyboxCommon.h"
-#include "TextureManager.h"
-#include "ModelManager.h"
-#include "PrimitiveModel.h"
+#include "../../engine/Graphics/Camera/CameraManager.h"
+#include "../../engine/Graphics/Model/Object3dCommon.h"
+#include "../../engine/Graphics/Model/SkyboxCommon.h"
+#include "../../engine/Graphics/System/TextureManager.h"
+#include "../../engine/Graphics/Model/ModelManager.h"
+#include "../../engine/Graphics/Model/PrimitiveModel.h"
 #include "WinApp.h"
 #include "../../engine/Graphics/PostProcess/PostEffect.h"
-#include "../../engine/Graphics/EffectManager.h"
-#include "../../engine/Graphics/ParticleManager.h"
-#include "../../engine/Graphics/GPUParticleManager.h"
-#include "../../engine/Physics/CollisionManager.h"
+#include "../../engine/Graphics/Particle/EffectManager.h"
+#include "../../engine/Graphics/Particle/ParticleManager.h"
+#include "../../engine/Graphics/Particle/GPUParticleManager.h"
+#include "../../engine/Physics/Collision3DManager.h"
 #include <cmath>
 #include <algorithm>
 
@@ -123,20 +123,13 @@ void StageScene::Initialize() {
 	Object3dCommon::GetInstance()->SetSpecularModel(2);
 
 	// ============================
+		// ============================
 	// カメラ初期位置（機体の後方）
 	// ============================
 	Vector3 initPos = flightModel_.GetPosition();
 	Vector3 initForward = flightModel_.GetForwardDirection();
 
-	// 初期カメラ位置を即座にセット（補間の初期値）
-	cameraCurrentPos_ = Add(initPos, Add(Multiply(-cameraDistance_, initForward), { 0.0f, cameraHeight_, 0.0f }));
-	cameraLookTarget_ = initPos;
-
-	Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
-	if (camera) {
-		camera->SetTranslate(cameraCurrentPos_);
-		camera->SetRotate(LookAtRotation(cameraCurrentPos_, cameraLookTarget_));
-	}
+	playerCamera_.Initialize(initPos, initForward);
 	CameraManager::GetInstance()->Update();
 
 	// ============================
@@ -147,11 +140,6 @@ void StageScene::Initialize() {
 
 	// マウスエイム開始時はOSカーソルを非表示＆ロック
 	Input::GetInstance()->LockCursor();
-
-	// カメラの初期回転角をキャッシュ
-	Vector3 camRot = LookAtRotation(cameraCurrentPos_, cameraLookTarget_);
-	cachedCameraYaw_ = camRot.y;
-	cachedCameraPitch_ = camRot.x;
 
 	// ============================
 	// 戦闘システムの初期化
@@ -209,6 +197,34 @@ void StageScene::Initialize() {
 	isMissionFailed_ = false;
 	muzzleFlashTimer_ = 0.0f;
 	totalTime_ = 0.0f;
+
+	// プレイヤー当たり判定ボディの初期化
+	playerBody_.scene_ = this;
+}
+
+// ============================================================
+// PlayerCollisionBody のコールバック実装
+// ============================================================
+void StageScene::PlayerCollisionBody::OnCollision(ICollisionBody3D* other) {
+	if (!scene_ || scene_->isMissionFailed_) { return; }
+
+	// EnemyBullet との衝突 → ダメージを受ける
+	if (other->GetCollisionAttribute() & CollisionAttribute::kEnemyBullet) {
+		// 弾丸からダメージ量を取得（Bullet の場合）
+		auto* bullet = dynamic_cast<Bullet*>(other);
+		float damage = bullet ? bullet->GetDamage() : 10.0f;
+
+		scene_->playerHP_ -= damage;
+		EffectManager::GetInstance()->EmitHitEffect(scene_->flightModel_.GetPosition());
+
+		// HPが0以下でゲームオーバー
+		if (scene_->playerHP_ <= 0.0f) {
+			scene_->playerHP_ = 0.0f;
+			scene_->isMissionFailed_ = true;
+			scene_->sceneID = SCENE::RESULT;
+			EffectManager::GetInstance()->EmitDestroyEffect(scene_->flightModel_.GetPosition());
+		}
+	}
 }
 
 
@@ -231,27 +247,6 @@ void StageScene::Update() {
 	if (throttle_ < 0.0f) { throttle_ = 0.0f; }
 	if (throttle_ > 1.0f) { throttle_ = 1.0f; }
 	flightModel_.SetThrottleInput(throttle_);
-
-	// --- 自由視点カメラ (Cキー長押し) ---
-	if (input->PushKey(DIK_C)) {
-		if (!freeViewActive_) {
-			// 押し始め: 現在のカメラ位置から球面座標を逆算して初期化
-			// → 開始時にカメラがジャンプしない
-			freeViewActive_ = true;
-			Vector3 camOffset = Substract(cameraCurrentPos_, flightModel_.GetPosition());
-			freeViewDistance_ = Length(camOffset);
-			if (freeViewDistance_ < 1.0f) { freeViewDistance_ = cameraDistance_; }
-			Vector3 dir = Normalize(camOffset);
-			freeViewPitch_ = std::asin(std::clamp(dir.y, -1.0f, 1.0f));
-			freeViewYaw_   = std::atan2(dir.x, dir.z);
-			freeViewPitchVelocity_ = 0.0f;
-			freeViewYawVelocity_   = 0.0f;
-			// 現在の注視点と機体位置の差分を保持（切替時の視点ジャンプ防止）
-			freeViewLookOffset_ = Substract(cameraLookTarget_, flightModel_.GetPosition());
-		}
-	} else {
-		freeViewActive_ = false;
-	}
 
 	// --- マウスエイム ON/OFF トグル (M キー) ---
 	if (input->TriggerKey(DIK_M)) {
@@ -293,7 +288,7 @@ void StageScene::Update() {
 	// フリーカメラ時、マウスエイムの目標が画面外（カメラの向いている方向から外れている）場合は
 	// マウスエイムによる追従を一時停止し、機体がそちらに向かわないようにする
 	bool pauseMouseAim = false;
-	if (mouseAimEnabled_ && freeViewActive_) {
+	if (mouseAimEnabled_ && playerCamera_.GetFreeViewActive()) {
 		Camera* cam = CameraManager::GetInstance()->GetActiveCamera();
 		if (cam) {
 			const Matrix4x4& mat = cam->GetWorldMatrix();
@@ -315,7 +310,7 @@ void StageScene::Update() {
 	// --- マウス入力による目標方向の更新 ---
 	// カーソルロック中かつ自由視点カメラ(Cキー)でない場合のみ、マウスで目標方向を更新する
 	// ※WASD操作中でもマウスエイム目標の更新は止めない（置いてけぼりになるのを防ぐため）
-	if (mouseAimEnabled_ && input->IsCursorLocked() && !freeViewActive_) {
+	if (mouseAimEnabled_ && input->IsCursorLocked() && !playerCamera_.GetFreeViewActive()) {
 		Input::MouseMove mouseMove = input->GetMouseMove();
 		Camera* cam = CameraManager::GetInstance()->GetActiveCamera();
 		if (cam) {
@@ -328,7 +323,7 @@ void StageScene::Update() {
 
 	// 失速して機首が強制的に落ちている間は、エイム目標が空に取り残されないよう
 	// 機首の方向へ徐々に引き戻す（ドラッグする）※フリーカメラ時限定
-	if (mouseAimEnabled_ && freeViewActive_ && flightModel_.IsStalling()) {
+	if (mouseAimEnabled_ && playerCamera_.GetFreeViewActive() && flightModel_.IsStalling()) {
 		Vector3 currentTarget = mouseAimController_.GetTargetDirection();
 		Vector3 forward = flightModel_.GetForwardDirection();
 		Vector3 newTarget = MyMath::Normalize(MyMath::Lerp(currentTarget, forward, 5.0f * kDeltaTime));
@@ -348,7 +343,7 @@ void StageScene::Update() {
 
 		// フリーカメラ(Cキー)中に手動でWASD操作をした場合は、
 		// 目標に到達しているかどうかに関わらずエイム目標を現在の機首方向に上書きする
-		if (mouseAimEnabled_ && freeViewActive_ && hasManualInput) {
+		if (mouseAimEnabled_ && playerCamera_.GetFreeViewActive() && hasManualInput) {
 			mouseAimController_.ResetToDirection(flightModel_.GetForwardDirection());
 		}
 
@@ -380,20 +375,23 @@ void StageScene::Update() {
 		int ammoBefore = gunpod_.GetCurrentAmmo();
 		gunpod_.Fire();
 		if (gunpod_.GetCurrentAmmo() < ammoBefore) {
-			Vector3 firePos = flightModel_.GetPosition();
+			Vector3 aircraftPos = flightModel_.GetPosition();
 			Vector3 aircraftForward = flightModel_.GetForwardDirection();
+			Vector3 aircraftVelocity = flightModel_.GetVelocity();
+
 			// 機首先端から発射
-			firePos = Add(firePos, Multiply(8.0f, aircraftForward));
+			Vector3 firePos = Add(aircraftPos, Multiply(8.0f, aircraftForward));
 
-			// ガンコンバージェンス（照準点への収束）
-			// レティクルの位置（500m先）に向けて発射する
-			Vector3 targetDir = mouseAimEnabled_ ? mouseAimController_.GetTargetDirection() : aircraftForward;
-			Vector3 aimWorldPos = Add(flightModel_.GetPosition(), Multiply(500.0f, targetDir));
-			Vector3 fireDir = Normalize(Substract(aimWorldPos, firePos));
+			// まっすぐ発射 (ガンコンバージェンスを廃止し、機首方向固定)
+			Vector3 fireDir = aircraftForward;
 
-			// 弾丸の初速は機体速度＋射出速度(500.0f)にする (自機が弾を追い抜く問題を防止)
-			float bulletSpeed = flightModel_.GetSpeed() + 500.0f;
-			bulletManager_.SpawnBullet(firePos, fireDir, bulletSpeed, 10.0f);
+			// 弾丸の初速ベクトル ＝ 機体速度 ＋ (射出方向 × 射出速度)
+			// (自機が弾を追い抜く問題を防止し、物理法則に従う)
+			float muzzleSpeed = 500.0f;
+			Vector3 muzzleVelocity = Multiply(muzzleSpeed, fireDir);
+			Vector3 bulletVelocity = Add(aircraftVelocity, muzzleVelocity);
+
+			bulletManager_.SpawnBullet(firePos, bulletVelocity, 10.0f);
 
 			// --- 薬莢の放出エフェクト ---
 			{
@@ -577,56 +575,28 @@ void StageScene::Update() {
 
 
 
-	// --- 弾丸 × 敵 の衝突判定 ---
+	// ============================
+	// 衝突判定（新システム）
+	// ============================
 	{
-		auto aliveEnemies = enemyManager_.GetAliveEnemies();
-		int prevAlive = static_cast<int>(aliveEnemies.size());
+		// 毎フレーム登録をクリアして再登録
+		collisionSystem_.ClearAll();
 
-		std::vector<MyMath::Vector3> hitPositions;
-		CollisionManager::CheckBulletEnemyCollisions(
-			bulletManager_.GetBullets(),
-			aliveEnemies,
-			10.0f,  // 弾丸ダメージ
-			hitPositions
-		);
+		// プレイヤーを登録
+		collisionSystem_.Register(&playerBody_);
 
-		// ヒットエフェクトの発生 (Planeの回転やRing, Cylinderなどをゲームに活用)
-		for (const auto& hitPos : hitPositions) {
-			EffectManager::GetInstance()->EmitHitEffect(hitPos);
+		// 全弾丸を登録
+		for (auto& bullet : bulletManager_.GetBullets()) {
+			collisionSystem_.Register(&bullet);
 		}
 
-		// 敵が新たに破壊されたら破壊演出を発生
-		for (auto* enemy : aliveEnemies) {
-			if (!enemy->IsAlive()) {
-				EffectManager::GetInstance()->EmitDestroyEffect(enemy->GetPosition());
-			}
+		// 全敵を登録
+		for (auto* enemy : enemyManager_.GetAliveEnemies()) {
+			collisionSystem_.Register(enemy);
 		}
-	}
 
-	// --- 弾丸 × プレイヤー の衝突判定 ---
-	if (!isMissionFailed_) {
-		std::vector<MyMath::Vector3> playerHitPositions;
-		float damageTaken = CollisionManager::CheckBulletPlayerCollisions(
-			bulletManager_.GetBullets(),
-			flightModel_.GetPosition(),
-			playerCollisionRadius_,
-			playerHitPositions
-		);
-
-		if (damageTaken > 0.0f) {
-			playerHP_ -= damageTaken;
-			for (const auto& hitPos : playerHitPositions) {
-				EffectManager::GetInstance()->EmitHitEffect(hitPos);
-			}
-
-			// HPが0になったらゲームオーバー
-			if (playerHP_ <= 0.0f) {
-				playerHP_ = 0.0f;
-				isMissionFailed_ = true;
-				sceneID = SCENE::RESULT;
-				EffectManager::GetInstance()->EmitDestroyEffect(flightModel_.GetPosition());
-			}
-		}
+		// 全判定実行（コールバックが自動で呼ばれる）
+		collisionSystem_.UpdateAll();
 	}
 
 	// --- クリア判定 ---
@@ -636,7 +606,7 @@ void StageScene::Update() {
 	}
 
 	// --- 地面衝突判定 ---
-	if (!isMissionFailed_ && CollisionManager::CheckGroundCollision(flightModel_.GetPosition())) {
+	if (!isMissionFailed_ && Collision3DManager::CheckGroundCollision(flightModel_.GetPosition())) {
 		isMissionFailed_ = true;
 		sceneID = SCENE::RESULT;
 	}
@@ -645,7 +615,7 @@ void StageScene::Update() {
 	// 描画オブジェクトに位置・姿勢を反映
 	// ============================
 	Vector3 pos = flightModel_.GetPosition();
-	Vector3 euler = QuaternionToEuler(flightModel_.GetOrientation());
+	Vector3 euler = PlayerCamera::QuaternionToEuler(flightModel_.GetOrientation());
 
 	aircraftObject_->SetTranslate(pos);
 	aircraftObject_->SetRotate(euler);
@@ -658,7 +628,7 @@ void StageScene::Update() {
 	// ============================
 	// 追従カメラ
 	// ============================
-	UpdateChaseCamera(kDeltaTime);
+	playerCamera_.Update(kDeltaTime, &flightModel_, &mouseAimController_, mouseAimEnabled_);
 
 	// ============================
 	// ============================
@@ -713,10 +683,10 @@ void StageScene::Update() {
 
 	ImGui::Separator();
 	ImGui::Text("=== Camera ===");
-	ImGui::DragFloat("Distance", &cameraDistance_, 0.5f, 5.0f, 100.0f);
-	ImGui::DragFloat("Height", &cameraHeight_, 0.5f, 0.0f, 30.0f);
-	ImGui::DragFloat("Pos Lag", &cameraPosLag_, 0.1f, 0.5f, 20.0f);
-	ImGui::DragFloat("Look Lag", &cameraLookLag_, 0.1f, 0.5f, 30.0f);
+	ImGui::DragFloat("Distance", &*playerCamera_.GetCameraDistancePtr(), 0.5f, 5.0f, 100.0f);
+	ImGui::DragFloat("Height", &*playerCamera_.GetCameraHeightPtr(), 0.5f, 0.0f, 30.0f);
+	ImGui::DragFloat("Pos Lag", &*playerCamera_.GetCameraPosLagPtr(), 0.1f, 0.5f, 20.0f);
+	ImGui::DragFloat("Look Lag", &*playerCamera_.GetCameraLookLagPtr(), 0.1f, 0.5f, 30.0f);
 
 	ImGui::Separator();
 	ImGui::Text("=== Mouse Aim ===");
@@ -1003,7 +973,7 @@ void StageScene::Draw() {
 		if (t > 1.0f) { t = 1.0f; }
 		
 		// 機体の回転を取得（オイラー角）
-		Vector3 aircraftRot = QuaternionToEuler(flightModel_.GetOrientation());
+		Vector3 aircraftRot = PlayerCamera::QuaternionToEuler(flightModel_.GetOrientation());
 		
 		float randomAlpha = muzzleFlashRandomAlpha_ * (1.0f - t);
 		
@@ -1143,172 +1113,13 @@ void StageScene::DrawGround() {
 // ・注視点も機体の少し前方を Lerp で滑らかに追従
 // ・カメラの回転は LookAt で常に機体を見つめる
 //
-void StageScene::UpdateChaseCamera(float dt) {
-	Vector3 aircraftPos = flightModel_.GetPosition();
-	Vector3 forward = flightModel_.GetForwardDirection();
-	Vector3 up = flightModel_.GetUpDirection();
 
-	// ============================
-	// 自由視点カメラ（Cキー長押し中）
-	// ============================
-	if (freeViewActive_) {
-		// マウス移動量で軌道角度を更新
-		Input::MouseMove mouseMove = Input::GetInstance()->GetMouseMove();
-		const float sensitivity = 0.002f;
-		const float damping = 0.85f; // 慣性の減衰率
-		const float accelScale = 1.0f - damping;
-
-		// マウス入力を速度に加算
-		freeViewYawVelocity_   += static_cast<float>(mouseMove.lX) * sensitivity * accelScale;
-		freeViewPitchVelocity_ += static_cast<float>(mouseMove.lY) * sensitivity * accelScale;
-
-		// 速度を角度に加算
-		freeViewYaw_   += freeViewYawVelocity_;
-		freeViewPitch_ += freeViewPitchVelocity_;
-
-		// 速度を減衰させる
-		freeViewYawVelocity_   *= damping;
-		freeViewPitchVelocity_ *= damping;
-
-		// ピッチを制限（真上・真下を超えないように）
-		const float pitchLimit = 3.141592f * 0.49f;
-		if (freeViewPitch_ > pitchLimit) { freeViewPitch_ = pitchLimit; freeViewPitchVelocity_ = 0.0f; }
-		if (freeViewPitch_ < -pitchLimit) { freeViewPitch_ = -pitchLimit; freeViewPitchVelocity_ = 0.0f; }
-
-		// 球面座標で機体中心からのオフセットを計算
-		Vector3 offset;
-		offset.x = freeViewDistance_ * std::cos(freeViewPitch_) * std::sin(freeViewYaw_);
-		offset.y = freeViewDistance_ * std::sin(freeViewPitch_);
-		offset.z = freeViewDistance_ * std::cos(freeViewPitch_) * std::cos(freeViewYaw_);
-
-		Vector3 freeViewPos = Add(aircraftPos, offset);
-
-		// カメラ位置を即座にセット
-		cameraCurrentPos_ = freeViewPos;
-
-		// マウス操作があればオフセットをゼロへ縮小（機体中心を注視するように移行）
-		bool hasMouseInput = (std::fabs(freeViewYawVelocity_) > 0.0001f || std::fabs(freeViewPitchVelocity_) > 0.0001f);
-		if (hasMouseInput) {
-			float blendT = 1.0f - std::exp(-15.0f * dt);
-			freeViewLookOffset_.x *= (1.0f - blendT);
-			freeViewLookOffset_.y *= (1.0f - blendT);
-			freeViewLookOffset_.z *= (1.0f - blendT);
-		}
-
-		// 注視点 = 機体位置 + 相対オフセット（初期は通常カメラと同じ、マウス操作で0に収束）
-		cameraLookTarget_ = Add(aircraftPos, freeViewLookOffset_);
-
-		Vector3 cameraRotation = LookAtRotation(freeViewPos, cameraLookTarget_);
-		cachedCameraPitch_ = cameraRotation.x;
-		cachedCameraYaw_   = cameraRotation.y;
-
-		Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
-		if (camera) {
-			camera->SetTranslate(freeViewPos);
-			camera->SetRotate(cameraRotation);
-			Object3dCommon::GetInstance()->SetCameraPosition(freeViewPos);
-		}
-		return;
-	}
-
-	// ============================
-	// 通常の追従カメラ
-	// ============================
-
-	Vector3 viewDir = forward;
-	Vector3 cameraUp = up;
-
-	if (mouseAimEnabled_) {
-		// マウスエイム中は、カメラが目標方向（レティクル）を追従するようにする
-		// これによりレティクルが画面外に消えるのを防ぐ (War Thunder風)
-		viewDir = mouseAimController_.GetTargetDirection();
-		
-		// カメラのアップベクトルは、水平を基本としつつ機体のロールも少し混ぜることで、
-		// プレイヤーが酔いにくく、かつ機体の傾きを感じられるようにする
-		Vector3 worldUp = {0.0f, 1.0f, 0.0f};
-		// viewDir が真上や真下を向いている時のジンバルロックを簡易的に防ぐ
-		if (std::fabs(viewDir.y) > 0.95f) {
-			worldUp = up;
-		}
-		cameraUp = Normalize(Lerp(worldUp, up, 0.3f));
-	}
-
-	// --- 理想的なカメラ位置を計算 ---
-	// viewDir の後方 × 距離 + ローカル上方 × 高さ
-	Vector3 backOffset = Multiply(-cameraDistance_, viewDir);
-	Vector3 upOffset = Multiply(cameraHeight_, cameraUp);
-	Vector3 desiredPos = Add(aircraftPos, Add(backOffset, upOffset));
-
-	// --- 注視点は少し前方かつ上寄り ---
-	// 注視点を上寄りにすることで、画面内で機体が少し下側に配置され前方が見やすくなる
-	Vector3 lookForward = Multiply(40.0f, viewDir);
-	Vector3 lookUp = Multiply(cameraHeight_ * 0.6f, cameraUp);
-	Vector3 desiredLookTarget = Add(aircraftPos, Add(lookForward, lookUp));
-
-	// --- 滑らかに補間（Exponential Smoothing） ---
-	float posT = 1.0f - std::exp(-cameraPosLag_ * dt);
-	float lookT = 1.0f - std::exp(-cameraLookLag_ * dt);
-
-	cameraCurrentPos_ = Lerp(cameraCurrentPos_, desiredPos, posT);
-	cameraLookTarget_ = Lerp(cameraLookTarget_, desiredLookTarget, lookT);
-
-	// --- カメラの回転を LookAt で計算 ---
-	Vector3 cameraRotation = LookAtRotation(cameraCurrentPos_, cameraLookTarget_);
-
-	// カメラの回転角をキャッシュ（マウスエイムの目標方向計算に使用）
-	cachedCameraPitch_ = cameraRotation.x;
-	cachedCameraYaw_ = cameraRotation.y;
-
-	// --- カメラに反映 ---
-	Camera* camera = CameraManager::GetInstance()->GetActiveCamera();
-	if (camera) {
-		camera->SetTranslate(cameraCurrentPos_);
-		camera->SetRotate(cameraRotation);
-
-		// --- ズーム（右クリックトグル） ---
-		if (Input::GetInstance()->TriggerMouse(1)) {
-			isZoomed_ = !isZoomed_;
-		}
-		
-		float targetFov = isZoomed_ ? 0.20f : 0.45f;
-		
-		// FOVを滑らかに補間
-		float fovT = 1.0f - std::exp(-15.0f * dt);
-		currentFov_ += (targetFov - currentFov_) * fovT;
-		camera->SetFovY(currentFov_);
-
-		// ライティング用カメラ位置更新
-		Object3dCommon::GetInstance()->SetCameraPosition(cameraCurrentPos_);
-	}
-}
 
 
 // ===========================================================
 // クォータニオン → オイラー角 変換
 // ===========================================================
-MyMath::Vector3 StageScene::QuaternionToEuler(const MyMath::Quaternion& q) {
-	Vector3 euler{};
 
-	// ロール (X軸回り)
-	float sinr_cosp = 2.0f * (q.w * q.x + q.y * q.z);
-	float cosr_cosp = 1.0f - 2.0f * (q.x * q.x + q.y * q.y);
-	euler.x = std::atan2(sinr_cosp, cosr_cosp);
-
-	// ピッチ (Y軸回り)  — ジンバルロック対策
-	float sinp = 2.0f * (q.w * q.y - q.z * q.x);
-	if (std::fabs(sinp) >= 1.0f) {
-		euler.y = std::copysign(3.14159265f / 2.0f, sinp);
-	} else {
-		euler.y = std::asin(sinp);
-	}
-
-	// ヨー (Z軸回り)
-	float siny_cosp = 2.0f * (q.w * q.z + q.x * q.y);
-	float cosy_cosp = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
-	euler.z = std::atan2(siny_cosp, cosy_cosp);
-
-	return euler;
-}
 
 
 // ===========================================================
@@ -1316,30 +1127,4 @@ MyMath::Vector3 StageScene::QuaternionToEuler(const MyMath::Quaternion& q) {
 // そのrotateに合致するオイラー角(XYZ順)を逆算する
 // ジンバルロック対策: 真上・真下付近ではヨーを前フレームの値で維持
 // ===========================================================
-MyMath::Vector3 StageScene::LookAtRotation(const MyMath::Vector3& from, const MyMath::Vector3& to) const {
-	Vector3 dir = Substract(to, from);
-	float len = Length(dir);
-	if (len < 0.0001f) {
-		return { cachedCameraPitch_, cachedCameraYaw_, 0.0f };
-	}
 
-	// 正規化
-	dir = Normalize(dir);
-
-	// クランプしてasinの定義域を守る
-	float clampedY = std::clamp(dir.y, -0.999f, 0.999f);
-	float pitch = -std::asin(clampedY);
-
-	// → 水平成分の大きさが閾値以下ならヨーを前フレームの値で維持
-	float horizontalLen = std::sqrt(dir.x * dir.x + dir.z * dir.z);
-	float yaw;
-	if (horizontalLen < 0.05f) {
-		// ジンバルロック領域: 前フレームのヨーを維持
-		yaw = cachedCameraYaw_;
-	} else {
-		yaw = std::atan2(dir.x, dir.z);
-	}
-
-	// ロールは0（水平を維持）
-	return { pitch, yaw, 0.0f };
-}

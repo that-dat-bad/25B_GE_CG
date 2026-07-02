@@ -2,7 +2,9 @@
 #include <memory>
 #include <string>
 #include "../../engine/base/Math/MyMath.h"
-#include "../../engine/Graphics/Object3d.h"
+#include "../../engine/Graphics/Model/Object3d.h"
+#include "../../engine/Physics/ICollisionBody.h"
+#include "../../engine/Physics/CollisionConfig.h"
 #include "../FlightModel/FlightModel.h"
 #include "../FlightModel/Payload/Gunpod.h"
 #include "../Bullet/BulletManager.h"
@@ -12,7 +14,7 @@ class Object3dCommon;
 class Camera;
 
 /// @brief 空中ターゲット（敵AI）
-class Enemy {
+class Enemy : public ICollisionBody3D {
 public:
 	Enemy() = default;
 	~Enemy() = default;
@@ -53,6 +55,15 @@ public:
 	float GetCollisionRadius() const { return collisionRadius_; }
 	float GetHealth() const { return health_; }
 	float GetMaxHealth() const { return maxHealth_; }
+
+	// === ICollisionBody3D 実装 ===
+	SphereCollider GetSphereCollider() const override {
+		return { flightModel_.GetPosition(), collisionRadius_ };
+	}
+	uint32_t GetCollisionAttribute() const override { return CollisionAttribute::kEnemy; }
+	uint32_t GetCollisionMask() const override { return CollisionMask::kEnemy; }
+	void OnCollision(ICollisionBody3D* other) override;
+	bool IsCollisionActive() const override { return isAlive_; }
 
 private:
 	/// @brief AI思考・操縦入力の更新

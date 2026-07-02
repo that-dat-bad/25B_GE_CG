@@ -1,8 +1,8 @@
 #include "BulletManager.h"
-#include "../../engine/Graphics/PrimitiveModel.h"
-#include "../../engine/Graphics/TextureManager.h"
-#include "../../engine/Graphics/Camera.h"
-#include "../../engine/Graphics/BlendMode.h"
+#include "../../engine/Graphics/Model/PrimitiveModel.h"
+#include "../../engine/Graphics/System/TextureManager.h"
+#include "../../engine/Graphics/Camera/Camera.h"
+#include "../../engine/Graphics/System/BlendMode.h"
 
 using namespace MyMath;
 
@@ -81,15 +81,13 @@ void BulletManager::DrawTracerSegment(const Vector3& p1, const Vector3& p2, int 
 	);
 }
 
-void BulletManager::SpawnBullet(const Vector3& position, const Vector3& direction, float speed, float damage, bool isEnemyBullet) {
-	// 非アクティブな弾丸を探す
+void BulletManager::SpawnBullet(const Vector3& position, const Vector3& velocity, float damage, bool isEnemyBullet) {
 	for (auto& bullet : bullets_) {
 		if (!bullet.IsAlive()) {
-			bullet.Spawn(position, direction, speed, damage, isEnemyBullet);
-			return;
+			bullet.Spawn(position, velocity, damage, isEnemyBullet);
+			break;
 		}
 	}
-	// プール満杯の場合は発射されない（ドロップ）
 }
 
 uint32_t BulletManager::GetActiveBulletCount() const {

@@ -1,21 +1,21 @@
-#include "CameraManager.h"
+#include "../../engine/Graphics/Camera/CameraManager.h"
 #include "DebugScene.h"
-#include "Object3dCommon.h"
-#include "SkyboxCommon.h"
-#include "TextureManager.h"
-#include "SpriteCommon.h"
-#include "PrimitiveModel.h"
+#include "../../engine/Graphics/Model/Object3dCommon.h"
+#include "../../engine/Graphics/Model/SkyboxCommon.h"
+#include "../../engine/Graphics/System/TextureManager.h"
+#include "../../engine/Graphics/Sprite/SpriteCommon.h"
+#include "../../engine/Graphics/Model/PrimitiveModel.h"
 #include "../../../external/imgui/imgui.h"
 #include "../../engine/io/Input.h"
 #include "../../engine/base/Math/MyMath.h"
 
 #include <cmath>
-#include <ModelManager.h>
+#include "../../engine/Graphics/Model/ModelManager.h"
 #include "../../engine/Graphics/PostProcess/PostEffect.h"
-#include "../../engine/Graphics/EffectManager.h"
-#include "../../engine/Graphics/ParticleManager.h"
-#include "../../engine/Graphics/GPUParticleManager.h"
-#include "../../engine/Graphics/TextRenderer.h"
+#include "../../engine/Graphics/Particle/EffectManager.h"
+#include "../../engine/Graphics/Particle/ParticleManager.h"
+#include "../../engine/Graphics/Particle/GPUParticleManager.h"
+#include "../../engine/Graphics/Text/TextRenderer.h"
 
 void DebugScene::Initialize() {
 	sceneID = SCENE::DEBUG;

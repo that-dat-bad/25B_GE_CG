@@ -1,7 +1,7 @@
 #include "PostEffect.h"
-#include "../DirectXCommon.h"
-#include "../SrvManager.h"
-#include "../TextureManager.h"
+#include "../System/DirectXCommon.h"
+#include "../System/SrvManager.h"
+#include "../System/TextureManager.h"
 #include <cassert>
 
 std::unique_ptr<PostEffect> PostEffect::instance_ = nullptr;

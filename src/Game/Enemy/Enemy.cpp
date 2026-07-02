@@ -1,10 +1,10 @@
 #include "Enemy.h"
-#include "Object3d.h"
-#include "Object3dCommon.h"
-#include "CameraManager.h"
-#include "ModelManager.h"
-#include "../../engine/Graphics/EffectManager.h"
-#include "../../engine/Graphics/ParticleManager.h"
+#include "../../engine/Graphics/Model/Object3d.h"
+#include "../../engine/Graphics/Model/Object3dCommon.h"
+#include "../../engine/Graphics/Camera/CameraManager.h"
+#include "../../engine/Graphics/Model/ModelManager.h"
+#include "../../engine/Graphics/Particle/EffectManager.h"
+#include "../../engine/Graphics/Particle/ParticleManager.h"
 
 void Enemy::Initialize(
 	const MyMath::Vector3& position,
@@ -130,11 +130,18 @@ void Enemy::UpdateAI(float deltaTime) {
 		
 		if (gunpod_.GetCurrentAmmo() < ammoBefore) { // 発射できた場合
 			MyMath::Vector3 firePos = flightModel_.GetPosition();
+			MyMath::Vector3 aircraftVelocity = flightModel_.GetVelocity();
+			
 			// 機首から発射
 			firePos = MyMath::Add(firePos, MyMath::Multiply(8.0f, forward));
 			
+			// 弾丸初速ベクトル ＝ 機体速度 ＋ (射出方向 × 射出速度)
+			float muzzleSpeed = 500.0f;
+			MyMath::Vector3 muzzleVelocity = MyMath::Multiply(muzzleSpeed, forward);
+			MyMath::Vector3 bulletVelocity = MyMath::Add(aircraftVelocity, muzzleVelocity);
+
 			if (bulletManager_) {
-				bulletManager_->SpawnBullet(firePos, forward, bulletSpeed, 10.0f, true);
+				bulletManager_->SpawnBullet(firePos, bulletVelocity, 10.0f, true);
 			}
 
 			// マズルフラッシュ
@@ -177,5 +184,19 @@ void Enemy::TakeDamage(float damage) {
 	if (health_ <= 0.0f) {
 		health_ = 0.0f;
 		isAlive_ = false;
+	}
+}
+
+void Enemy::OnCollision(ICollisionBody3D* other) {
+	if (!isAlive_) { return; }
+
+	// PlayerBullet との衝突 → ダメージを受ける
+	if (other->GetCollisionAttribute() & CollisionAttribute::kPlayerBullet) {
+		TakeDamage(10.0f);
+		EffectManager::GetInstance()->EmitHitEffect(flightModel_.GetPosition());
+
+		if (!isAlive_) {
+			EffectManager::GetInstance()->EmitDestroyEffect(flightModel_.GetPosition());
+		}
 	}
 }

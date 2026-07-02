@@ -1,9 +1,9 @@
 #pragma once
 #include "IScene.h"
 #include <vector>
-#include "Object3d.h"
-#include "Sprite.h"
-#include "Skybox.h"
+#include "../../engine/Graphics/Model/Object3d.h"
+#include "../../engine/Graphics/Sprite/Sprite.h"
+#include "../../engine/Graphics/Model/Skybox.h"
 #include <memory>
 
 /// エンジン機能テスト用のデバッグシーン

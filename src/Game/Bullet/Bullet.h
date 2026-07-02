@@ -1,20 +1,21 @@
 #pragma once
 #include "../../engine/base/Math/MyMath.h"
 #include "../../engine/Physics/Collider.h"
+#include "../../engine/Physics/ICollisionBody.h"
+#include "../../engine/Physics/CollisionConfig.h"
 
 /// @brief 弾丸エンティティ（オブジェクトプールで管理される）
-class Bullet {
+class Bullet : public ICollisionBody3D {
 public:
 	Bullet() = default;
 	~Bullet() = default;
 
 	/// @brief 弾丸を発射状態にする
 	/// @param position 初期位置
-	/// @param direction 発射方向（正規化済み）
-	/// @param speed 弾速 (m/s)
+	/// @param velocity 弾丸の初速度ベクトル (m/s)
 	/// @param damage 1発のダメージ
 	/// @param isEnemyBullet 敵の弾丸かどうか（デフォルト false）
-	void Spawn(const MyMath::Vector3& position, const MyMath::Vector3& direction, float speed, float damage, bool isEnemyBullet = false);
+	void Spawn(const MyMath::Vector3& position, const MyMath::Vector3& velocity, float damage, bool isEnemyBullet = false);
 
 	/// @brief 弾丸の位置更新
 	void Update(float dt);
@@ -35,6 +36,17 @@ public:
 
 	/// @brief 衝突判定用のコライダーを取得
 	SphereCollider GetCollider() const;
+
+	// === ICollisionBody3D 実装 ===
+	SphereCollider GetSphereCollider() const override { return GetCollider(); }
+	uint32_t GetCollisionAttribute() const override {
+		return isEnemyBullet_ ? CollisionAttribute::kEnemyBullet : CollisionAttribute::kPlayerBullet;
+	}
+	uint32_t GetCollisionMask() const override {
+		return isEnemyBullet_ ? CollisionMask::kEnemyBullet : CollisionMask::kPlayerBullet;
+	}
+	void OnCollision(ICollisionBody3D* other) override;
+	bool IsCollisionActive() const override { return isAlive_; }
 
 private:
 	MyMath::Vector3 position_{};

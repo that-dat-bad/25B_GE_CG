@@ -2,9 +2,9 @@
 
 using namespace MyMath;
 
-void Bullet::Spawn(const Vector3& position, const Vector3& direction, float speed, float damage, bool isEnemyBullet) {
+void Bullet::Spawn(const Vector3& position, const Vector3& velocity, float damage, bool isEnemyBullet) {
 	position_ = position;
-	velocity_ = Multiply(speed, direction);
+	velocity_ = velocity;
 	damage_ = damage;
 	lifeTime_ = 5.0f;
 	currentTime_ = 0.0f;
@@ -45,4 +45,9 @@ SphereCollider Bullet::GetCollider() const {
 	collider.center = position_;
 	collider.radius = kCollisionRadius;
 	return collider;
+}
+
+void Bullet::OnCollision([[maybe_unused]] ICollisionBody3D* other) {
+	// 衝突したら弾丸を消滅させる
+	Kill();
 }

@@ -23,11 +23,10 @@ public:
 
 	/// @brief 弾丸を1発生成
 	/// @param position 発射位置
-	/// @param direction 発射方向（正規化済み）
-	/// @param speed 弾速 (m/s)
+	/// @param velocity 弾丸の初速度ベクトル (m/s)
 	/// @param damage ダメージ
 	/// @param isEnemyBullet 敵の弾かどうか
-	void SpawnBullet(const MyMath::Vector3& position, const MyMath::Vector3& direction, float speed, float damage, bool isEnemyBullet = false);
+	void SpawnBullet(const MyMath::Vector3& position, const MyMath::Vector3& velocity, float damage, bool isEnemyBullet = false);
 
 	/// @brief アクティブな弾丸のリストへの参照を取得
 	std::vector<Bullet>& GetBullets() { return bullets_; }

@@ -1,14 +1,17 @@
 #pragma once
 #include "IScene.h"
 #include <memory>
-#include "Object3d.h"
-#include "Skybox.h"
+#include "../../engine/Graphics/Model/Object3d.h"
+#include "../../engine/Graphics/Model/Skybox.h"
+#include "../Camera/PlayerCamera.h"
 #include "FlightModel/FlightModel.h"
 #include "FlightModel/FlightInstructor.h"
 #include "FlightModel/MouseAimController.h"
 #include "FlightModel/Payload/Gunpod.h"
 #include "Enemy/EnemyManager.h"
 #include "Bullet/BulletManager.h"
+#include "../../engine/Physics/CollisionSystem.h"
+#include "../../engine/Physics/CollisionConfig.h"
 
 /// @brief ゲーム本編のステージシーン
 class StageScene : public IScene {
@@ -37,37 +40,9 @@ private:
 	std::unique_ptr<Skybox> skybox_ = nullptr;
 
 	// ============================
+	// プレイヤーカメラ
 	// ============================
-	MyMath::Vector3 cameraCurrentPos_;   // カメラの現在位置（補間済み）
-	MyMath::Vector3 cameraLookTarget_;   // カメラの注視点（補間済み）
-
-	// カメラパラメータ
-	float cameraDistance_  = 22.0f;   // 機体からの距離
-	float cameraHeight_   = 8.0f;    // 機体の上方向オフセット
-	float cameraPosLag_   = 5.0f;    // 位置の追従速度（大きいほど速い）
-	float cameraLookLag_  = 10.0f;   // 注視点の追従速度
-	float currentFov_     = 0.45f;   // 現在のFOV
-	bool isZoomed_        = false;   // ズーム状態（トグル）
-
-	// カメラ更新
-	void UpdateChaseCamera(float dt);
-
-	// ============================
-	// 自由視点カメラ（Cキー長押し）
-	// ============================
-	bool  freeViewActive_ = false;       // Cキー押下中フラグ
-	float freeViewYaw_    = 0.0f;        // 自由視点ヨー角
-	float freeViewPitch_  = 0.0f;        // 自由視点ピッチ角
-	float freeViewYawVelocity_   = 0.0f; // 自由視点ヨー角速度
-	float freeViewPitchVelocity_ = 0.0f; // 自由視点ピッチ角速度
-	float freeViewDistance_ = 25.0f;     // 機体からの距離
-	MyMath::Vector3 freeViewLookOffset_ = { 0.0f, 0.0f, 0.0f }; // 注視点の機体からの相対オフセット
-
-	// ヘルパー：クォータニオンからオイラー角(XYZ)への変換
-	static MyMath::Vector3 QuaternionToEuler(const MyMath::Quaternion& q);
-
-	// ヘルパー：注視点からカメラの回転(オイラー角)を計算
-	MyMath::Vector3 LookAtRotation(const MyMath::Vector3& from, const MyMath::Vector3& to) const;
+	PlayerCamera playerCamera_;
 
 	// ============================
 	// マウスエイム操縦
@@ -75,16 +50,29 @@ private:
 	MouseAimController mouseAimController_;
 	bool mouseAimEnabled_ = true;    // マウスエイムモード ON/OFF
 
-	// カメラの回転角キャッシュ（マウスエイムの目標方向計算に使用）
-	float cachedCameraYaw_ = 0.0f;
-	float cachedCameraPitch_ = 0.0f;
-
 	// ============================
 	// 戦闘システム
 	// ============================
 	GunPod gunpod_;
 	EnemyManager enemyManager_;
 	BulletManager bulletManager_;
+
+	// --- 統合当たり判定 ---
+	CollisionSystem collisionSystem_;
+
+	/// @brief プレイヤーの当たり判定ボディ（内部クラス）
+	class PlayerCollisionBody : public ICollisionBody3D {
+	public:
+		StageScene* scene_ = nullptr;
+		SphereCollider GetSphereCollider() const override {
+			return { scene_->flightModel_.GetPosition(), scene_->playerCollisionRadius_ };
+		}
+		uint32_t GetCollisionAttribute() const override { return CollisionAttribute::kPlayer; }
+		uint32_t GetCollisionMask() const override { return CollisionMask::kPlayer; }
+		void OnCollision(ICollisionBody3D* other) override;
+		bool IsCollisionActive() const override { return !scene_->isMissionFailed_; }
+	};
+	PlayerCollisionBody playerBody_;
 
 	// 追従マズルフラッシュ描画用タイマー
 	float muzzleFlashTimer_ = 0.0f;
