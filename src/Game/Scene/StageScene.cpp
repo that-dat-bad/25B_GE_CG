@@ -222,10 +222,10 @@ void StageScene::Update() {
 	Input* input = Input::GetInstance();
 
 	// --- スロットル ---
-	if (input->PushKey(DIK_LSHIFT)) {
+	if (input->PushKey(DIK_W)) {
 		throttle_ += 0.8f * kDeltaTime;
 	}
-	if (input->PushKey(DIK_LCONTROL)) {
+	if (input->PushKey(DIK_S)) {
 		throttle_ -= 0.8f * kDeltaTime;
 	}
 	if (throttle_ < 0.0f) { throttle_ = 0.0f; }
@@ -244,6 +244,10 @@ void StageScene::Update() {
 			Vector3 dir = Normalize(camOffset);
 			freeViewPitch_ = std::asin(std::clamp(dir.y, -1.0f, 1.0f));
 			freeViewYaw_   = std::atan2(dir.x, dir.z);
+			freeViewPitchVelocity_ = 0.0f;
+			freeViewYawVelocity_   = 0.0f;
+			// 現在の注視点と機体位置の差分を保持（切替時の視点ジャンプ防止）
+			freeViewLookOffset_ = Substract(cameraLookTarget_, flightModel_.GetPosition());
 		}
 	} else {
 		freeViewActive_ = false;
@@ -275,8 +279,8 @@ void StageScene::Update() {
 	float manualRoll = 0.0f;
 	float manualYaw = 0.0f;
 
-	if (input->PushKey(DIK_W)) { manualPitch -= 1.0f; }
-	if (input->PushKey(DIK_S)) { manualPitch += 1.0f; }
+	if (input->PushKey(DIK_LSHIFT)) { manualPitch -= 1.0f; }
+	if (input->PushKey(DIK_LCONTROL)) { manualPitch += 1.0f; }
 	if (input->PushKey(DIK_A)) { manualRoll += 1.0f; }
 	if (input->PushKey(DIK_D)) { manualRoll -= 1.0f; }
 	if (input->PushKey(DIK_Q)) { manualYaw -= 1.0f; }
@@ -377,9 +381,16 @@ void StageScene::Update() {
 		gunpod_.Fire();
 		if (gunpod_.GetCurrentAmmo() < ammoBefore) {
 			Vector3 firePos = flightModel_.GetPosition();
-			Vector3 fireDir = flightModel_.GetForwardDirection();
+			Vector3 aircraftForward = flightModel_.GetForwardDirection();
 			// 機首先端から発射
-			firePos = Add(firePos, Multiply(8.0f, fireDir));
+			firePos = Add(firePos, Multiply(8.0f, aircraftForward));
+
+			// ガンコンバージェンス（照準点への収束）
+			// レティクルの位置（500m先）に向けて発射する
+			Vector3 targetDir = mouseAimEnabled_ ? mouseAimController_.GetTargetDirection() : aircraftForward;
+			Vector3 aimWorldPos = Add(flightModel_.GetPosition(), Multiply(500.0f, targetDir));
+			Vector3 fireDir = Normalize(Substract(aimWorldPos, firePos));
+
 			// 弾丸の初速は機体速度＋射出速度(500.0f)にする (自機が弾を追い抜く問題を防止)
 			float bulletSpeed = flightModel_.GetSpeed() + 500.0f;
 			bulletManager_.SpawnBullet(firePos, fireDir, bulletSpeed, 10.0f);
@@ -741,8 +752,8 @@ void StageScene::Update() {
 	ImGui::Separator();
 	ImGui::Text("=== Controls ===");
 	ImGui::Text("Mouse: Aim direction (PID)");
-	ImGui::Text("W/S: Pitch | A/D: Roll | Q/E: Yaw (override)");
-	ImGui::Text("LShift/LCtrl: Throttle");
+	ImGui::Text("LShift/LCtrl: Pitch | A/D: Roll | Q/E: Yaw (override)");
+	ImGui::Text("W/S: Throttle");
 	ImGui::Text("F: Flaps | B: AirBrake");
 	ImGui::Text("M: Mouse Aim [%s]", mouseAimEnabled_ ? "ON" : "OFF");
 	ImGui::Text("I: Instructor [%s]", flightInstructor_.IsEnabled() ? "ON" : "OFF");
@@ -1143,14 +1154,26 @@ void StageScene::UpdateChaseCamera(float dt) {
 	if (freeViewActive_) {
 		// マウス移動量で軌道角度を更新
 		Input::MouseMove mouseMove = Input::GetInstance()->GetMouseMove();
-		const float sensitivity = 0.005f;
-		freeViewYaw_   += static_cast<float>(mouseMove.lX) * sensitivity;
-		freeViewPitch_ += static_cast<float>(mouseMove.lY) * sensitivity;
+		const float sensitivity = 0.002f;
+		const float damping = 0.85f; // 慣性の減衰率
+		const float accelScale = 1.0f - damping;
+
+		// マウス入力を速度に加算
+		freeViewYawVelocity_   += static_cast<float>(mouseMove.lX) * sensitivity * accelScale;
+		freeViewPitchVelocity_ += static_cast<float>(mouseMove.lY) * sensitivity * accelScale;
+
+		// 速度を角度に加算
+		freeViewYaw_   += freeViewYawVelocity_;
+		freeViewPitch_ += freeViewPitchVelocity_;
+
+		// 速度を減衰させる
+		freeViewYawVelocity_   *= damping;
+		freeViewPitchVelocity_ *= damping;
 
 		// ピッチを制限（真上・真下を超えないように）
 		const float pitchLimit = 3.141592f * 0.49f;
-		if (freeViewPitch_ > pitchLimit) { freeViewPitch_ = pitchLimit; }
-		if (freeViewPitch_ < -pitchLimit) { freeViewPitch_ = -pitchLimit; }
+		if (freeViewPitch_ > pitchLimit) { freeViewPitch_ = pitchLimit; freeViewPitchVelocity_ = 0.0f; }
+		if (freeViewPitch_ < -pitchLimit) { freeViewPitch_ = -pitchLimit; freeViewPitchVelocity_ = 0.0f; }
 
 		// 球面座標で機体中心からのオフセットを計算
 		Vector3 offset;
@@ -1160,11 +1183,22 @@ void StageScene::UpdateChaseCamera(float dt) {
 
 		Vector3 freeViewPos = Add(aircraftPos, offset);
 
-		// カメラ位置・注視点を即座にセット（自由視点中は補間なし）
+		// カメラ位置を即座にセット
 		cameraCurrentPos_ = freeViewPos;
-		cameraLookTarget_ = aircraftPos;
 
-		Vector3 cameraRotation = LookAtRotation(freeViewPos, aircraftPos);
+		// マウス操作があればオフセットをゼロへ縮小（機体中心を注視するように移行）
+		bool hasMouseInput = (std::fabs(freeViewYawVelocity_) > 0.0001f || std::fabs(freeViewPitchVelocity_) > 0.0001f);
+		if (hasMouseInput) {
+			float blendT = 1.0f - std::exp(-15.0f * dt);
+			freeViewLookOffset_.x *= (1.0f - blendT);
+			freeViewLookOffset_.y *= (1.0f - blendT);
+			freeViewLookOffset_.z *= (1.0f - blendT);
+		}
+
+		// 注視点 = 機体位置 + 相対オフセット（初期は通常カメラと同じ、マウス操作で0に収束）
+		cameraLookTarget_ = Add(aircraftPos, freeViewLookOffset_);
+
+		Vector3 cameraRotation = LookAtRotation(freeViewPos, cameraLookTarget_);
 		cachedCameraPitch_ = cameraRotation.x;
 		cachedCameraYaw_   = cameraRotation.y;
 

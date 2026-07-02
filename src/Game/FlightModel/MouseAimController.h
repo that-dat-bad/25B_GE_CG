@@ -99,7 +99,7 @@ private:
 	bool enabled_ = true;
 
 	// マウス感度
-	float sensitivity_ = 0.15f;
+	float sensitivity_ = 0.05f; // reduced mouse sensitivity
 
 	// ワールド空間の目標方向（単位ベクトル）
 	MyMath::Vector3 targetDirection_ = { 0.0f, 0.0f, 1.0f };

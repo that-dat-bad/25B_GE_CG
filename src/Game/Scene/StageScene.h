@@ -58,7 +58,10 @@ private:
 	bool  freeViewActive_ = false;       // Cキー押下中フラグ
 	float freeViewYaw_    = 0.0f;        // 自由視点ヨー角
 	float freeViewPitch_  = 0.0f;        // 自由視点ピッチ角
+	float freeViewYawVelocity_   = 0.0f; // 自由視点ヨー角速度
+	float freeViewPitchVelocity_ = 0.0f; // 自由視点ピッチ角速度
 	float freeViewDistance_ = 25.0f;     // 機体からの距離
+	MyMath::Vector3 freeViewLookOffset_ = { 0.0f, 0.0f, 0.0f }; // 注視点の機体からの相対オフセット
 
 	// ヘルパー：クォータニオンからオイラー角(XYZ)への変換
 	static MyMath::Vector3 QuaternionToEuler(const MyMath::Quaternion& q);
