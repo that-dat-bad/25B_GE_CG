@@ -33,7 +33,7 @@ void VoiceCallback::OnStreamEnd() {
 // ============================
 // ============================
 AudioManager* AudioManager::GetInstance() {
-	if (instance == nullptr) { instance.reset(new AudioManager()); }
+	if (instance == nullptr) { instance = std::make_unique<AudioManager>(); }
 	return instance.get();
 }
 

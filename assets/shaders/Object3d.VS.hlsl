@@ -49,20 +49,13 @@ VertexOutput main(VertexInput input)
     // 変形した座標に、カメラなどのWVP行列を掛けて画面に出力
     output.position = mul(skinnedPosition, gTransformationMatrix.WVP);
     
-    // 座標変換
-    //output.position = mul(input.position, gTransformationMatrix.WVP);
-    
     // UV座標をそのまま渡す
     output.texcoord = input.texcoord;
-    
-    // 法線をワールド空間に変換して正規化 (WorldInverseTransposeを使用)
-    //output.normal = normalize(mul(input.normal, (float32_t3x3) gTransformationMatrix.WorldInverseTranspose));
     
     float32_t3 skinnedNormal = mul(input.normal, (float32_t3x3) skinnedMatrix);
     output.normal = normalize(mul(skinnedNormal, (float32_t3x3) gTransformationMatrix.WorldInverseTranspose));
     
     // 頂点位置をワールド空間に変換
-    //output.worldPosition = mul(input.position, gTransformationMatrix.World).xyz;
     output.worldPosition = mul(skinnedPosition, gTransformationMatrix.World).xyz;
     return output;
 }

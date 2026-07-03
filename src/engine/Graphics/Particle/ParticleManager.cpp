@@ -128,7 +128,7 @@ void ParticleManager::Update() {
 				Matrix4x4 finalBillboard = billboardMatrix;
 				
 				if (it->isStretched) {
-					Vector3 camToParticle = Substract(it->transform.translate, camera->GetTranslate());
+					Vector3 camToParticle = Subtract(it->transform.translate, camera->GetTranslate());
 					if (Length(camToParticle) > 0.001f) {
 						camToParticle = Normalize(camToParticle);
 						
@@ -147,7 +147,7 @@ void ParticleManager::Update() {
 							Vector3 velDir = Normalize(stretchVec);
 							// 速度（または指定方向）ベクトルをスクリーン平面（法線camToParticle）に投影
 							float dot = Dot(velDir, camToParticle);
-							Vector3 projVel = Substract(velDir, Multiply(dot, camToParticle));
+							Vector3 projVel = Subtract(velDir, Multiply(dot, camToParticle));
 							if (Length(projVel) > 0.0001f) {
 								projVel = Normalize(projVel);
 								Vector3 right = Normalize(Cross(camToParticle, projVel));

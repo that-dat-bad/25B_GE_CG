@@ -14,7 +14,7 @@ namespace MyMath {
 	Vector3 Add(const Vector3& v1, const Vector3& v2);
 
 	// 引き算
-	Vector3 Substract(const Vector3& v1, const Vector3& v2);
+	Vector3 Subtract(const Vector3& v1, const Vector3& v2);
 
 	// スカラー積
 	Vector3 Multiply(float scaler, const Vector3& v);

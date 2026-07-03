@@ -29,7 +29,7 @@ void PlayerCamera::Update(float dt, FlightModel* flightModel, MouseAimController
     if (input->PushKey(DIK_C)) {
         if (!freeViewActive_) {
             freeViewActive_ = true;
-            Vector3 camOffset = Substract(cameraCurrentPos_, aircraftPos);
+            Vector3 camOffset = Subtract(cameraCurrentPos_, aircraftPos);
             freeViewDistance_ = Length(camOffset);
             if (freeViewDistance_ < 1.0f) { freeViewDistance_ = cameraDistance_; }
             Vector3 dir = Normalize(camOffset);
@@ -37,7 +37,7 @@ void PlayerCamera::Update(float dt, FlightModel* flightModel, MouseAimController
             freeViewYaw_   = std::atan2(dir.x, dir.z);
             freeViewPitchVelocity_ = 0.0f;
             freeViewYawVelocity_   = 0.0f;
-            freeViewLookOffset_ = Substract(cameraLookTarget_, aircraftPos);
+            freeViewLookOffset_ = Subtract(cameraLookTarget_, aircraftPos);
         }
     } else {
         freeViewActive_ = false;
@@ -167,7 +167,7 @@ MyMath::Vector3 PlayerCamera::QuaternionToEuler(const MyMath::Quaternion& q) {
 }
 
 MyMath::Vector3 PlayerCamera::LookAtRotation(const MyMath::Vector3& from, const MyMath::Vector3& to) const {
-    Vector3 dir = Substract(to, from);
+    Vector3 dir = Subtract(to, from);
     float len = Length(dir);
     if (len < 0.0001f) {
         return { cachedCameraPitch_, cachedCameraYaw_, 0.0f };

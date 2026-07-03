@@ -124,7 +124,7 @@ void FlightModel::Update(float deltaTime)
 
 	// 11. G計算
 	if (deltaTime > 0.0001f) {
-		MyMath::Vector3 deltaV = MyMath::Substract(velocity_, prevVelocity);
+		MyMath::Vector3 deltaV = MyMath::Subtract(velocity_, prevVelocity);
 		MyMath::Vector3 accelNoGravity = MyMath::Multiply(1.0f / deltaTime, deltaV);
 		// 重力を除外（重力は体感Gに含めない: 自由落下 = 0G）
 		accelNoGravity = MyMath::Add(accelNoGravity, { 0.0f, kGravity, 0.0f });

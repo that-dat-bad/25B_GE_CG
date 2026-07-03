@@ -89,7 +89,7 @@ bool Collision3DManager::CheckBodyCollision(ICollisionBody3D* a, ICollisionBody3
 // ============================================================
 
 bool Collision3DManager::CheckSphereSphere(const SphereCollider& a, const SphereCollider& b) {
-	MyMath::Vector3 diff = MyMath::Substract(a.center, b.center);
+	MyMath::Vector3 diff = MyMath::Subtract(a.center, b.center);
 	float distSq = diff.x * diff.x + diff.y * diff.y + diff.z * diff.z;
 	float radiusSum = a.radius + b.radius;
 	return distSq <= radiusSum * radiusSum;

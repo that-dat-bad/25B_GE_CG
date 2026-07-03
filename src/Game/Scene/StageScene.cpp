@@ -524,9 +524,9 @@ void StageScene::Update() {
 
 		if (hasLastWingTips_) {
 			// 前フレームからの移動距離に応じて、隙間を埋めるように補間
-			Vector3 deltaL = Substract(leftWingTip, lastLeftWingTip_);
+			Vector3 deltaL = Subtract(leftWingTip, lastLeftWingTip_);
 			float distL = Length(deltaL);
-			Vector3 deltaR = Substract(rightWingTip, lastRightWingTip_);
+			Vector3 deltaR = Subtract(rightWingTip, lastRightWingTip_);
 
 			// 0.25m（25cm）間隔で配置するための補間数（ストレッチビルボード化によりステップ数を激減）
 			int steps = static_cast<int>(std::ceil(distL / 0.25f));

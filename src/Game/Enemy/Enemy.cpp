@@ -81,7 +81,7 @@ void Enemy::UpdateAI(float deltaTime) {
 	MyMath::Vector3 playerPos = playerFlightModel_->GetPosition();
 	MyMath::Vector3 myPos = flightModel_.GetPosition();
 	
-	MyMath::Vector3 toPlayer = MyMath::Substract(playerPos, myPos);
+	MyMath::Vector3 toPlayer = MyMath::Subtract(playerPos, myPos);
 	float distance = MyMath::Length(toPlayer);
 
 	// 偏差射撃（リード）の計算：弾速と相手の速度から未来位置を予測する
@@ -93,11 +93,11 @@ void Enemy::UpdateAI(float deltaTime) {
 	MyMath::Vector3 futurePos = MyMath::Add(playerPos, MyMath::Multiply(timeToHit, targetVel));
 	
 	// 2次予測（より正確な着弾点）
-	float distance2 = MyMath::Length(MyMath::Substract(futurePos, myPos));
+	float distance2 = MyMath::Length(MyMath::Subtract(futurePos, myPos));
 	timeToHit = distance2 / bulletSpeed;
 	futurePos = MyMath::Add(playerPos, MyMath::Multiply(timeToHit, targetVel));
 
-	MyMath::Vector3 toFuture = MyMath::Substract(futurePos, myPos);
+	MyMath::Vector3 toFuture = MyMath::Subtract(futurePos, myPos);
 
 	// 目標方向を未来位置へセット
 	if (distance > 1.0f) {
