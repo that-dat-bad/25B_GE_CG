@@ -46,6 +46,9 @@ enum class DamageZone {
 };
 
 // --- 機体フレームクラス本体 ---
+/// <summary>
+/// 機体のフレーム（骨格）や物理的特性を管理するクラス
+/// </summary>
 class Airframe {
 public:
 	Airframe() : currentInternalFuel_(0.0f), currentHealth_(0.0f),
@@ -57,13 +60,22 @@ public:
 	}
 	~Airframe() = default;
 
-	// 初期化（外部データを受け取ってセットアップ）
+	/// <summary>
+	/// 初期化（外部データを受け取ってセットアップ）
+	/// </summary>
+	/// <param name="data">機体データ構造体</param>
 	void Initialize(const AirframeData& data);
 
-	// 内蔵燃料を消費する処理
+	/// <summary>
+	/// 内蔵燃料を消費する処理
+	/// </summary>
+	/// <param name="amount">消費量</param>
 	void ConsumeInternalFuel(float amount);
 
-	// ダメージを受ける処理
+	/// <summary>
+	/// ダメージを受ける処理
+	/// </summary>
+	/// <param name="damage">ダメージ量</param>
 	void TakeDamage(float damage);
 
 	// --- フラップ ---

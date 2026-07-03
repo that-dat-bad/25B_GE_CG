@@ -5,9 +5,15 @@
 #include "../FlightModel/FlightModel.h"
 #include "../FlightModel/MouseAimController.h"
 
+/// <summary>
+/// 自機を追従するカメラの制御クラス（三人称視点、フリービュー対応）
+/// </summary>
 class PlayerCamera {
 public:
+    /// <summary>初期化処理</summary>
     void Initialize(const MyMath::Vector3& initialPos, const MyMath::Vector3& initialForward);
+
+    /// <summary>カメラの位置・姿勢の更新処理</summary>
     void Update(float dt, FlightModel* flightModel, MouseAimController* mouseAimController, bool mouseAimEnabled);
 
     bool& GetFreeViewActive() { return freeViewActive_; }

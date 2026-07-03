@@ -364,3 +364,4 @@ FodyWeavers.xsd
 /imgui.ini
 /.agents/skills/cpp-pro
 .aider*
+assets/shaders/compiled/

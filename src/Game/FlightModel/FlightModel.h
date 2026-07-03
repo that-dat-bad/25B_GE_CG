@@ -9,15 +9,26 @@
 #include "Payload/IPayload.h"
 
 
+/// <summary>
+/// 飛行機の物理挙動（フライトモデル）を計算・管理するクラス
+/// </summary>
 class FlightModel {
 public:
+	/// <summary>コンストラクタ</summary>
 	FlightModel();
 	~FlightModel() = default;
 
-	// 初期化
+	/// <summary>
+	/// 初期化
+	/// </summary>
+	/// <param name="airframeData">機体パラメータ</param>
+	/// <param name="engineData">エンジンパラメータ</param>
 	void Initialize(const AirframeData& airframeData, const EngineData& engineData);
 
-	// 毎フレームの更新処理
+	/// <summary>
+	/// 毎フレームの更新処理(物理計算など)
+	/// </summary>
+	/// <param name="deltaTime">デルタタイム(秒)</param>
 	void Update(float deltaTime);
 
 

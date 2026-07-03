@@ -26,25 +26,28 @@ public:
 	/// </summary>
 	PrimitiveModel() = default;
 
+	/// <summary>初期化処理</summary>
 	void Initialize(DirectXCommon* dxCommon);
+
+	/// <summary>終了処理</summary>
 	void Finalize();
 	
-	// 描画カウントをリセットする（毎フレームの最初に呼ぶ、またはUpdateなどで呼ぶ）
+	/// <summary>描画カウントをリセットする（毎フレームの最初に呼ぶ、またはUpdateなどで呼ぶ）</summary>
 	void Reset();
 
-	// エフェクト描画関数 (Ring)
+	/// <summary>エフェクト描画関数 (Ring)</summary>
 	void DrawRing(const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode = BlendMode::kNormal);
 
-	// エフェクト描画関数 (Cylinder)
+	/// <summary>エフェクト描画関数 (Cylinder)</summary>
 	void DrawCylinder(const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode = BlendMode::kNormal);
 
-	// エフェクト描画関数 (Plane)
+	/// <summary>エフェクト描画関数 (Plane)</summary>
 	void DrawPlane(const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode = BlendMode::kNormal);
 
-	// エフェクト描画関数 (Cone)
+	/// <summary>エフェクト描画関数 (Cone)</summary>
 	void DrawCone(const Vector3& scale, const Vector3& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode = BlendMode::kNormal);
 
-	// エフェクト描画関数 (Cone - クォータニオン版)
+	/// <summary>エフェクト描画関数 (Cone - クォータニオン版)</summary>
 	void DrawCone(const Vector3& scale, const Quaternion& rotate, const Vector3& translate, const Vector4& color, uint32_t textureIndex, Camera* camera, BlendMode blendMode = BlendMode::kNormal);
 
 	// 3D直線描画関数 (デバッグ用などに使用)

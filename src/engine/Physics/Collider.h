@@ -5,19 +5,25 @@
 // 3D コライダー
 // ============================================================
 
-/// @brief コライダーの種類（3D）
+/// <summary>
+/// コライダーの種類（3D）
+/// </summary>
 enum class ColliderType3D {
 	Sphere,
 	AABB,
 };
 
-/// @brief 球コライダー
+/// <summary>
+/// 球コライダー
+/// </summary>
 struct SphereCollider {
 	MyMath::Vector3 center;
 	float radius = 1.0f;
 };
 
-/// @brief AABBコライダー
+/// <summary>
+/// AABBコライダー
+/// </summary>
 struct AABBCollider {
 	MyMath::Vector3 min;
 	MyMath::Vector3 max;
@@ -27,19 +33,25 @@ struct AABBCollider {
 // 2D コライダー
 // ============================================================
 
-/// @brief コライダーの種類（2D）
+/// <summary>
+/// コライダーの種類（2D）
+/// </summary>
 enum class ColliderType2D {
 	Circle,
 	Rect,
 };
 
-/// @brief 円コライダー（2D）
+/// <summary>
+/// 円コライダー（2D）
+/// </summary>
 struct CircleCollider {
 	Vector2 center;
 	float radius = 1.0f;
 };
 
-/// @brief 矩形コライダー（2D / AABB）
+/// <summary>
+/// 矩形コライダー（2D / AABB）
+/// </summary>
 struct RectCollider {
 	Vector2 min;
 	Vector2 max;

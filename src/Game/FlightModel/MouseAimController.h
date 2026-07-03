@@ -3,7 +3,7 @@
 
 class FlightModel;
 
-/// 汎用PIDコントローラー（1軸分）
+/// <summary>汎用PIDコントローラー（1軸分）</summary>
 struct PIDController {
 	float kP = 0.0f;    // 比例ゲイン
 	float kI = 0.0f;    // 積分ゲイン
@@ -13,12 +13,12 @@ struct PIDController {
 	float prevError = 0.0f;     // 前フレームの誤差
 	float maxIntegral = 1.0f;   // 積分アンチワインドアップ上限
 
-	/// PIDのパラメータを設定
+	/// <summary>PIDのパラメータを設定</summary>
 	void SetGains(float p, float i, float d, float maxI = 1.0f) {
 		kP = p; kI = i; kD = d; maxIntegral = maxI;
 	}
 
-	/// 誤差と経過時間からPID出力を計算
+	/// <summary>誤差と経過時間からPID出力を計算</summary>
 	float Update(float error, float dt) {
 		// 比例項
 		float pTerm = kP * error;
@@ -41,7 +41,7 @@ struct PIDController {
 		return pTerm + iTerm + dTerm;
 	}
 
-	/// 状態をリセット
+	/// <summary>状態をリセット</summary>
 	void Reset() {
 		integral = 0.0f;
 		prevError = 0.0f;
@@ -49,14 +49,16 @@ struct PIDController {
 };
 
 
+/// <summary>
 /// War Thunder風 マウスエイム・コントローラー
 /// マウス入力 → ワールド空間の目標方向を回転 → PID制御で操舵入力を生成。
+/// </summary>
 class MouseAimController {
 public:
 	MouseAimController() = default;
 	~MouseAimController() = default;
 
-	/// 初期化
+	/// <summary>初期化</summary>
 	void Initialize();
 
 	/// マウスの相対移動量でワールド空間の目標方向を回転（カメラのローカル軸を使用）

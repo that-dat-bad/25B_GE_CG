@@ -13,21 +13,25 @@
 class Object3dCommon;
 class Camera;
 
-/// @brief 空中ターゲット（敵AI）
+/// <summary>
+/// 空中ターゲット（敵AI）
+/// </summary>
 class Enemy : public ICollisionBody3D {
 public:
 	Enemy() = default;
 	~Enemy() = default;
 
-	/// @brief 初期化
-	/// @param position 配置座標
-	/// @param modelPath モデルファイルパス
-	/// @param maxHealth 最大HP
-	/// @param airframeData 機体パラメータ
-	/// @param engineData エンジンパラメータ
-	/// @param gunpodData ガンポッドパラメータ
-	/// @param playerFlightModel 自機のフライトモデルへのポインタ
-	/// @param bulletManager 弾丸マネージャーへのポインタ
+	/// <summary>
+	/// 初期化
+	/// </summary>
+	/// <param name="position">配置座標</param>
+	/// <param name="modelPath">モデルファイルパス</param>
+	/// <param name="maxHealth">最大HP</param>
+	/// <param name="airframeData">機体パラメータ</param>
+	/// <param name="engineData">エンジンパラメータ</param>
+	/// <param name="gunpodData">ガンポッドパラメータ</param>
+	/// <param name="playerFlightModel">自機のフライトモデルへのポインタ</param>
+	/// <param name="bulletManager">弾丸マネージャーへのポインタ</param>
 	void Initialize(
 		const MyMath::Vector3& position, 
 		const std::string& modelPath, 
@@ -39,14 +43,20 @@ public:
 		BulletManager* bulletManager
 	);
 
-	/// @brief 更新処理
+	/// <summary>
+	/// 更新処理
+	/// </summary>
 	void Update(float deltaTime);
 
-	/// @brief 描画処理
+	/// <summary>
+	/// 描画処理
+	/// </summary>
 	void Draw();
 
-	/// @brief ダメージを受ける
-	/// @param damage ダメージ量
+	/// <summary>
+	/// ダメージを受ける
+	/// </summary>
+	/// <param name="damage">ダメージ量</param>
 	void TakeDamage(float damage);
 
 	// === アクセッサ ===

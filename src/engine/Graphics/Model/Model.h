@@ -10,12 +10,31 @@ using namespace MyMath;
 class ModelCommon;
 class Camera;
 
+/// <summary>
+/// 3Dモデルデータを保持し描画を行うクラス
+/// (アセットファイルからのデータ読み込み、アニメーション対応)
+/// </summary>
 class Model {
 public:
+	/// <summary>
+	/// モデルの初期化
+	/// </summary>
+	/// <param name="modelCommon">ModelCommonポインタ</param>
+	/// <param name="directorypath">ディレクトリパス</param>
+	/// <param name="filename">ファイル名</param>
 	void Initialize(ModelCommon* modelCommon, const std::string& directorypath, const std::string& filename);
+	
+	/// <summary>
+	/// モデルの描画コマンド発行
+	/// </summary>
 	void Draw();
 
-	// デバッグ用: スケルトンの描画
+	/// <summary>
+	/// デバッグ用: スケルトンの描画
+	/// </summary>
+	/// <param name="objectWorldMatrix">オブジェクトのワールド行列</param>
+	/// <param name="camera">カメラ</param>
+	/// <param name="color">描画色</param>
 	void DebugDrawSkeleton(const Matrix4x4& objectWorldMatrix, Camera* camera, const Vector4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
 
 	void SetShininess(float shininess) { materialData_->shininess = shininess; }

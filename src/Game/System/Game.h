@@ -21,12 +21,34 @@
 
 
 
+/// <summary>
+/// ゲーム全体の初期化・更新・描画・終了（メインループ）を管理するクラス
+/// </summary>
 class Game {
 public:
+	/// <summary>
+	/// ゲームの初期化処理
+	/// </summary>
 	void Initialize();
+
+	/// <summary>
+	/// ゲームの終了処理
+	/// </summary>
 	void Finalize();
+
+	/// <summary>
+	/// 毎フレームの更新処理
+	/// </summary>
 	void Update();
+
+	/// <summary>
+	/// 毎フレームの描画処理
+	/// </summary>
 	void Draw();
+
+	/// <summary>
+	/// メインループを実行する
+	/// </summary>
 	void Run();
 	// ゲーム終了フラグのチェック
 	bool IsEndRequest() const { return endRequest_; }

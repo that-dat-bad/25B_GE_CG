@@ -40,20 +40,25 @@ public:
 	static const uint32_t kSwapChainBufferCount_ = 2;
 
 
-	// 初期化
+	/// <summary>
+	/// 初期化
+	/// </summary>
+	/// <param name="winApp">Windowsアプリケーションへのポインタ</param>
 	void Initialize(WinApp* winApp);
+	
+	/// <summary>終了処理</summary>
 	void Finalize();
 
-	// 全てのGPU処理の完了を待つ
+	/// <summary>全てのGPU処理の完了を待つ</summary>
 	void WaitForGPU();
 
-	//描画前処理
+	/// <summary>描画前処理</summary>
 	void PreDraw();
 
-	//描画後処理（ポストエフェクト適用、バックバッファをRTのまま残す）
+	/// <summary>描画後処理（ポストエフェクト適用、バックバッファをRTのまま残す）</summary>
 	void PostDraw();
 
-	//フレーム終了処理（バックバッファをPRESENTに戻してsubmit）
+	/// <summary>フレーム終了処理（バックバッファをPRESENTに戻してsubmit）</summary>
 	void EndFrame();
 
 	Microsoft::WRL::ComPtr<IDxcBlob> CompileShader(const std::wstring& filePath, const wchar_t* profile);

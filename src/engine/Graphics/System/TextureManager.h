@@ -30,17 +30,22 @@ public:
 	/// </summary>
 	TextureManager() = default;
 
-	// 初期化
+	/// <summary>初期化処理</summary>
 	void Initialize(DirectXCommon* dxCommon,SrvManager* srvManager);
 
-	// 終了処理
+	/// <summary>終了処理</summary>
 	void Finalize();
 
-	// テクスチャ読み込み
+	/// <summary>
+	/// テクスチャ読み込み
+	/// </summary>
+	/// <param name="filePath">ファイルパス</param>
 	void LoadTexture(const std::string& filePath);
 
+	/// <summary>メモリからテクスチャ読み込み</summary>
 	void LoadTextureFromMemory(const std::string& textureName, const void* data, size_t size);
 
+	/// <summary>生ピクセルデータからテクスチャ読み込み</summary>
 	void LoadTextureFromRawPixels(const std::string& textureName, uint32_t width, uint32_t height, DXGI_FORMAT format, const void* pixels);
 
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(uint32_t textureIndex);

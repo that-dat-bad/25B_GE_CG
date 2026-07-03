@@ -5,33 +5,47 @@
 
 class Camera;
 
-/// @brief 弾丸のオブジェクトプール管理クラス
+/// <summary>
+/// 弾丸のオブジェクトプール管理クラス
+/// </summary>
 class BulletManager {
 public:
 	BulletManager() = default;
 	~BulletManager() = default;
 
-	/// @brief 初期化（オブジェクトプールの確保）
-	/// @param maxBullets プールの最大数
+	/// <summary>
+	/// 初期化（オブジェクトプールの確保）
+	/// </summary>
+	/// <param name="maxBullets">プールの最大数</param>
 	void Initialize(uint32_t maxBullets = 512);
 
-	/// @brief 全弾丸の位置更新
+	/// <summary>
+	/// 全弾丸の位置更新
+	/// </summary>
 	void Update(float dt);
 
-	/// @brief 弾丸の描画（パーティクルインスタンシングで描画）
+	/// <summary>
+	/// 弾丸の描画（パーティクルインスタンシングで描画）
+	/// </summary>
 	void Draw(Camera* camera);
 
-	/// @brief 弾丸を1発生成
-	/// @param position 発射位置
-	/// @param velocity 弾丸の初速度ベクトル (m/s)
-	/// @param damage ダメージ
-	/// @param isEnemyBullet 敵の弾かどうか
+	/// <summary>
+	/// 弾丸を1発生成
+	/// </summary>
+	/// <param name="position">発射位置</param>
+	/// <param name="velocity">弾丸の初速度ベクトル (m/s)</param>
+	/// <param name="damage">ダメージ</param>
+	/// <param name="isEnemyBullet">敵の弾かどうか</param>
 	void SpawnBullet(const MyMath::Vector3& position, const MyMath::Vector3& velocity, float damage, bool isEnemyBullet = false);
 
-	/// @brief アクティブな弾丸のリストへの参照を取得
+	/// <summary>
+	/// アクティブな弾丸のリストへの参照を取得
+	/// </summary>
 	std::vector<Bullet>& GetBullets() { return bullets_; }
 
-	/// @brief アクティブな弾丸数
+	/// <summary>
+	/// アクティブな弾丸数
+	/// </summary>
 	uint32_t GetActiveBulletCount() const;
 
 private:

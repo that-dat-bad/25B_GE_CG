@@ -2,10 +2,20 @@
 #include "../base/Math/MyMath.h"
 using namespace MyMath;
 
+/// <summary>
+/// 仮想カメラクラス
+/// 空間のビュー行列・プロジェクション行列の計算と保持を行う
+/// </summary>
 class Camera
 {
 public:
+	/// <summary>コンストラクタ</summary>
 	Camera();
+
+	/// <summary>
+	/// カメラ情報の更新
+	/// 行列の再計算を行う
+	/// </summary>
 	void Update();
 
 	//アクセッサ
