@@ -5,7 +5,7 @@ std::unique_ptr<CameraManager> CameraManager::instance_ = nullptr;
 
 CameraManager* CameraManager::GetInstance() {
 	if (instance_ == nullptr) {
-		instance_.reset(new CameraManager());
+		instance_ = std::make_unique<CameraManager>();
 	}
 	return instance_.get();
 }

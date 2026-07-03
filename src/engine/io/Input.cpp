@@ -11,7 +11,7 @@ std::unique_ptr<Input> Input::instance_ = nullptr;
 
 Input* Input::GetInstance() {
 	if (instance_ == nullptr) {
-		instance_.reset(new Input());
+		instance_ = std::make_unique<Input>();
 	}
 	return instance_.get();
 }

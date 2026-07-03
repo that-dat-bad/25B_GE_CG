@@ -10,10 +10,21 @@
 
 using namespace MyMath;
 
+/// <summary>
+/// プリミティブ形状 (リング、シリンダー、コーン、平面) 描画管理クラス
+/// </summary>
 class PrimitiveModel {
 public:
-	// シングルトン
+	/// <summary>
+	/// シングルトンインスタンスの取得
+	/// </summary>
+	/// <returns>インスタンスポインタ</returns>
 	static PrimitiveModel* GetInstance();
+
+	/// <summary>
+	/// デフォルトコンストラクタ (std::make_unique対応のためpublic)
+	/// </summary>
+	PrimitiveModel() = default;
 
 	void Initialize(DirectXCommon* dxCommon);
 	void Finalize();
@@ -49,7 +60,6 @@ public:
 	~PrimitiveModel() = default;
 
 private:
-	PrimitiveModel() = default;
 	PrimitiveModel(const PrimitiveModel&) = delete;
 	PrimitiveModel& operator=(const PrimitiveModel&) = delete;
 

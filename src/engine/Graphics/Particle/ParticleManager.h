@@ -103,10 +103,22 @@ struct ParticleGroup {
 
 #include <memory> 
 
+/// <summary>
+/// CPU駆動型パーティクルシステム管理クラス
+/// </summary>
 class ParticleManager
 {
 public: // シングルトンパターン
+	/// <summary>
+	/// シングルトンインスタンスの取得
+	/// </summary>
+	/// <returns>インスタンスポインタ</returns>
 	static ParticleManager* GetInstance();
+
+	/// <summary>
+	/// デフォルトコンストラクタ (std::make_unique対応のためpublic)
+	/// </summary>
+	ParticleManager() = default;
 
 	void Initialize(DirectXCommon* dxCommon, SrvManager* srvManager);
 	void Update();
@@ -127,7 +139,6 @@ public: // シングルトンパターン
 	void AddAccelerationField(const std::string& name, const Vector3& acceleration, const AABB& area);
 
 private:
-	ParticleManager() = default;
 	ParticleManager(const ParticleManager&) = delete;
 	ParticleManager& operator=(const ParticleManager&) = delete;
 

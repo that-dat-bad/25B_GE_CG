@@ -454,7 +454,7 @@ std::unique_ptr<EffectManager> EffectManager::instance_ = nullptr;
 
 EffectManager* EffectManager::GetInstance() {
 	if (instance_ == nullptr) {
-		instance_.reset(new EffectManager());
+		instance_ = std::make_unique<EffectManager>();
 	}
 	return instance_.get();
 }
@@ -486,8 +486,8 @@ void EffectManager::Finalize() {
 	instance_.reset();
 }
 
-void EffectManager::AddEffect(IEffect* effect) {
-	effects_.push_back(std::unique_ptr<IEffect>(effect));
+void EffectManager::AddEffect(std::unique_ptr<IEffect> effect) {
+	effects_.push_back(std::move(effect));
 }
 
 void EffectManager::EmitHitEffect(const Vector3& position) {
@@ -495,20 +495,20 @@ void EffectManager::EmitHitEffect(const Vector3& position) {
 	Vector4 color = { 1.0f, 0.8f, 0.2f, 1.0f }; // オレンジ色
 
 	// 1. Ringエフェクト（地面に広がる衝撃波）
-	AddEffect(new RingEffect(position, color, 0.5f, 4.0f));
+	AddEffect(std::make_unique<RingEffect>(position, color, 0.5f, 4.0f));
 
 	// 2. Cylinderエフェクト（上に伸びる光の柱）
-	AddEffect(new CylinderEffect(position, color, 0.4f, 8.0f, 1.5f));
+	AddEffect(std::make_unique<CylinderEffect>(position, color, 0.4f, 8.0f, 1.5f));
 
 	// 3. 回転Planeエフェクト（空間を斬るようなエフェクト）
 	// 白色でランダムな方向に3つ発生させる
 	Vector4 planeColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 	for (int i = 0; i < 3; i++) {
-		AddEffect(new HitRotPlaneEffect(position, planeColor, 0.3f, 3.0f));
+		AddEffect(std::make_unique<HitRotPlaneEffect>(position, planeColor, 0.3f, 3.0f));
 	}
 
 	// 4. Billboard Particle エフェクト（火花）
-	AddEffect(new BillboardParticleEffect(position, "HitSpark", 20));
+	AddEffect(std::make_unique<BillboardParticleEffect>(position, "HitSpark", 20));
 }
 
 void EffectManager::EmitHitPlaneEffect(const Vector3& position) {
@@ -516,7 +516,7 @@ void EffectManager::EmitHitPlaneEffect(const Vector3& position) {
 	
 	// ランダムな角度で3つ発生させる
 	for (int i = 0; i < 3; i++) {
-		AddEffect(new HitRotPlaneEffect(position, color, 0.3f, 3.0f));
+		AddEffect(std::make_unique<HitRotPlaneEffect>(position, color, 0.3f, 3.0f));
 	}
 }
 
@@ -526,12 +526,12 @@ void EffectManager::EmitDestroyEffect(const Vector3& position) {
 	// 幾何学エフェクト（Ring, Cylinder, RotPlane）はチープに見えるため削除し、
 	// 代わりにリッチな ExplosionParticleEffect に全振りします。
 	
-	AddEffect(new ExplosionParticleEffect(position));
+	AddEffect(std::make_unique<ExplosionParticleEffect>(position));
 }
 
 void EffectManager::EmitMuzzleFlash(const Vector3& position, const Vector3& direction) {
 	// パーティクルベースの火花+閃光
 	// (板ポリやリングの閃光はStageScene側で機体に追従させて描画する)
-	AddEffect(new MuzzleFlashEffect(position, direction));
+	AddEffect(std::make_unique<MuzzleFlashEffect>(position, direction));
 }
 

@@ -1,5 +1,6 @@
 #include "Sprite.h"
 #include "SpriteCommon.h"
+#include "../../base/WinApp.h"
 #include "../System/DirectXCommon.h"
 #include "../base/Math/MyMath.h"
 #include "../System/TextureManager.h"
@@ -94,7 +95,7 @@ void Sprite::Update()
 
 	Matrix4x4 worldMatrix = MakeAffineMatrix(finalScale, transform_.rotate, transform_.translate);
 	Matrix4x4 viewMatrix = Identity4x4();
-	Matrix4x4 projectionMatrix = makeOrthographicmMatrix(0.0f, 0.0f, 1280.0f, 720.0f, -10.0f, 100.0f);
+	Matrix4x4 projectionMatrix = makeOrthographicmMatrix(0.0f, 0.0f, static_cast<float>(WinApp::kClientWidth), static_cast<float>(WinApp::kClientHeight), -10.0f, 100.0f);
 	Matrix4x4 wvpMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 
 	materialData_->WVP = wvpMatrix;

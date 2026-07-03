@@ -1,4 +1,5 @@
 #include "ParticleManager.h"
+#include "../../base/WinApp.h"
 #include "../System/TextureManager.h"
 #include "../Camera/CameraManager.h"
 #include <cassert>
@@ -14,7 +15,7 @@ std::unique_ptr<ParticleManager> ParticleManager::instance_ = nullptr;
 
 ParticleManager* ParticleManager::GetInstance() {
 	if (instance_ == nullptr) {
-		instance_.reset(new ParticleManager());
+		instance_ = std::make_unique<ParticleManager>();
 	}
 	return instance_.get();
 }
@@ -53,8 +54,8 @@ void ParticleManager::Update() {
 	if (cameraDataPtr_) {
 		cameraDataPtr_->nearClip = 0.1f; // 固定値でも良いですが実際の値に合わせてください
 		cameraDataPtr_->farClip = 1000.0f; // 実際の FarClip
-		cameraDataPtr_->screenWidth = 1280.0f; // WinAppのサイズ
-		cameraDataPtr_->screenHeight = 720.0f;
+		cameraDataPtr_->screenWidth = static_cast<float>(WinApp::kClientWidth); // WinAppのサイズ
+		cameraDataPtr_->screenHeight = static_cast<float>(WinApp::kClientHeight);
 	}
 
 	Matrix4x4 cameraWorldMatrix = camera->GetWorldMatrix();

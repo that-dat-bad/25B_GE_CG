@@ -120,19 +120,32 @@ private:
 	Vector3 direction_;
 };
 
-// ============================================
-// エフェクトマネージャー
-// ============================================
+/// <summary>
+/// エフェクト管理クラス (各種パーティクル・ジオメトリ演出制御)
+/// </summary>
 class EffectManager {
 public:
+	/// <summary>
+	/// シングルトンインスタンスの取得
+	/// </summary>
+	/// <returns>インスタンスポインタ</returns>
 	static EffectManager* GetInstance();
+
+	/// <summary>
+	/// デフォルトコンストラクタ (std::make_unique対応のためpublic)
+	/// </summary>
+	EffectManager() = default;
 
 	void Initialize();
 	void Update();
 	void Draw(Camera* camera);
 	void Finalize();
 
-	void AddEffect(IEffect* effect);
+	/// <summary>
+	/// エフェクトの追加 (所有権を委譲する)
+	/// </summary>
+	/// <param name="effect">追加するエフェクトのunique_ptr</param>
+	void AddEffect(std::unique_ptr<IEffect> effect);
 
 	// 複数のエフェクトを組み合わせた関数
 	void EmitHitEffect(const Vector3& position);
@@ -146,7 +159,6 @@ public:
 
 	~EffectManager() = default;
 private:
-	EffectManager() = default;
 	EffectManager(const EffectManager&) = delete;
 	EffectManager& operator=(const EffectManager&) = delete;
 

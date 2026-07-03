@@ -13,10 +13,22 @@ class DirectXCommon;
 
 #include <memory> 
 
+/// <summary>
+/// テクスチャ管理クラス
+/// </summary>
 class TextureManager
 {
 public:
+	/// <summary>
+	/// シングルトンインスタンスの取得
+	/// </summary>
+	/// <returns>インスタンスポインタ</returns>
 	static TextureManager* GetInstance();
+
+	/// <summary>
+	/// デフォルトコンストラクタ (std::make_unique対応のためpublic)
+	/// </summary>
+	TextureManager() = default;
 
 	// 初期化
 	void Initialize(DirectXCommon* dxCommon,SrvManager* srvManager);
@@ -53,10 +65,7 @@ public:
 
 private:
 
-
-
 	static std::unique_ptr<TextureManager> instance_;
-	TextureManager() = default;
 	TextureManager(const TextureManager&) = delete;
 	TextureManager& operator=(const TextureManager&) = delete;
 

@@ -4,9 +4,22 @@
 #include <string>
 #include <memory>
 
+/// <summary>
+/// カメラ管理クラス
+/// </summary>
 class CameraManager {
 public: 
+	/// <summary>
+	/// シングルトンインスタンスの取得
+	/// </summary>
+	/// <returns>インスタンスポインタ</returns>
 	static CameraManager* GetInstance();
+
+	/// <summary>
+	/// デフォルトコンストラクタ (std::make_unique対応のためpublic)
+	/// </summary>
+	CameraManager() = default;
+
 	~CameraManager() = default;
 	void Initialize();
 	void Finalize();
@@ -32,7 +45,6 @@ public:
 
 private:
 	static std::unique_ptr<CameraManager> instance_;
-	CameraManager() = default;
 
 	CameraManager(const CameraManager&) = delete;
 	CameraManager& operator=(const CameraManager&) = delete;

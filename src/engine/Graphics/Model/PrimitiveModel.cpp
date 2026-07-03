@@ -12,7 +12,7 @@ std::unique_ptr<PrimitiveModel> PrimitiveModel::instance_ = nullptr;
 
 PrimitiveModel* PrimitiveModel::GetInstance() {
 	if (instance_ == nullptr) {
-		instance_.reset(new PrimitiveModel());
+		instance_ = std::make_unique<PrimitiveModel>();
 	}
 	return instance_.get();
 }

@@ -7,32 +7,91 @@
 #pragma comment(lib, "dxguid.lib")
 #include <memory>
 
+/// <summary>
+/// 入力管理クラス (キーボード、マウス)
+/// </summary>
 class Input
 {
 public:
 	template <class T> using ComPtr = Microsoft::WRL::ComPtr<T>;
 
+	/// <summary>
+	/// シングルトンインスタンスの取得
+	/// </summary>
+	/// <returns>インスタンスポインタ</returns>
 	static Input* GetInstance();
 
+	/// <summary>
+	/// デフォルトコンストラクタ (std::make_unique対応のためpublic)
+	/// </summary>
+	Input() = default;
+
+	/// <summary>
+	/// 初期化
+	/// </summary>
+	/// <param name="hInstance">インスタンスハンドル</param>
+	/// <param name="hwnd">ウィンドウハンドル</param>
 	void Initialize(HINSTANCE hInstance, HWND hwnd);
 
+	/// <summary>
 	/// マウスカーソルをウィンドウ中央にロック＆非表示にする
+	/// </summary>
 	void LockCursor();
+
+	/// <summary>
 	/// マウスカーソルのロックを解除＆表示する
+	/// </summary>
 	void UnlockCursor();
-	/// カーソルがロックされているか
+
+	/// <summary>
+	/// カーソルがロックされているか取得
+	/// </summary>
+	/// <returns>ロックされていればtrue</returns>
 	bool IsCursorLocked() const { return cursorLocked_; }
+
+	/// <summary>
+	/// 更新処理
+	/// </summary>
 	void Update();
 
+	/// <summary>
+	/// キーの押下状態取得
+	/// </summary>
+	/// <param name="keyNumber">キーコード (DIK_*)</param>
+	/// <returns>押されていればtrue</returns>
 	bool PushKey(BYTE keyNumber);
+
+	/// <summary>
+	/// キーのトリガー状態取得（押した瞬間）
+	/// </summary>
+	/// <param name="keyNumber">キーコード (DIK_*)</param>
+	/// <returns>押した瞬間であればtrue</returns>
 	bool TriggerKey(BYTE keyNumber);
+
 	struct MouseMove {
 		long lX;
 		long lY;
 		long lZ;
 	};
+
+	/// <summary>
+	/// マウスの移動量取得
+	/// </summary>
+	/// <returns>移動量構造体</returns>
 	MouseMove GetMouseMove();
+
+	/// <summary>
+	/// マウスボタンの押下状態取得
+	/// </summary>
+	/// <param name="buttonNumber">ボタン番号 (0:左, 1:右, 2:中)</param>
+	/// <returns>押されていればtrue</returns>
 	bool PushMouse(int buttonNumber);
+
+	/// <summary>
+	/// マウスボタンのトリガー状態取得
+	/// </summary>
+	/// <param name="buttonNumber">ボタン番号 (0:左, 1:右, 2:中)</param>
+	/// <returns>押した瞬間であればtrue</returns>
 	bool TriggerMouse(int buttonNumber);
 
 	// スクリーン座標でのマウス位置取得（クライアント領域基準）
@@ -40,11 +99,17 @@ public:
 		long x;
 		long y;
 	};
+
+	/// <summary>
+	/// クライアント領域基準でのマウス位置取得
+	/// </summary>
+	/// <param name="hwnd">ウィンドウハンドル</param>
+	/// <returns>座標構造体</returns>
 	MousePosition GetMouseScreenPosition(HWND hwnd);
+
 	~Input() = default;
 
 private:
-	Input() = default;
 	Input(const Input&) = delete;
 	Input& operator=(const Input&) = delete;
 	static std::unique_ptr<Input> instance_;

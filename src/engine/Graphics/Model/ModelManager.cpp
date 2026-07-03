@@ -11,7 +11,7 @@ ModelManager::~ModelManager() = default;
 ModelManager* ModelManager::GetInstance()
 {
 	if (instance_ == nullptr) {
-		instance_.reset(new ModelManager());
+		instance_ = std::make_unique<ModelManager>();
 	}
 	return instance_.get();
 }

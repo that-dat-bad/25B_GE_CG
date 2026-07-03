@@ -5,11 +5,24 @@
 #include "Model.h"
 class ModelCommon;
 class DirectXCommon;
+/// <summary>
+/// 3Dモデルアセット管理クラス
+/// </summary>
 class ModelManager
 {
 
 public:
+	/// <summary>
+	/// シングルトンインスタンスの取得
+	/// </summary>
+	/// <returns>インスタンスポインタ</returns>
 	static ModelManager* GetInstance();
+
+	/// <summary>
+	/// デフォルトコンストラクタ (std::make_unique対応のためpublic)
+	/// </summary>
+	ModelManager();
+
 	void Initialize(DirectXCommon* dxCommon);
 	void Finalize();
 
@@ -29,7 +42,6 @@ public:
 	~ModelManager();
 private:
 	static std::unique_ptr<ModelManager> instance_;
-	ModelManager();
 	ModelManager(const ModelManager&) = delete;
 	ModelManager& operator=(const ModelManager&) = delete;
 	std::unique_ptr<ModelCommon> modelCommon_ = nullptr;

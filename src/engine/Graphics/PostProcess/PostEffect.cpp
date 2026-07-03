@@ -8,7 +8,7 @@ std::unique_ptr<PostEffect> PostEffect::instance_ = nullptr;
 
 PostEffect* PostEffect::GetInstance() {
 	if (instance_ == nullptr) {
-		instance_.reset(new PostEffect());
+		instance_ = std::make_unique<PostEffect>();
 	}
 	return instance_.get();
 }

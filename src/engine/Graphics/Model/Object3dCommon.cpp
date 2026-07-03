@@ -8,7 +8,7 @@ std::unique_ptr<Object3dCommon> Object3dCommon::instance = nullptr;
 
 Object3dCommon* Object3dCommon::GetInstance() {
 	if (instance == nullptr) {
-		instance.reset(new Object3dCommon());
+		instance = std::make_unique<Object3dCommon>();
 	}
 	return instance.get();
 }

@@ -32,19 +32,36 @@ struct PostEffectParams {
 	float padding[3];
 };
 
+/// <summary>
 /// フルスクリーンポストエフェクトを管理するシングルトンクラス
+/// </summary>
 class PostEffect {
 public:
+	/// <summary>
+	/// シングルトンインスタンスの取得
+	/// </summary>
+	/// <returns>インスタンスポインタ</returns>
 	static PostEffect* GetInstance();
 
+	/// <summary>
+	/// デフォルトコンストラクタ (std::make_unique対応のためpublic)
+	/// </summary>
+	PostEffect() = default;
+
+	/// <summary>
 	/// 初期化（PSO 生成、SRV 登録）
+	/// </summary>
 	void Initialize(DirectXCommon* dxCommon, SrvManager* srvManager);
 
+	/// <summary>
 	/// 終了処理
+	/// </summary>
 	void Finalize();
 
+	/// <summary>
 	/// レンダーテクスチャから swap chain への fullscreen 描画を実行する
 	/// PostDraw 内で CopyResource の代わりに呼ぶ
+	/// </summary>
 	void Draw(ID3D12Resource* renderTextureResource, uint32_t renderTextureSrvIndex);
 
 	/// 現在のエフェクトを設定
@@ -80,7 +97,6 @@ public:
 	~PostEffect() = default;
 
 private:
-	PostEffect() = default;
 	PostEffect(const PostEffect&) = delete;
 	PostEffect& operator=(const PostEffect&) = delete;
 

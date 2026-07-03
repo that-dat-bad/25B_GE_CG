@@ -47,10 +47,22 @@ struct LightingSettings {
 	float padding2;
 };
 
+/// <summary>
+/// 3Dオブジェクト描画の共通設定管理クラス
+/// </summary>
 class Object3dCommon
 {
 public:
+	/// <summary>
+	/// シングルトンインスタンスの取得
+	/// </summary>
+	/// <returns>インスタンスポインタ</returns>
 	static Object3dCommon* GetInstance();
+
+	/// <summary>
+	/// デフォルトコンストラクタ (std::make_unique対応のためpublic)
+	/// </summary>
+	Object3dCommon() = default;
 
 	void Initialize(DirectXCommon* dxCommon);
 	void Finalize();
@@ -88,7 +100,6 @@ public:
 
 	~Object3dCommon() = default;
 private:
-	Object3dCommon() = default;
 	Object3dCommon(const Object3dCommon&) = delete;
 	Object3dCommon& operator=(const Object3dCommon&) = delete;
 

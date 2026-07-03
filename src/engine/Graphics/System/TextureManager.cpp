@@ -18,7 +18,7 @@ std::wstring ConvertString(const std::string& str) {
 
 TextureManager* TextureManager::GetInstance() {
 	if (instance_ == nullptr) {
-		instance_.reset(new TextureManager());
+		instance_ = std::make_unique<TextureManager>();
 	}
 	return instance_.get();
 }
