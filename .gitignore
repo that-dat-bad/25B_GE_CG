@@ -366,3 +366,10 @@ FodyWeavers.xsd
 .aider*
 *.cso
 assets/shaders/compiled/
+
+# Exclude non-development docs and files
+docs/
+*.blend1
+skills-lock.json
+*タスク*.md
+*ロードマップ*.md
