@@ -33,6 +33,8 @@ public:
 
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(uint32_t textureIndex);
 
+	SrvManager* GetSrvManager() const { return srvManager_; }
+
 	// メタデータを取得
 	const DirectX::TexMetadata& GetMetaData(const std::string& filePath);
 

@@ -54,6 +54,7 @@ void Object3dCommon::Initialize(DirectXCommon* dxCommon)
 	lightingSettingsData->lightType = 0;
 	CreateRootSignature(dxCommon_);
 	CreateGraphicsPipeline(dxCommon_);
+	CreateSkinningGraphicsPipeline(dxCommon_);
 }
 
 void Object3dCommon::SetupCommonState()
@@ -80,7 +81,7 @@ void Object3dCommon::CreateRootSignature(DirectXCommon* dxCommon)
 	descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_ROOT_PARAMETER rootParameters[9] = {};
+	D3D12_ROOT_PARAMETER rootParameters[10] = {};
 	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameters[0].Descriptor.ShaderRegister = 0;
@@ -118,6 +119,17 @@ void Object3dCommon::CreateRootSignature(DirectXCommon* dxCommon)
 	rootParameters[8].DescriptorTable.pDescriptorRanges = envDescriptorRange;
 	rootParameters[8].DescriptorTable.NumDescriptorRanges = _countof(envDescriptorRange);
 
+	D3D12_DESCRIPTOR_RANGE paletteDescriptorRange[1] = {};
+	paletteDescriptorRange[0].BaseShaderRegister = 0; // t0
+	paletteDescriptorRange[0].NumDescriptors = 1;
+	paletteDescriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	paletteDescriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	rootParameters[9].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParameters[9].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	rootParameters[9].DescriptorTable.pDescriptorRanges = paletteDescriptorRange;
+	rootParameters[9].DescriptorTable.NumDescriptorRanges = _countof(paletteDescriptorRange);
+
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
 	staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -148,12 +160,10 @@ void Object3dCommon::CreateRootSignature(DirectXCommon* dxCommon)
 void Object3dCommon::CreateGraphicsPipeline(DirectXCommon* dxCommon)
 {
 	CreateRootSignature(dxCommon);
-	D3D12_INPUT_ELEMENT_DESC inputElementDescs[5] = {};
+	D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
 	inputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	inputElementDescs[1] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	inputElementDescs[2] = { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	inputElementDescs[3] = { "WEIGHT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
-	inputElementDescs[4] = { "BLENDINDICES", 0, DXGI_FORMAT_R32G32B32A32_SINT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
 	graphicsPipelineStateDesc.pRootSignature = rootSignature_.Get();
@@ -198,4 +208,57 @@ void Object3dCommon::SetBlendMode(BlendMode mode)
 {
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 	commandList->SetPipelineState(graphicsPipelineStates_[static_cast<size_t>(mode)].Get());
+}
+
+void Object3dCommon::CreateSkinningGraphicsPipeline(DirectXCommon* dxCommon)
+{
+	D3D12_INPUT_ELEMENT_DESC inputElementDescs[5] = {};
+	inputElementDescs[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	inputElementDescs[1] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	inputElementDescs[2] = { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	inputElementDescs[3] = { "WEIGHT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	inputElementDescs[4] = { "INDEX", 0, DXGI_FORMAT_R32G32B32A32_SINT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
+	graphicsPipelineStateDesc.pRootSignature = rootSignature_.Get();
+	graphicsPipelineStateDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
+
+	Microsoft::WRL::ComPtr<IDxcBlob> vertexShaderBlob = dxCommon->CompileShader(L"./assets/shaders/SkinningObject3D.VS.hlsl", L"vs_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderBlob = dxCommon->CompileShader(L"./assets/shaders/Object3D.PS.hlsl", L"ps_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> geometryShaderBlob = dxCommon->CompileShader(L"./assets/shaders/Object3D.GS.hlsl", L"gs_6_0");
+	graphicsPipelineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(), vertexShaderBlob->GetBufferSize() };
+	graphicsPipelineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(), pixelShaderBlob->GetBufferSize() };
+	graphicsPipelineStateDesc.GS = { geometryShaderBlob->GetBufferPointer(), geometryShaderBlob->GetBufferSize() };
+
+	D3D12_RASTERIZER_DESC rasterizerDesc{};
+	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
+	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
+	graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;
+
+	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
+	depthStencilDesc.DepthEnable = true;
+	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+	graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
+	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+	graphicsPipelineStateDesc.NumRenderTargets = 1;
+	graphicsPipelineStateDesc.RTVFormats[0] = dxCommon->GetRTVFormat();
+	graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	graphicsPipelineStateDesc.SampleDesc.Count = 1;
+	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+
+	for (size_t i = 0; i < static_cast<size_t>(BlendMode::kCountOf); ++i) {
+		BlendMode mode = static_cast<BlendMode>(i);
+		graphicsPipelineStateDesc.BlendState = GetBlendDesc(mode);
+
+		HRESULT hr = dxCommon->GetDevice()->CreateGraphicsPipelineState(&graphicsPipelineStateDesc, IID_PPV_ARGS(&skinningGraphicsPipelineStates_[i]));
+		if (FAILED(hr)) assert(false);
+	}
+}
+
+void Object3dCommon::SetSkinningBlendMode(BlendMode mode)
+{
+	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+	commandList->SetPipelineState(skinningGraphicsPipelineStates_[static_cast<size_t>(mode)].Get());
 }

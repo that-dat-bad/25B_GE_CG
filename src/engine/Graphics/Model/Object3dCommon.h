@@ -60,6 +60,7 @@ public:
 
 	// ブレンドモード設定
 	void SetBlendMode(BlendMode mode);
+	void SetSkinningBlendMode(BlendMode mode);
 
 	// ライティング設定
 	void SetShadingModel(int32_t model) { lightingSettingsData->shadingModel = model; }
@@ -98,6 +99,7 @@ private:
 	Camera* defaultCamera_ = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature_;
 	std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, static_cast<size_t>(BlendMode::kCountOf)> graphicsPipelineStates_;
+	std::array<Microsoft::WRL::ComPtr<ID3D12PipelineState>, static_cast<size_t>(BlendMode::kCountOf)> skinningGraphicsPipelineStates_;
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource_;
 	Microsoft::WRL::ComPtr<ID3D12Resource> pointLightResource_;
 	Microsoft::WRL::ComPtr<ID3D12Resource> spotLightResource_;
@@ -116,4 +118,5 @@ private:
 
 	//グラフィックパイプラインの生成
 	void CreateGraphicsPipeline(DirectXCommon* dxCommon);
+	void CreateSkinningGraphicsPipeline(DirectXCommon* dxCommon);
 };
