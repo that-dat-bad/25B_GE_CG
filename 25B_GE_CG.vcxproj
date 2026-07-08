@@ -308,6 +308,7 @@ xcopy /E /I /Y "$(SolutionDir)Resources" "$(TargetDir)Resources"</Command>
     <ClInclude Include="src\engine\Graphics\Camera\DebugCamera.h" />
     <ClInclude Include="src\engine\Graphics\System\DirectXCommon.h" />
     <ClInclude Include="src\engine\io\Input.h" />
+    <ClInclude Include="src\engine\io\LevelLoader.h" />
     <ClInclude Include="src\engine\base\StringUtility.h" />
     <ClInclude Include="src\engine\base\Math\Vector2.h" />
     <ClInclude Include="src\engine\base\Math\Vector4.h" />
@@ -403,6 +404,7 @@ xcopy /E /I /Y "$(SolutionDir)Resources" "$(TargetDir)Resources"</Command>
     <ClCompile Include="src\engine\Graphics\Camera\DebugCamera.cpp" />
     <ClCompile Include="src\engine\Graphics\System\DirectXCommon.cpp" />
     <ClCompile Include="src\engine\io\Input.cpp" />
+    <ClCompile Include="src\engine\io\LevelLoader.cpp" />
     <ClCompile Include="src\Game\System\main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">MaxSpeed</Optimization>
       <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Development|x64'">true</WholeProgramOptimization>
