@@ -158,11 +158,11 @@ void StageScene::Initialize() {
 
 	// 敵の配置（ミッション01仕様）
 	std::vector<EnemySpawnData> mission01Enemies = {
-		{ {  100.0f, 100.0f,  200.0f }, "Resources/planeplane.obj", 50.0f },
-		{ {  -80.0f, 100.0f,  300.0f }, "Resources/planeplane.obj", 50.0f },
-		{ {  200.0f, 100.0f,  450.0f }, "Resources/planeplane.obj", 50.0f },
-		{ { -150.0f, 100.0f,  500.0f }, "Resources/planeplane.obj", 50.0f },
-		{ {   50.0f, 100.0f,  700.0f }, "Resources/planeplane.obj", 50.0f },
+		{ {  100.0f, 100.0f,  200.0f }, "Resources/planeplane.obj", 50.0f, AIType::ChaseAttack },
+		{ {  -80.0f, 100.0f,  300.0f }, "Resources/planeplane.obj", 50.0f, AIType::ChaseAttack },
+		{ {  200.0f, 100.0f,  450.0f }, "Resources/planeplane.obj", 50.0f, AIType::ChaseAttack },
+		{ { -150.0f, 100.0f,  500.0f }, "Resources/planeplane.obj", 50.0f, AIType::CruiseEvade },
+		{ {   50.0f, 100.0f,  700.0f }, "Resources/planeplane.obj", 50.0f, AIType::CruiseEvade },
 	};
 	enemyManager_.Initialize(
 		mission01Enemies,
@@ -214,6 +214,20 @@ void StageScene::PlayerCollisionBody::OnCollision(ICollisionBody3D* other) {
 		auto* bullet = dynamic_cast<Bullet*>(other);
 		float damage = bullet ? bullet->GetDamage() : 10.0f;
 
+		scene_->playerHP_ -= damage;
+		EffectManager::GetInstance()->EmitHitEffect(scene_->flightModel_.GetPosition());
+
+		// HPが0以下でゲームオーバー
+		if (scene_->playerHP_ <= 0.0f) {
+			scene_->playerHP_ = 0.0f;
+			scene_->isMissionFailed_ = true;
+			scene_->sceneID = SCENE::RESULT;
+			EffectManager::GetInstance()->EmitDestroyEffect(scene_->flightModel_.GetPosition());
+		}
+	}
+	// Enemy との衝突 → 大ダメージ（7割削る）
+	else if (other->GetCollisionAttribute() & CollisionAttribute::kEnemy) {
+		float damage = scene_->playerMaxHP_ * 0.7f;
 		scene_->playerHP_ -= damage;
 		EffectManager::GetInstance()->EmitHitEffect(scene_->flightModel_.GetPosition());
 
@@ -801,6 +815,24 @@ void StageScene::Update() {
 	ImGui::Text("Enemies: %d / %d", enemyManager_.GetDestroyedCount(), enemyManager_.GetTotalCount());
 	ImGui::Text("Ammo: %d / %d", gunpod_.GetCurrentAmmo(), gunpod_.GetMaxAmmo());
 	ImGui::Text("Bullets Active: %u", bulletManager_.GetActiveBulletCount());
+	
+	ImGui::Separator();
+	ImGui::Text("=== Alive Enemies ===");
+	int enemyIndex = 0;
+	for (auto* enemy : enemyManager_.GetAliveEnemies()) {
+		float dist = MyMath::Length(MyMath::Subtract(enemy->GetPosition(), flightModel_.GetPosition()));
+		if (enemy->GetAIType() == AIType::ChaseAttack) {
+			ImGui::Text("[%d] Type A (Chase/Attack)", enemyIndex);
+		} else {
+			ImVec4 stateColor = (enemy->GetTypeBState() == TypeBState::Evading) ? ImVec4(1.0f, 0.5f, 0.0f, 1.0f) : ImVec4(0.0f, 0.8f, 1.0f, 1.0f);
+			ImGui::Text("[%d] Type B (Cruise/Evade)", enemyIndex);
+			ImGui::TextColored(stateColor, "   State: %s", enemy->GetTypeBStateString());
+		}
+		ImGui::Text("   Pos: (%.1f, %.1f, %.1f)", enemy->GetPosition().x, enemy->GetPosition().y, enemy->GetPosition().z);
+		ImGui::Text("   Dist: %.1f m", dist);
+		enemyIndex++;
+	}
+
 	if (isMissionCleared_) {
 		ImGui::TextColored(ImVec4(0, 1, 0, 1), "*** MISSION CLEAR ***");
 	}

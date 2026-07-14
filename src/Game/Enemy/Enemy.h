@@ -13,6 +13,16 @@
 class Object3dCommon;
 class Camera;
 
+enum class AIType {
+	ChaseAttack,
+	CruiseEvade
+};
+
+enum class TypeBState {
+	Cruising,
+	Evading
+};
+
 /// <summary>
 /// 空中ターゲット（敵AI）
 /// </summary>
@@ -32,6 +42,7 @@ public:
 	/// <param name="gunpodData">ガンポッドパラメータ</param>
 	/// <param name="playerFlightModel">自機のフライトモデルへのポインタ</param>
 	/// <param name="bulletManager">弾丸マネージャーへのポインタ</param>
+	/// <param name="aiType">AI挙動タイプ</param>
 	void Initialize(
 		const MyMath::Vector3& position, 
 		const std::string& modelPath, 
@@ -40,7 +51,8 @@ public:
 		const EngineData& engineData,
 		const GunPodData& gunpodData,
 		FlightModel* playerFlightModel,
-		BulletManager* bulletManager
+		BulletManager* bulletManager,
+		AIType aiType = AIType::ChaseAttack
 	);
 
 	/// <summary>
@@ -65,6 +77,11 @@ public:
 	float GetCollisionRadius() const { return collisionRadius_; }
 	float GetHealth() const { return health_; }
 	float GetMaxHealth() const { return maxHealth_; }
+	AIType GetAIType() const { return aiType_; }
+	TypeBState GetTypeBState() const { return typeBState_; }
+	const char* GetTypeBStateString() const {
+		return typeBState_ == TypeBState::Cruising ? "Cruising" : "Evading";
+	}
 
 	// === ICollisionBody3D 実装 ===
 	SphereCollider GetSphereCollider() const override {
@@ -101,4 +118,9 @@ private:
 
 	// 描画用3Dオブジェクト
 	std::unique_ptr<Object3d> object3d_ = nullptr;
+
+	// AI設定・ステート
+	AIType aiType_ = AIType::ChaseAttack;
+	TypeBState typeBState_ = TypeBState::Cruising;
+	MyMath::Vector3 cruiseDirection_ = { 0.0f, 0.0f, 1.0f };
 };

@@ -10,7 +10,7 @@
 void Game::Initialize() {
 	// 1. 基盤システムの初期化
 	winApp = std::make_unique<WinApp>();
-	winApp->Initialize();
+	winApp->Initialize(L"戦雷", L"1.0");
 	DirectXCommon::GetInstance()->Initialize(winApp.get());
 	Input::GetInstance()->Initialize(GetModuleHandle(nullptr), winApp->GetHwnd());
 

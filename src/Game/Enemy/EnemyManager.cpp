@@ -16,7 +16,8 @@ void EnemyManager::Initialize(
 		enemy->Initialize(
 			data.position, data.modelPath, data.health,
 			airframeData, engineData, gunpodData,
-			playerFlightModel, bulletManager
+			playerFlightModel, bulletManager,
+			data.aiType
 		);
 		enemies_.push_back(std::move(enemy));
 	}

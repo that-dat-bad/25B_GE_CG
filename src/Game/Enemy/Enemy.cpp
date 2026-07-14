@@ -5,6 +5,7 @@
 #include "../../engine/Graphics/Model/ModelManager.h"
 #include "../../engine/Graphics/Particle/EffectManager.h"
 #include "../../engine/Graphics/Particle/ParticleManager.h"
+#include "../../engine/base/logger.h"
 
 void Enemy::Initialize(
 	const MyMath::Vector3& position,
@@ -14,19 +15,29 @@ void Enemy::Initialize(
 	const EngineData& engineData,
 	const GunPodData& gunpodData,
 	FlightModel* playerFlightModel,
-	BulletManager* bulletManager
+	BulletManager* bulletManager,
+	AIType aiType
 ) {
 	maxHealth_ = maxHealth;
 	health_ = maxHealth;
 	isAlive_ = true;
 	playerFlightModel_ = playerFlightModel;
 	bulletManager_ = bulletManager;
+	aiType_ = aiType;
+	typeBState_ = TypeBState::Cruising;
 
 	// フライトモデルと武装の初期化
 	flightModel_.Initialize(airframeData, engineData);
 	flightModel_.SetPosition(position);
-	flightModel_.SetVelocity(MyMath::Multiply(200.0f / 3.6f, flightModel_.GetForwardDirection())); // 初期速度
-	flightModel_.SetThrottle(0.8f);
+
+	cruiseDirection_ = flightModel_.GetForwardDirection();
+	if (aiType_ == AIType::CruiseEvade) {
+		flightModel_.SetVelocity(MyMath::Multiply(50.0f / 3.6f, cruiseDirection_));
+		flightModel_.SetThrottle(0.2f);
+	} else {
+		flightModel_.SetVelocity(MyMath::Multiply(200.0f / 3.6f, cruiseDirection_)); // 初期速度
+		flightModel_.SetThrottle(0.8f);
+	}
 
 	gunpod_.Initialize(gunpodData);
 	
@@ -84,73 +95,111 @@ void Enemy::UpdateAI(float deltaTime) {
 	MyMath::Vector3 toPlayer = MyMath::Subtract(playerPos, myPos);
 	float distance = MyMath::Length(toPlayer);
 
-	// 偏差射撃（リード）の計算：弾速と相手の速度から未来位置を予測する
-	float bulletSpeed = flightModel_.GetSpeed() + 500.0f; // 弾速
-	MyMath::Vector3 targetVel = playerFlightModel_->GetVelocity();
-	
-	// 1次予測
-	float timeToHit = distance / bulletSpeed;
-	MyMath::Vector3 futurePos = MyMath::Add(playerPos, MyMath::Multiply(timeToHit, targetVel));
-	
-	// 2次予測（より正確な着弾点）
-	float distance2 = MyMath::Length(MyMath::Subtract(futurePos, myPos));
-	timeToHit = distance2 / bulletSpeed;
-	futurePos = MyMath::Add(playerPos, MyMath::Multiply(timeToHit, targetVel));
-
-	MyMath::Vector3 toFuture = MyMath::Subtract(futurePos, myPos);
-
-	// 目標方向を未来位置へセット
-	if (distance > 1.0f) {
-		MyMath::Vector3 targetDir = MyMath::Normalize(toFuture);
-		aimController_.ResetToDirection(targetDir);
-	}
-
-	// 操舵入力の計算
-	float finalPitch = 0.0f, finalRoll = 0.0f, finalYaw = 0.0f;
-	aimController_.CalculateSteeringInput(flightModel_.GetOrientation(), deltaTime, finalPitch, finalRoll, finalYaw);
-	flightModel_.SetControlInput(finalPitch, finalRoll, finalYaw);
-
-	// スロットル調整 (遠ければ加速、近ければ減速)
-	if (distance > 1000.0f) {
-		flightModel_.SetThrottleInput(1.0f);
-	} else if (distance < 300.0f) {
-		flightModel_.SetThrottleInput(0.4f);
-	} else {
-		flightModel_.SetThrottleInput(0.7f);
-	}
-
-	// 攻撃判定
-	MyMath::Vector3 forward = flightModel_.GetForwardDirection();
-	// 予測位置(toFuture)に対して正面を向いているかで射撃判定を行う
-	float dot = MyMath::Dot(forward, MyMath::Normalize(toFuture));
-	// プレイヤー（の未来位置）が正面(約5度以内)におり、かつ距離が1000m以下なら射撃
-	if (dot > 0.996f && distance < 1000.0f) {
-		int ammoBefore = gunpod_.GetCurrentAmmo();
-		gunpod_.Fire();
+	if (aiType_ == AIType::ChaseAttack) {
+		// 偏差射撃（リード）の計算：弾速と相手の速度から未来位置を予測する
+		float bulletSpeed = flightModel_.GetSpeed() + 500.0f; // 弾速
+		MyMath::Vector3 targetVel = playerFlightModel_->GetVelocity();
 		
-		if (gunpod_.GetCurrentAmmo() < ammoBefore) { // 発射できた場合
-			MyMath::Vector3 firePos = flightModel_.GetPosition();
-			MyMath::Vector3 aircraftVelocity = flightModel_.GetVelocity();
-			
-			// 機首から発射
-			firePos = MyMath::Add(firePos, MyMath::Multiply(8.0f, forward));
-			
-			// 弾丸初速ベクトル ＝ 機体速度 ＋ (射出方向 × 射出速度)
-			float muzzleSpeed = 500.0f;
-			MyMath::Vector3 muzzleVelocity = MyMath::Multiply(muzzleSpeed, forward);
-			MyMath::Vector3 bulletVelocity = MyMath::Add(aircraftVelocity, muzzleVelocity);
+		// 1次予測
+		float timeToHit = distance / bulletSpeed;
+		MyMath::Vector3 futurePos = MyMath::Add(playerPos, MyMath::Multiply(timeToHit, targetVel));
+		
+		// 2次予測（より正確な着弾点）
+		float distance2 = MyMath::Length(MyMath::Subtract(futurePos, myPos));
+		timeToHit = distance2 / bulletSpeed;
+		futurePos = MyMath::Add(playerPos, MyMath::Multiply(timeToHit, targetVel));
 
-			if (bulletManager_) {
-				bulletManager_->SpawnBullet(firePos, bulletVelocity, 10.0f, true);
-			}
+		MyMath::Vector3 toFuture = MyMath::Subtract(futurePos, myPos);
 
-			// マズルフラッシュ
-			muzzleFlashCount_++;
-			if (muzzleFlashCount_ % 2 == 0) {
-				EffectManager::GetInstance()->EmitMuzzleFlash(firePos, forward);
-				muzzleFlashTimer_ = 0.08f;
+		// 目標方向を未来位置へセット
+		if (distance > 1.0f) {
+			MyMath::Vector3 targetDir = MyMath::Normalize(toFuture);
+			aimController_.ResetToDirection(targetDir);
+		}
+
+		// 操舵入力の計算
+		float finalPitch = 0.0f, finalRoll = 0.0f, finalYaw = 0.0f;
+		aimController_.CalculateSteeringInput(flightModel_.GetOrientation(), deltaTime, finalPitch, finalRoll, finalYaw);
+		flightModel_.SetControlInput(finalPitch, finalRoll, finalYaw);
+
+		// スロットル調整 (遠ければ加速、近ければ減速)
+		if (distance > 1000.0f) {
+			flightModel_.SetThrottleInput(1.0f);
+		} else if (distance < 300.0f) {
+			flightModel_.SetThrottleInput(0.4f);
+		} else {
+			flightModel_.SetThrottleInput(0.7f);
+		}
+
+		// 攻撃判定
+		MyMath::Vector3 forward = flightModel_.GetForwardDirection();
+		// 予測位置(toFuture)に対して正面を向いているかで射撃判定を行う
+		float dot = MyMath::Dot(forward, MyMath::Normalize(toFuture));
+		// プレイヤー（の未来位置）が正面(約5度以内)におり、かつ距離が1000m以下なら射撃
+		if (dot > 0.996f && distance < 1000.0f) {
+			int ammoBefore = gunpod_.GetCurrentAmmo();
+			gunpod_.Fire();
+			
+			if (gunpod_.GetCurrentAmmo() < ammoBefore) { // 発射できた場合
+				MyMath::Vector3 firePos = flightModel_.GetPosition();
+				MyMath::Vector3 aircraftVelocity = flightModel_.GetVelocity();
+				
+				// 機首から発射
+				firePos = MyMath::Add(firePos, MyMath::Multiply(8.0f, forward));
+				
+				// 弾丸初速ベクトル ＝ 機体速度 ＋ (射出方向 × 射出速度)
+				float muzzleSpeed = 500.0f;
+				MyMath::Vector3 muzzleVelocity = MyMath::Multiply(muzzleSpeed, forward);
+				MyMath::Vector3 bulletVelocity = MyMath::Add(aircraftVelocity, muzzleVelocity);
+
+				if (bulletManager_) {
+					bulletManager_->SpawnBullet(firePos, bulletVelocity, 10.0f, true);
+				}
+
+				// マズルフラッシュ
+				muzzleFlashCount_++;
+				if (muzzleFlashCount_ % 2 == 0) {
+					EffectManager::GetInstance()->EmitMuzzleFlash(firePos, forward);
+					muzzleFlashTimer_ = 0.08f;
+				}
 			}
 		}
+	}
+	else if (aiType_ == AIType::CruiseEvade) {
+		// ステートの切り替え条件
+		if (typeBState_ == TypeBState::Cruising) {
+			// プレイヤーが接近した時（例：500m以内）
+			if (distance < 500.0f) {
+				typeBState_ = TypeBState::Evading;
+				logger::Log("[Enemy AI Type B] Switched to EVADING state. Distance to player: " + std::to_string(distance) + "\n");
+			}
+		} else if (typeBState_ == TypeBState::Evading) {
+			// プレイヤーから離れた時（例：800m以上）
+			if (distance > 800.0f) {
+				typeBState_ = TypeBState::Cruising;
+				logger::Log("[Enemy AI Type B] Switched to CRUISING state. Distance to player: " + std::to_string(distance) + "\n");
+			}
+		}
+
+		MyMath::Vector3 targetDir = cruiseDirection_;
+		float targetThrottle = 0.2f;
+
+		if (typeBState_ == TypeBState::Evading) {
+			// プレイヤーから離れるように進路を変更（回避行動）
+			MyMath::Vector3 awayFromPlayer = MyMath::Subtract(myPos, playerPos);
+			if (MyMath::Length(awayFromPlayer) > 0.001f) {
+				targetDir = MyMath::Normalize(awayFromPlayer);
+			}
+			targetThrottle = 1.0f; // 回避時は加速（全力）
+		}
+
+		aimController_.ResetToDirection(targetDir);
+
+		// 操舵入力の計算
+		float finalPitch = 0.0f, finalRoll = 0.0f, finalYaw = 0.0f;
+		aimController_.CalculateSteeringInput(flightModel_.GetOrientation(), deltaTime, finalPitch, finalRoll, finalYaw);
+		flightModel_.SetControlInput(finalPitch, finalRoll, finalYaw);
+		flightModel_.SetThrottleInput(targetThrottle);
 	}
 }
 
@@ -198,5 +247,10 @@ void Enemy::OnCollision(ICollisionBody3D* other) {
 		if (!isAlive_) {
 			EffectManager::GetInstance()->EmitDestroyEffect(flightModel_.GetPosition());
 		}
+	}
+	// Player との衝突 → 即死して撃破エフェクト発生
+	else if (other->GetCollisionAttribute() & CollisionAttribute::kPlayer) {
+		TakeDamage(health_);
+		EffectManager::GetInstance()->EmitDestroyEffect(flightModel_.GetPosition());
 	}
 }

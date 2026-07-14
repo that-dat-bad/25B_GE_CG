@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include <cstdint>
+#include <string>
 
 /// <summary>
 /// Windowsアプリケーション管理クラス
@@ -17,7 +18,7 @@ public:
 	/// <summary>
 	/// ウィンドウの初期化
 	/// </summary>
-	void Initialize();
+	void Initialize(const std::wstring& title = L"DirectXGame", const std::wstring& version = L"1.0");
 
 	/// <summary>
 	/// Windowsメッセージの処理 (毎フレーム呼ぶ)

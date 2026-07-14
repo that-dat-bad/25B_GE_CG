@@ -10,6 +10,7 @@ struct EnemySpawnData {
 	MyMath::Vector3 position;
 	std::string modelPath;
 	float health;
+	AIType aiType = AIType::ChaseAttack;
 };
 
 /// @brief 敵の生成・管理クラス

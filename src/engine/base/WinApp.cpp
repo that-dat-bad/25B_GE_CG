@@ -32,7 +32,7 @@ LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
-void WinApp::Initialize() {
+void WinApp::Initialize(const std::wstring& title, const std::wstring& version) {
 	//システムタイマーの分解能を上げる
 	timeBeginPeriod(1);
 
@@ -48,9 +48,11 @@ void WinApp::Initialize() {
 	RECT wrc = { 0, 0, kClientWidth, kClientHeight };
 	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);
 
+	std::wstring windowTitle = title + L" by Dawn Engine ver." + version;
+
 	hwnd_ = CreateWindow(
 		wc_.lpszClassName,
-		L"戦雷",
+		windowTitle.c_str(),
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,

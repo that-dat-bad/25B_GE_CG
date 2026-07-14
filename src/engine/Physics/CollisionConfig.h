@@ -20,7 +20,7 @@ namespace CollisionAttribute {
 /// 例: Player は EnemyBullet と Enemy に当たる
 namespace CollisionMask {
 	constexpr uint32_t kPlayer       = CollisionAttribute::kEnemyBullet | CollisionAttribute::kEnemy;
-	constexpr uint32_t kEnemy        = CollisionAttribute::kPlayerBullet;
+	constexpr uint32_t kEnemy        = CollisionAttribute::kPlayerBullet | CollisionAttribute::kPlayer;
 	constexpr uint32_t kPlayerBullet = CollisionAttribute::kEnemy;
 	constexpr uint32_t kEnemyBullet  = CollisionAttribute::kPlayer;
 	constexpr uint32_t kNone         = 0;
