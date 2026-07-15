@@ -21,6 +21,10 @@ enum class PostEffectType : uint32_t {
 	kDissolve,      // ディゾルブ
 	kRandom,        // ランダム
 	kScanLine,      // 走査線
+	kLightAmp,      // 光量増幅 (Light Amp)
+	kLensDistortion,// レンズ歪み (Lens Distortion)
+	kChromaticAberration, // 色収差 (Chromatic Aberration)
+	kBloom,         // ブルーム (Bloom)
 	kCountOfPostEffects, // エフェクトの種類
 };
 
@@ -33,6 +37,20 @@ struct PostEffectParams {
 	float colorR;
 	float colorG;
 	float colorB;
+};
+
+struct ActivePostEffect {
+	PostEffectType type = PostEffectType::kNone;
+	int32_t kernelSize = 3;
+	float intensity = 1.0f;
+	float dirX = 0.0f;
+	float dirY = 0.0f;
+	float dissolveThreshold = 0.5f;
+	float dissolveEdgeWidth = 0.05f;
+	int dissolveMaskIndex = 0;
+	float colorR = 1.0f;
+	float colorG = 1.0f;
+	float colorB = 1.0f;
 };
 
 /// <summary>
@@ -104,7 +122,16 @@ public:
 	void SetColorB(float b) { colorB_ = b; }
 	float GetColorB() const { return colorB_; }
 
+	// 複数ポストエフェクトの制御用API
+	std::vector<ActivePostEffect>& GetActiveEffects() { return activeEffects_; }
+	const std::vector<ActivePostEffect>& GetActiveEffects() const { return activeEffects_; }
+	void AddActiveEffect(const ActivePostEffect& effect) { activeEffects_.push_back(effect); }
+	void ClearActiveEffects() { activeEffects_.clear(); }
 
+	// プリセット保存・読込用API
+	void ApplyBuiltInPreset(const std::string& presetName);
+	bool SavePreset(const std::string& presetName);
+	bool LoadPreset(const std::string& presetName);
 
 	~PostEffect() = default;
 
@@ -126,6 +153,8 @@ private:
 	// 現在のエフェクト種類
 	PostEffectType currentEffect_ = PostEffectType::kNone;
 
+	std::vector<ActivePostEffect> activeEffects_;
+
 	Microsoft::WRL::ComPtr<ID3D12Resource> postEffectParamsBuffer_;
 	PostEffectParams* mappedPostEffectParams_ = nullptr;
 	int32_t kernelSize_ = 3;
@@ -145,6 +174,7 @@ private:
 
 	float time_ = 0.0f;
 
+	void DrawSinglePass(ID3D12GraphicsCommandList* commandList, const ActivePostEffect& effect, uint32_t srcIndex, uint32_t dstIndex, bool isOutputToBackBuffer, uint32_t passIndex, float customDirX = -999999.0f, float customDirY = -999999.0f, float customIntensity = -1.0f);
 
 	void CreateRootSignature();
 	void CreateDissolveRootSignature();
