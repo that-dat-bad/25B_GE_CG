@@ -174,12 +174,32 @@ void DebugScene::Update() {
 	changed |= ImGui::Checkbox("Skybox Visible", &isSkyboxVisible_);
 
 	static int currentEffect = 0;
-	const char* effectItems[] = { "None", "GrayScale", "Vignette", "BoxFilter", "GaussBlur", "KawaseBlur", "RadialBlur", "Dissolve", "Random" };
+	const char* effectItems[] = { "None", "ColorTint", "Vignette", "BoxFilter", "GaussBlur", "KawaseBlur", "RadialBlur", "Dissolve", "Random", "ScanLine" };
 	if (ImGui::Combo("Post Effect", &currentEffect, effectItems, IM_ARRAYSIZE(effectItems))) {
 		PostEffect::GetInstance()->SetEffectType(static_cast<PostEffectType>(currentEffect));
+		if (static_cast<PostEffectType>(currentEffect) == PostEffectType::kScanLine) {
+			PostEffect::GetInstance()->SetKernelSize(0);
+			PostEffect::GetInstance()->SetIntensity(0.2f);
+			PostEffect::GetInstance()->SetDirX(600.0f);
+			PostEffect::GetInstance()->SetDirY(5.0f);
+			PostEffect::GetInstance()->SetColorR(1.0f);
+			PostEffect::GetInstance()->SetColorG(1.0f);
+			PostEffect::GetInstance()->SetColorB(1.0f);
+		} else if (static_cast<PostEffectType>(currentEffect) == PostEffectType::kColorTint) {
+			PostEffect::GetInstance()->SetColorR(0.1f);
+			PostEffect::GetInstance()->SetColorG(0.95f);
+			PostEffect::GetInstance()->SetColorB(0.2f); // デフォルトで緑色に設定
+		}
 	}
 
-	if (currentEffect == static_cast<int>(PostEffectType::kBoxFilter)) {
+	if (currentEffect == static_cast<int>(PostEffectType::kColorTint)) {
+		float color[3] = { PostEffect::GetInstance()->GetColorR(), PostEffect::GetInstance()->GetColorG(), PostEffect::GetInstance()->GetColorB() };
+		if (ImGui::ColorEdit3("Color Tint", color)) {
+			PostEffect::GetInstance()->SetColorR(color[0]);
+			PostEffect::GetInstance()->SetColorG(color[1]);
+			PostEffect::GetInstance()->SetColorB(color[2]);
+		}
+	} else if (currentEffect == static_cast<int>(PostEffectType::kBoxFilter)) {
 		int kernelSize = PostEffect::GetInstance()->GetKernelSize();
 		if (ImGui::SliderInt("BoxFilter Kernel Size", &kernelSize, 1, 31)) {
 			PostEffect::GetInstance()->SetKernelSize(kernelSize);
@@ -223,6 +243,46 @@ void DebugScene::Update() {
 			if (ImGui::Combo("Mask Texture", &maskIdx, maskItems, maskCount)) {
 				PostEffect::GetInstance()->SetDissolveMaskIndex(maskIdx);
 			}
+		}
+	} else if (currentEffect == static_cast<int>(PostEffectType::kScanLine)) {
+		int mode = PostEffect::GetInstance()->GetKernelSize();
+		const char* modeItems[] = { "Normal Color", "Grayscale + Tint (NVD Mode)" };
+		if (ImGui::Combo("ScanLine Mode", &mode, modeItems, IM_ARRAYSIZE(modeItems))) {
+			PostEffect::GetInstance()->SetKernelSize(mode);
+			if (mode == 1) {
+				PostEffect::GetInstance()->SetIntensity(0.3f);
+				PostEffect::GetInstance()->SetDirX(600.0f);
+				PostEffect::GetInstance()->SetDirY(5.0f);
+				PostEffect::GetInstance()->SetColorR(0.1f);
+				PostEffect::GetInstance()->SetColorG(0.95f);
+				PostEffect::GetInstance()->SetColorB(0.2f);
+			} else {
+				PostEffect::GetInstance()->SetColorR(1.0f);
+				PostEffect::GetInstance()->SetColorG(1.0f);
+				PostEffect::GetInstance()->SetColorB(1.0f);
+			}
+		}
+
+		float intensity = PostEffect::GetInstance()->GetIntensity();
+		if (ImGui::SliderFloat("Scanline Intensity", &intensity, 0.0f, 1.0f)) {
+			PostEffect::GetInstance()->SetIntensity(intensity);
+		}
+
+		float density = PostEffect::GetInstance()->GetDirX();
+		if (ImGui::SliderFloat("Scanline Density", &density, 10.0f, 2000.0f)) {
+			PostEffect::GetInstance()->SetDirX(density);
+		}
+
+		float speed = PostEffect::GetInstance()->GetDirY();
+		if (ImGui::SliderFloat("Scroll Speed", &speed, -100.0f, 100.0f)) {
+			PostEffect::GetInstance()->SetDirY(speed);
+		}
+
+		float color[3] = { PostEffect::GetInstance()->GetColorR(), PostEffect::GetInstance()->GetColorG(), PostEffect::GetInstance()->GetColorB() };
+		if (ImGui::ColorEdit3("Scanline Color Tint", color)) {
+			PostEffect::GetInstance()->SetColorR(color[0]);
+			PostEffect::GetInstance()->SetColorG(color[1]);
+			PostEffect::GetInstance()->SetColorB(color[2]);
 		}
 	}
 

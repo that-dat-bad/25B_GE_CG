@@ -12,7 +12,7 @@ class SrvManager;
 /// ポストエフェクトの種類
 enum class PostEffectType : uint32_t {
 	kNone = 0,      // エフェクトなし
-	kGrayScale,     // グレースケール
+	kColorTint,     // カラーティント
 	kVignette,      // ビネット
 	kBoxFilter,     // ボックスフィルタ
 	kGaussBlur,     // ガウスブラー
@@ -20,6 +20,7 @@ enum class PostEffectType : uint32_t {
 	kRadialBlur,    // ラジアルブラー
 	kDissolve,      // ディゾルブ
 	kRandom,        // ランダム
+	kScanLine,      // 走査線
 	kCountOfPostEffects, // エフェクトの種類
 };
 
@@ -29,7 +30,9 @@ struct PostEffectParams {
 	float dirX;
 	float dirY;
 	float time;
-	float padding[3];
+	float colorR;
+	float colorG;
+	float colorB;
 };
 
 /// <summary>
@@ -92,6 +95,15 @@ public:
 	int GetDissolveMaskIndex() const { return dissolveMaskIndex_; }
 	int GetDissolveMaskCount() const { return static_cast<int>(dissolveMaskSrvIndices_.size()); }
 
+	void SetColorR(float r) { colorR_ = r; }
+	float GetColorR() const { return colorR_; }
+
+	void SetColorG(float g) { colorG_ = g; }
+	float GetColorG() const { return colorG_; }
+
+	void SetColorB(float b) { colorB_ = b; }
+	float GetColorB() const { return colorB_; }
+
 
 
 	~PostEffect() = default;
@@ -120,6 +132,9 @@ private:
 	float intensity_ = 1.0f;
 	float dirX_ = 0.0f;
 	float dirY_ = 0.0f;
+	float colorR_ = 1.0f;
+	float colorG_ = 1.0f;
+	float colorB_ = 1.0f;
 
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> dissolveRootSignature_;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> dissolvePSO_;

@@ -150,7 +150,7 @@ void PostEffect::CreateGraphicsPipelines() {
 
 	// ピクセルシェーダーのコンパイル（各種エフェクト）
 	Microsoft::WRL::ComPtr<IDxcBlob> psNone = dxCommon_->CompileShader(L"./assets/shaders/CopyImage.PS.hlsl", L"ps_6_0");
-	Microsoft::WRL::ComPtr<IDxcBlob> psGray = dxCommon_->CompileShader(L"./assets/shaders/GrayScale.PS.hlsl", L"ps_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> psColorTint = dxCommon_->CompileShader(L"./assets/shaders/ColorTint.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psVignette = dxCommon_->CompileShader(L"./assets/shaders/Vignette.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psBoxFilter = dxCommon_->CompileShader(L"./assets/shaders/BoxFilter.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psGaussBlur = dxCommon_->CompileShader(L"./assets/shaders/GaussBlur.PS.hlsl", L"ps_6_0");
@@ -158,10 +158,11 @@ void PostEffect::CreateGraphicsPipelines() {
 	Microsoft::WRL::ComPtr<IDxcBlob> psRadialBlur = dxCommon_->CompileShader(L"./assets/shaders/RadialBlur.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psDissolve = dxCommon_->CompileShader(L"./assets/shaders/Dissolve.PS.hlsl", L"ps_6_0");
 	Microsoft::WRL::ComPtr<IDxcBlob> psRandom = dxCommon_->CompileShader(L"./assets/shaders/Random.PS.hlsl", L"ps_6_0");
+	Microsoft::WRL::ComPtr<IDxcBlob> psScanLine = dxCommon_->CompileShader(L"./assets/shaders/ScanLine.PS.hlsl", L"ps_6_0");
 
 	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaders[static_cast<size_t>(PostEffectType::kCountOfPostEffects)];
 	pixelShaders[static_cast<size_t>(PostEffectType::kNone)] = psNone;
-	pixelShaders[static_cast<size_t>(PostEffectType::kGrayScale)] = psGray;
+	pixelShaders[static_cast<size_t>(PostEffectType::kColorTint)] = psColorTint;
 	pixelShaders[static_cast<size_t>(PostEffectType::kVignette)] = psVignette;
 	pixelShaders[static_cast<size_t>(PostEffectType::kBoxFilter)] = psBoxFilter;
 	pixelShaders[static_cast<size_t>(PostEffectType::kGaussBlur)] = psGaussBlur;
@@ -169,6 +170,7 @@ void PostEffect::CreateGraphicsPipelines() {
 	pixelShaders[static_cast<size_t>(PostEffectType::kRadialBlur)] = psRadialBlur;
 	pixelShaders[static_cast<size_t>(PostEffectType::kDissolve)] = psDissolve;
 	pixelShaders[static_cast<size_t>(PostEffectType::kRandom)] = psRandom;
+	pixelShaders[static_cast<size_t>(PostEffectType::kScanLine)] = psScanLine;
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
 	psoDesc.pRootSignature = rootSignature_.Get();
@@ -377,6 +379,9 @@ void PostEffect::Draw(ID3D12Resource* renderTextureResource, uint32_t renderText
 		param0->dirX = dirX_;
 		param0->dirY = dirY_;
 		param0->time = time_;
+		param0->colorR = colorR_;
+		param0->colorG = colorG_;
+		param0->colorB = colorB_;
 		commandList->SetGraphicsRootConstantBufferView(1, postEffectParamsBuffer_->GetGPUVirtualAddress());
 
 		commandList->DrawInstanced(3, 1, 0, 0);
