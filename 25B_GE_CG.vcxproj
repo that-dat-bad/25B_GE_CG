@@ -330,8 +330,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\Game\Enemy\EnemyManager.h" />
     <ClInclude Include="src\Game\Bullet\Bullet.h" />
     <ClInclude Include="src\Game\Bullet\BulletManager.h" />
+    <ClInclude Include="src\Game\Environment\Sun.h" />
+    <ClInclude Include="src\Game\Environment\EnvironmentManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Game\Environment\Sun.cpp" />
+    <ClCompile Include="src\Game\Environment\EnvironmentManager.cpp" />
     <ClCompile Include="src\Game\FlightModel\FlightInstructor.cpp" />
     <ClCompile Include="src\Game\FlightModel\MouseAimController.cpp" />
     <ClCompile Include="src\Game\FlightModel\Payload\Gunpod.cpp" />

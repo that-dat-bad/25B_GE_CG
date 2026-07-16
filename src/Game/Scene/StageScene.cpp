@@ -109,14 +109,9 @@ void StageScene::Initialize() {
 	Object3dCommon::GetInstance()->SetDefaultEnvTextureIndex(skyboxTexIndex);
 
 	// ============================
-	// ライティング設定（太陽光）
+	// ライティング設定（太陽・環境）
 	// ============================
-	DirectionalLight* dirLight = Object3dCommon::GetInstance()->GetDirectionalLightData();
-	if (dirLight) {
-		dirLight->color = { 1.0f, 0.95f, 0.85f, 1.0f };       // やや暖色の太陽光
-		dirLight->direction = { 0.5f, -0.8f, 0.3f };           // 斜め上から
-		dirLight->intensity = 0.5f;
-	}
+	environmentManager_.Initialize();
 	// ライティングモデル設定
 	Object3dCommon::GetInstance()->SetLightType(1);             // Directional Light 有効
 	Object3dCommon::GetInstance()->SetShadingModel(1);
@@ -281,6 +276,11 @@ void StageScene::Update() {
 		} else {
 			input->LockCursor();
 		}
+	}
+
+	// --- ナイトビジョン (NVD) ON/OFF トグル (N キー) ---
+	if (input->TriggerKey(DIK_N)) {
+		isNvdActive_ = !isNvdActive_;
 	}
 
 	// --- WASD 手動操縦入力 ---
@@ -843,16 +843,81 @@ void StageScene::Update() {
 #endif
 
 	// ============================
-	// ブラックアウト & レッドアウト ポストエフェクト（既存ビネットを拡張）
+	// ポストエフェクトの動的設定
 	// ============================
-	// 常にビネットを有効にし、Gフォースに応じて強度を滑らかに変化させる
+	PostEffect* postEffect = PostEffect::GetInstance();
+	postEffect->ClearActiveEffects();
+
+	// 1. ナイトビジョン (NVD) モード
+	if (isNvdActive_) {
+		// 光量増幅 (LightAmp)
+		ActivePostEffect amp;
+		amp.type = PostEffectType::kLightAmp;
+		amp.intensity = 2.5f;
+		postEffect->AddActiveEffect(amp);
+
+		// カラーティント (ColorTint - 緑)
+		ActivePostEffect tint;
+		tint.type = PostEffectType::kColorTint;
+		tint.colorR = 0.1f;
+		tint.colorG = 0.95f;
+		tint.colorB = 0.2f;
+		postEffect->AddActiveEffect(tint);
+
+		// ブルーム (Bloom)
+		ActivePostEffect bloom;
+		bloom.type = PostEffectType::kBloom;
+		bloom.intensity = 3.0f;
+		bloom.dirX = 1.2f;
+		bloom.dirY = 0.75f;
+		postEffect->AddActiveEffect(bloom);
+
+		// ノイズ (Noise)
+		ActivePostEffect noise;
+		noise.type = PostEffectType::kRandom;
+		noise.intensity = 0.12f;
+		postEffect->AddActiveEffect(noise);
+
+		// 走査線 (ScanLine)
+		ActivePostEffect scan;
+		scan.type = PostEffectType::kScanLine;
+		scan.kernelSize = 0;
+		scan.intensity = 0.15f;
+		scan.dirX = 600.0f;
+		scan.dirY = 5.0f;
+		postEffect->AddActiveEffect(scan);
+
+		// 色収差 (Chromatic Aberration)
+		ActivePostEffect ab;
+		ab.type = PostEffectType::kChromaticAberration;
+		ab.intensity = 0.015f;
+		postEffect->AddActiveEffect(ab);
+
+		// レンズ歪み (LensDistortion)
+		ActivePostEffect dist;
+		dist.type = PostEffectType::kLensDistortion;
+		dist.intensity = 0.18f;
+		postEffect->AddActiveEffect(dist);
+	}
+
+	// 2. 環境の更新（太陽の回転、ライティング、太陽ブルーム処理の委譲）
+	if (!isNvdActive_) {
+		environmentManager_.Update(CameraManager::GetInstance()->GetActiveCamera(), kDeltaTime);
+	} else {
+		// ナイトビジョン中は太陽ブルームをかけないが、時間は進めたいので camera を nullptr にして更新
+		environmentManager_.Update(nullptr, kDeltaTime);
+	}
+
+	// 3. Gフォースによるビネット（ブラックアウト / レッドアウト）
 	float blackout = flightModel_.GetBlackoutFactor();
 	float redout = flightModel_.GetRedoutFactor();
-	
-	PostEffect* postEffect = PostEffect::GetInstance();
-	postEffect->SetEffectType(PostEffectType::kVignette);
-	postEffect->SetIntensity(blackout * 5.0f);
-	postEffect->SetDirX(redout * 1.5f); // 1.5倍で強めにかける
+	if (blackout > 0.0f || redout > 0.0f) {
+		ActivePostEffect vig;
+		vig.type = PostEffectType::kVignette;
+		vig.intensity = blackout * 5.0f;
+		vig.dirX = redout * 1.5f;
+		postEffect->AddActiveEffect(vig);
+	}
 }
 
 
@@ -861,6 +926,9 @@ void StageScene::Draw() {
 		SkyboxCommon::GetInstance()->SetupCommonState();
 		skybox_->Draw();
 	}
+
+	// 太陽の見た目を無限遠に描画
+	environmentManager_.Draw(CameraManager::GetInstance()->GetActiveCamera());
 
 	// 3Dオブジェクト描画（Object3dパイプライン）
 	Object3dCommon::GetInstance()->SetupCommonState();
@@ -1063,6 +1131,9 @@ void StageScene::Finalize() {
 
 	// エフェクトマネージャーの後片付け
 	EffectManager::GetInstance()->Finalize();
+
+	// ポストエフェクトをクリア
+	PostEffect::GetInstance()->ClearActiveEffects();
 }
 
 

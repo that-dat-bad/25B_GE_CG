@@ -1,6 +1,7 @@
 #pragma once
 #include "IScene.h"
 #include <memory>
+#include "../Environment/EnvironmentManager.h"
 #include "../../engine/Graphics/Model/Object3d.h"
 #include "../../engine/Graphics/Model/Skybox.h"
 #include "../Camera/PlayerCamera.h"
@@ -104,4 +105,10 @@ private:
 
 	// 経過時間（エフェクトアニメーション用）
 	float totalTime_ = 0.0f;
+
+	// ナイトビジョン状態
+	bool isNvdActive_ = false;
+
+	// 環境管理（太陽・昼夜サイクルなど）
+	EnvironmentManager environmentManager_;
 };
