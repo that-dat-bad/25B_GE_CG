@@ -365,3 +365,4 @@ FodyWeavers.xsd
 /.agents/skills/cpp-pro
 .aider*
 assets/shaders/compiled/
+/.github/upgrades/scenarios/cppbuildtoolsupgrade

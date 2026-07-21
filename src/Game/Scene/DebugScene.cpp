@@ -258,6 +258,9 @@ void DebugScene::Update() {
 					effects[i].intensity = 1.0f;
 					effects[i].dirX = 0.0f;
 					effects[i].dirY = 0.0f;
+					effects[i].colorR = 0.9f;
+					effects[i].colorG = 0.05f;
+					effects[i].colorB = 0.05f;
 				} else if (effects[i].type == PostEffectType::kBoxFilter) {
 					effects[i].kernelSize = 3;
 				} else if (effects[i].type == PostEffectType::kGaussBlur) {
@@ -307,7 +310,13 @@ void DebugScene::Update() {
 				ImGui::SliderFloat("Noise Strength", &effects[i].intensity, 0.0f, 1.0f);
 			} else if (effects[i].type == PostEffectType::kVignette) {
 				ImGui::SliderFloat("Vignette Intensity", &effects[i].intensity, 0.0f, 10.0f);
-				ImGui::SliderFloat("Redout Intensity", &effects[i].dirX, 0.0f, 1.0f);
+				ImGui::SliderFloat("Overlay Intensity", &effects[i].dirX, 0.0f, 1.0f);
+				float vigColor[3] = { effects[i].colorR, effects[i].colorG, effects[i].colorB };
+				if (ImGui::ColorEdit3("Overlay Color", vigColor)) {
+					effects[i].colorR = vigColor[0];
+					effects[i].colorG = vigColor[1];
+					effects[i].colorB = vigColor[2];
+				}
 			} else if (effects[i].type == PostEffectType::kBoxFilter) {
 				ImGui::SliderInt("BoxFilter Kernel Size", &effects[i].kernelSize, 1, 31);
 			} else if (effects[i].type == PostEffectType::kGaussBlur) {

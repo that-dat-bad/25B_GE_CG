@@ -916,6 +916,10 @@ void StageScene::Update() {
 		vig.type = PostEffectType::kVignette;
 		vig.intensity = blackout * 5.0f;
 		vig.dirX = redout * 1.5f;
+		// レッドアウト用の色を明示的に指定
+		vig.colorR = 0.9f;
+		vig.colorG = 0.05f;
+		vig.colorB = 0.05f;
 		postEffect->AddActiveEffect(vig);
 	}
 }

@@ -13,6 +13,7 @@
 #include "Bullet/BulletManager.h"
 #include "../../engine/Physics/CollisionSystem.h"
 #include "../../engine/Physics/CollisionConfig.h"
+#include "../../engine/Graphics/PostProcess/PostEffect.h"
 
 /// @brief ゲーム本編のステージシーン
 class StageScene : public IScene {
@@ -111,4 +112,15 @@ private:
 
 	// 環境管理（太陽・昼夜サイクルなど）
 	EnvironmentManager environmentManager_;
+
+	// ============================
+	// ポストエフェクト統合制御
+	// ============================
+	void UpdatePostEffects(float deltaTime);
+
+	bool enableAutoPostEffects_ = true;     // ゲーム状況連動の自動ポストエフェクト
+	float damageFlashTimer_ = 0.0f;         // 被弾フラッシュ制御タイマー
+	int manualSelectedEffect_ = 0;          // 手動・ImGuiテスト用エフェクトインデックス
+	ActivePostEffect manualEffectParams_{}; // 手動・ImGuiテスト用パラメータ
 };
+
