@@ -5,6 +5,7 @@
 #include "math/MyMath.h"
 
 #include "AirFrame.h"
+#include "DamageModel.h"
 #include "Engine.h"
 #include "Payload/IPayload.h"
 
@@ -67,6 +68,13 @@ public:
 	// ダメージ連動
 	Airframe& GetAirframe() { return airframe_; }
 	const Airframe& GetAirframe() const { return airframe_; }
+	DamageModel& GetDamageModel() { return airframe_.GetDamageModel(); }
+	const DamageModel& GetDamageModel() const { return airframe_.GetDamageModel(); }
+
+	/// @brief 弾丸のワールド位置からサブコライダー被弾処理を実行
+	HitResult ProcessBulletHit(const MyMath::Vector3& bulletWorldPos, float rawDamage) {
+		return airframe_.GetDamageModel().ProcessBulletHit(bulletWorldPos, position_, orientation_, rawDamage);
+	}
 
 	// 外部から位置・姿勢・速度をセットする（スポーン時など）
 	void SetPosition(const MyMath::Vector3& pos) { position_ = pos; }

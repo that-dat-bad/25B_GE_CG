@@ -226,11 +226,13 @@ void Enemy::Draw() {
 	object3d_->Draw();
 }
 
+#include "../Bullet/Bullet.h"
+
 void Enemy::TakeDamage(float damage) {
 	if (!isAlive_) { return; }
 
-	health_ -= damage;
-	if (health_ <= 0.0f) {
+	flightModel_.GetDamageModel().ProcessHit(DamagePart::Fuse, damage);
+	if (flightModel_.GetAirframe().IsDestroyed()) {
 		health_ = 0.0f;
 		isAlive_ = false;
 	}
@@ -239,18 +241,23 @@ void Enemy::TakeDamage(float damage) {
 void Enemy::OnCollision(ICollisionBody3D* other) {
 	if (!isAlive_) { return; }
 
-	// PlayerBullet との衝突 → ダメージを受ける
+	// PlayerBullet との衝突 → パーツ被弾処理
 	if (other->GetCollisionAttribute() & CollisionAttribute::kPlayerBullet) {
-		TakeDamage(10.0f);
-		EffectManager::GetInstance()->EmitHitEffect(flightModel_.GetPosition());
+		auto* bullet = dynamic_cast<Bullet*>(other);
+		Vector3 bulletPos = bullet ? bullet->GetPosition() : flightModel_.GetPosition();
+		float dmg = bullet ? bullet->GetDamage() : 10.0f;
 
-		if (!isAlive_) {
+		HitResult res = flightModel_.ProcessBulletHit(bulletPos, dmg);
+		EffectManager::GetInstance()->EmitHitEffect(bulletPos);
+
+		if (flightModel_.GetAirframe().IsDestroyed()) {
+			isAlive_ = false;
 			EffectManager::GetInstance()->EmitDestroyEffect(flightModel_.GetPosition());
 		}
 	}
 	// Player との衝突 → 即死して撃破エフェクト発生
 	else if (other->GetCollisionAttribute() & CollisionAttribute::kPlayer) {
-		TakeDamage(health_);
+		isAlive_ = false;
 		EffectManager::GetInstance()->EmitDestroyEffect(flightModel_.GetPosition());
 	}
 }

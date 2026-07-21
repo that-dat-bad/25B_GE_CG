@@ -141,8 +141,8 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration />
-      <AdditionalLibraryDirectories>$(SolutionDir)external\assimp\lib\Debug</AdditionalLibraryDirectories>
-      <AdditionalDependencies>assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\assimp\lib\Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
@@ -336,6 +336,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="src\Game\Bullet\BulletManager.h" />
     <ClInclude Include="src\Game\Environment\Sun.h" />
     <ClInclude Include="src\Game\Environment\EnvironmentManager.h" />
+    <ClInclude Include="src\Game\FlightModel\DamageModel.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Game\Environment\Sun.cpp" />
@@ -346,6 +347,7 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="src\Game\FlightModel\Payload\IPayload.cpp">
       <DeploymentContent>true</DeploymentContent>
     </ClCompile>
+    <ClCompile Include="src\Game\FlightModel\DamageModel.cpp" />
     <ClCompile Include="src\Game\FlightModel\Engine.cpp" />
     <ClCompile Include="src\Game\FlightModel\AirFrame.cpp" />
     <ClCompile Include="src\Game\FlightModel\FlightModel.cpp" />

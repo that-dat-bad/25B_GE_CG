@@ -203,31 +203,33 @@ void StageScene::Initialize() {
 void StageScene::PlayerCollisionBody::OnCollision(ICollisionBody3D* other) {
 	if (!scene_ || scene_->isMissionFailed_) { return; }
 
-	// EnemyBullet との衝突 → ダメージを受ける
+	// EnemyBullet との衝突 → サブコライダー被弾処理
 	if (other->GetCollisionAttribute() & CollisionAttribute::kEnemyBullet) {
-		// 弾丸からダメージ量を取得（Bullet の場合）
 		auto* bullet = dynamic_cast<Bullet*>(other);
+		Vector3 bulletPos = bullet ? bullet->GetPosition() : scene_->flightModel_.GetPosition();
 		float damage = bullet ? bullet->GetDamage() : 10.0f;
 
-		scene_->playerHP_ -= damage;
-		EffectManager::GetInstance()->EmitHitEffect(scene_->flightModel_.GetPosition());
+		HitResult res = scene_->flightModel_.ProcessBulletHit(bulletPos, damage);
+		EffectManager::GetInstance()->EmitHitEffect(bulletPos);
 
-		// HPが0以下でゲームオーバー
-		if (scene_->playerHP_ <= 0.0f) {
+		if (res.fireStarted) {
+			EffectManager::GetInstance()->EmitDestroyEffect(bulletPos);
+		}
+
+		// 致命的ダメージでゲームオーバー
+		if (scene_->flightModel_.GetAirframe().IsDestroyed()) {
 			scene_->playerHP_ = 0.0f;
 			scene_->isMissionFailed_ = true;
 			scene_->sceneID = SCENE::RESULT;
 			EffectManager::GetInstance()->EmitDestroyEffect(scene_->flightModel_.GetPosition());
 		}
 	}
-	// Enemy との衝突 → 大ダメージ（7割削る）
+	// Enemy との衝突 → 胴体に大ダメージ
 	else if (other->GetCollisionAttribute() & CollisionAttribute::kEnemy) {
-		float damage = scene_->playerMaxHP_ * 0.7f;
-		scene_->playerHP_ -= damage;
+		scene_->flightModel_.GetDamageModel().ProcessHit(DamagePart::Fuse, 50.0f);
 		EffectManager::GetInstance()->EmitHitEffect(scene_->flightModel_.GetPosition());
 
-		// HPが0以下でゲームオーバー
-		if (scene_->playerHP_ <= 0.0f) {
+		if (scene_->flightModel_.GetAirframe().IsDestroyed()) {
 			scene_->playerHP_ = 0.0f;
 			scene_->isMissionFailed_ = true;
 			scene_->sceneID = SCENE::RESULT;
@@ -619,10 +621,11 @@ void StageScene::Update() {
 		sceneID = SCENE::CLEAR;
 	}
 
-	// --- 地面衝突判定 ---
-	if (!isMissionFailed_ && Collision3DManager::CheckGroundCollision(flightModel_.GetPosition())) {
+	// --- 機体全般の壊滅判定 (パーツ破壊・パイロット死亡等) ---
+	if (!isMissionFailed_ && flightModel_.GetAirframe().IsDestroyed()) {
 		isMissionFailed_ = true;
 		sceneID = SCENE::RESULT;
+		EffectManager::GetInstance()->EmitDestroyEffect(flightModel_.GetPosition());
 	}
 
 	// ============================
@@ -683,13 +686,24 @@ void StageScene::Update() {
 	ImGui::Text("AirBrake: %.0f%%", flightModel_.GetAirBrakePosition() * 100.0f);
 
 	ImGui::Separator();
-	ImGui::Text("=== Damage ===");
-	const auto& af = flightModel_.GetAirframe();
-	ImGui::Text("Engine:    %.0f%%", af.GetDamageState(DamageZone::Engine) * 100.0f);
-	ImGui::Text("L.Wing:    %.0f%%", af.GetDamageState(DamageZone::LeftWing) * 100.0f);
-	ImGui::Text("R.Wing:    %.0f%%", af.GetDamageState(DamageZone::RightWing) * 100.0f);
-	ImGui::Text("Tail:      %.0f%%", af.GetDamageState(DamageZone::Tail) * 100.0f);
-	ImGui::Text("FuelTank:  %.0f%%", af.GetDamageState(DamageZone::FuelTank) * 100.0f);
+	ImGui::Text("=== Damage Model ===");
+	const auto& dm = flightModel_.GetDamageModel();
+	for (int i = 0; i < DamageModel::kPartCount; ++i) {
+		DamagePart part = static_cast<DamagePart>(i);
+		const auto& st = dm.GetPartState(part);
+		float hpRatio = st.GetHPRatio();
+
+		ImVec4 color = ImVec4(1.0f - hpRatio, hpRatio, 0.2f, 1.0f);
+		if (st.HasFlag(PartStatus::OnFire)) color = ImVec4(1.0f, 0.3f, 0.0f, 1.0f);
+		if (st.HasFlag(PartStatus::Destroyed)) color = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+
+		std::string statusStr = "";
+		if (st.HasFlag(PartStatus::OnFire)) statusStr += " [FIRE]";
+		if (st.HasFlag(PartStatus::Leaking)) statusStr += " [LEAK]";
+		if (st.HasFlag(PartStatus::Destroyed)) statusStr += " [DESTROYED]";
+
+		ImGui::TextColored(color, "%-18s: %3.0f%% HP%s", DamageModel::GetPartName(part), hpRatio * 100.0f, statusStr.c_str());
+	}
 
 	ImGui::Separator();
 	ImGui::Text("=== Mass ===");

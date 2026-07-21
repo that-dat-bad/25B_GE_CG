@@ -77,6 +77,8 @@ public:
 	float GetCollisionRadius() const { return collisionRadius_; }
 	float GetHealth() const { return health_; }
 	float GetMaxHealth() const { return maxHealth_; }
+	FlightModel& GetFlightModel() { return flightModel_; }
+	const FlightModel& GetFlightModel() const { return flightModel_; }
 	AIType GetAIType() const { return aiType_; }
 	TypeBState GetTypeBState() const { return typeBState_; }
 	const char* GetTypeBStateString() const {

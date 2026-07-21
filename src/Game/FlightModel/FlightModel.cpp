@@ -77,6 +77,9 @@ void FlightModel::Initialize(const AirframeData& airframeData, const EngineData&
 // ===========================================================
 void FlightModel::Update(float deltaTime)
 {
+	// 0. ダメージモデルの火災・漏れなどの毎フレーム経過更新
+	airframe_.GetDamageModel().UpdateEffects(deltaTime);
+
 	// 1. エンジンの更新（スロットルのスプールアップ/ダウン）
 	engine_.Update(deltaTime, targetThrottle_);
 
@@ -121,6 +124,9 @@ void FlightModel::Update(float deltaTime)
 
 	// 10. 位置の更新 (p += v * dt)
 	position_ = MyMath::Add(position_, MyMath::Multiply(deltaTime, velocity_));
+
+	// 10.5. 地面との部位別物理衝突判定 & ダメージ計算・転倒トルク
+	airframe_.GetDamageModel().ProcessGroundCollision(position_, orientation_, velocity_, angularVelocity_, deltaTime, 0.0f);
 
 	// 11. G計算
 	if (deltaTime > 0.0001f) {
@@ -435,6 +441,21 @@ void FlightModel::UpdateOrientation(float deltaTime)
 
 	// 空力ピッチモーメントは角加速度として直接加算
 	angularVelocity_.x += aerodynamicPitchMoment * deltaTime;
+
+	// 左右翼の揚力差による空気力学的ロールモーメント計算
+	float asymRoll = airframe_.GetDamageModel().GetAsymmetricRollMoment();
+	if (std::fabs(asymRoll) > 0.001f && speed > 5.0f) {
+		float dynamicPress = 0.5f * CalculateAirDensity(position_.y) * speed * speed;
+		float totalWingLift = dynamicPress * airframe_.GetWingArea() * std::fabs(CalculateLiftCoefficient(currentAoA_));
+		float wingArm = 2.5f; // 翼の中心までのモーメントアーム (m)
+		
+		// 右翼揚力 > 左翼揚力 の時、asymRoll > 0 となり、正の角加速度を加算して左へロール（破損した左翼が落ちる）
+		float rollTorque = asymRoll * (totalWingLift * 0.5f) * wingArm;
+		const float kInverseInertiaZ = 0.00005f; // 慣性モーメントの逆数 (1 / Iz)
+		float rollAlpha = rollTorque * kInverseInertiaZ;
+		
+		angularVelocity_.z += rollAlpha * deltaTime;
+	}
 
 	// =====================================================
 	// 角速度から姿勢を更新
