@@ -10,6 +10,7 @@
 #include "../../engine/base/Math/MyMath.h"
 
 #include <cmath>
+#include <cfloat>
 #include "../../engine/Graphics/Model/ModelManager.h"
 #include "../../engine/Graphics/PostProcess/PostEffect.h"
 #include "../../engine/Graphics/Particle/EffectManager.h"
@@ -275,7 +276,10 @@ void DebugScene::Update() {
 					effects[i].dissolveThreshold = 0.5f;
 					effects[i].dissolveEdgeWidth = 0.05f;
 				} else if (effects[i].type == PostEffectType::kLightAmp) {
-					effects[i].intensity = 1.5f;
+					effects[i].intensity = 4.0f;
+					effects[i].colorR = 0.15f;
+					effects[i].colorG = 1.0f;
+					effects[i].colorB = 0.3f;
 				} else if (effects[i].type == PostEffectType::kLensDistortion) {
 					effects[i].intensity = 0.15f; // デフォルトで緩やかな樽型歪み
 				} else if (effects[i].type == PostEffectType::kRandom) {
@@ -297,7 +301,13 @@ void DebugScene::Update() {
 					effects[i].colorB = color[2];
 				}
 			} else if (effects[i].type == PostEffectType::kLightAmp) {
-				ImGui::SliderFloat("Light Amp Multiplier", &effects[i].intensity, 0.0f, 10.0f);
+				ImGui::DragFloat("Light Amp Multiplier", &effects[i].intensity, 0.05f, 0.0f, FLT_MAX);
+				float nvdColor[3] = { effects[i].colorR, effects[i].colorG, effects[i].colorB };
+				if (ImGui::ColorEdit3("NVD Color Tint", nvdColor)) {
+					effects[i].colorR = nvdColor[0];
+					effects[i].colorG = nvdColor[1];
+					effects[i].colorB = nvdColor[2];
+				}
 			} else if (effects[i].type == PostEffectType::kLensDistortion) {
 				ImGui::SliderFloat("Lens Distortion Factor", &effects[i].intensity, -1.0f, 1.0f);
 			} else if (effects[i].type == PostEffectType::kChromaticAberration) {

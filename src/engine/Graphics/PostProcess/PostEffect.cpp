@@ -425,26 +425,22 @@ void PostEffect::ApplyBuiltInPreset(const std::string& presetName) {
 	if (presetName == "NVD (Night Vision)") {
 		ActivePostEffect amp;
 		amp.type = PostEffectType::kLightAmp;
-		amp.intensity = 2.5f;
+		amp.intensity = 4.0f;
+		amp.colorR = 0.15f;
+		amp.colorG = 1.0f;
+		amp.colorB = 0.3f;
 		activeEffects_.push_back(amp);
-
-		ActivePostEffect tint;
-		tint.type = PostEffectType::kColorTint;
-		tint.colorR = 0.1f;
-		tint.colorG = 0.95f;
-		tint.colorB = 0.2f;
-		activeEffects_.push_back(tint);
 
 		ActivePostEffect bloom;
 		bloom.type = PostEffectType::kBloom;
-		bloom.intensity = 3.0f;
-		bloom.dirX = 1.5f;
-		bloom.dirY = 0.75f;
+		bloom.intensity = 4.5f;
+		bloom.dirX = 2.0f;
+		bloom.dirY = 0.5f; // 輝度閾値を低めにして空などの広範囲を鮮烈に発光させる
 		activeEffects_.push_back(bloom);
 
 		ActivePostEffect noise;
 		noise.type = PostEffectType::kRandom;
-		noise.intensity = 0.12f;
+		noise.intensity = 0.10f;
 		activeEffects_.push_back(noise);
 
 		ActivePostEffect scan;

@@ -39,6 +39,8 @@ public: // メンバ関数
 	void Initialize(Object3dCommon* object3dCommon);
 	// 更新
 	void Update();
+	// 親の行列等を合成したワールド行列を直接指定して更新
+	void UpdateWithWorldMatrix(const Matrix4x4& worldMatrix);
 	// 描画
 	void Draw();
 	// スケルトンのデバッグ描画

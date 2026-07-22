@@ -614,3 +614,11 @@ MyMath::Vector3 FlightModel::GetRightDirection() const
 		2.0f * (x * z - w * y)
 	};
 }
+
+MyMath::Matrix4x4 FlightModel::GetWorldMatrix() const
+{
+	// スケール(1,1,1)、回転(orientation_)、平行移動(position_) からアフィン行列を合成
+	MyMath::Matrix4x4 rotMat = MyMath::MakeRotateMatrix(orientation_);
+	MyMath::Matrix4x4 transMat = MyMath::MakeTranslateMatrix(position_);
+	return MyMath::Multiply(rotMat, transMat);
+}

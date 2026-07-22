@@ -60,6 +60,26 @@ void Object3d::Update() {
 	UpdateLOD();
 }
 
+void Object3d::UpdateWithWorldMatrix(const Matrix4x4& worldMatrix) {
+	// 1. Camera行列を使ってWVPを作る
+	Matrix4x4 worldViewProjectionMatrix;
+
+	if (camera_) {
+		const Matrix4x4& viewProjectionMatrix = camera_->GetViewProjectionMatrix();
+		worldViewProjectionMatrix = Multiply(worldMatrix, viewProjectionMatrix);
+	} else {
+		worldViewProjectionMatrix = worldMatrix;
+	}
+
+	// 2. 定数バッファに転送
+	transformationMatrixData_->WVP = worldViewProjectionMatrix;
+	transformationMatrixData_->World = worldMatrix;
+	transformationMatrixData_->WorldInverseTranspose = Transpose(Inverse(worldMatrix));
+
+	// 3. LOD情報の更新
+	UpdateLOD();
+}
+
 void Object3d::Draw() {
 	// LODカリング等でモデルが無い場合は描画処理自体をスキップ
 	if (!model_) {

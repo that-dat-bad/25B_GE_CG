@@ -11,6 +11,8 @@
 #include "FlightModel/Payload/Gunpod.h"
 #include "Enemy/EnemyManager.h"
 #include "Bullet/BulletManager.h"
+#include "../Graphics/AircraftVisualModel.h"
+#include "../Graphics/DebrisManager.h"
 #include "../../engine/Physics/CollisionSystem.h"
 #include "../../engine/Physics/CollisionConfig.h"
 #include "../../engine/Graphics/PostProcess/PostEffect.h"
@@ -30,8 +32,14 @@ private:
 	// フライトインストラクター（自動水平復帰）
 	FlightInstructor flightInstructor_;
 
-	// 描画用 3Dオブジェクト（機体の見た目）
+	// 描画用 3Dオブジェクト（機体の見た目 - レガシー）
 	std::unique_ptr<Object3d> aircraftObject_ = nullptr;
+
+	// 部位破壊対応マルチパーツビジュアルモデル
+	AircraftVisualModel aircraftVisualModel_;
+
+	// パーツ破壊イベントチェック
+	void CheckPartDestructionEvents();
 
 	// 地面テクスチャ
 	uint32_t groundTextureIndex_ = 0;

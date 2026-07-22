@@ -276,11 +276,8 @@ PixelShaderOutput main(PixelInput input)
             }
         }
 
-        // Ambient (環境光: 光が当たらない面でも完全に真っ黒にならないようにする)
-        float32_t3 ambient = gMaterial.color.rgb * texColor.rgb * 0.15f;
-
         // Combine
-        output.color.rgb = ambient + totalDiffuse + totalSpecular + envColor;
+        output.color.rgb = totalDiffuse + totalSpecular + envColor;
         output.color.a = gMaterial.color.a * texColor.a;
     }
     else

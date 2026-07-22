@@ -1,0 +1,60 @@
+#pragma once
+#include <memory>
+#include <unordered_map>
+#include <string>
+#include "../FlightModel/DamageModel.h"
+#include "../../engine/Graphics/Model/Object3d.h"
+
+class Object3dCommon;
+class Camera;
+
+/// @brief 機体のビジュアルモデル（マルチパーツ描画・部位非表示・プロペラ回転制御）
+class AircraftVisualModel {
+public:
+	AircraftVisualModel() = default;
+	~AircraftVisualModel() = default;
+
+	/// @brief 初期化
+	void Initialize(Object3dCommon* object3dCommon, Camera* camera);
+
+	/// @brief パーツモデルの設定
+	void SetModelForPart(DamagePart part, const std::string& modelFilePath);
+	void SetModelForPart(DamagePart part, Model* model);
+
+	/// @brief パーツのローカルオフセット設定
+	void SetPartLocalTransform(DamagePart part, const Vector3& scale, const Vector3& rotate, const Vector3& translate);
+
+	/// @brief パーツの表示状態制御
+	void SetPartVisible(DamagePart part, bool visible);
+	bool IsPartVisible(DamagePart part) const;
+
+	/// @brief プロペラ回転速度の設定 (rad/sec)
+	void SetPropellerRpm(float rpm) { propellerRpm_ = rpm; }
+
+	/// @brief 更新（親ワールド行列からの階層合成）
+	void Update(const Matrix4x4& parentWorldMatrix, float deltaTime);
+
+	/// @brief 描画
+	void Draw();
+
+	/// @brief 指定パーツの最新ワールド行列を取得（破片スポーン用）
+	Matrix4x4 GetPartWorldMatrix(DamagePart part) const;
+
+	/// @brief 指定パーツの最新ワールド座標を取得
+	Vector3 GetPartWorldPosition(DamagePart part) const;
+
+private:
+	struct PartNode {
+		std::unique_ptr<Object3d> object = nullptr;
+		Transform localTransform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+		Matrix4x4 currentWorldMatrix = Identity4x4();
+		bool isVisible = true;
+	};
+
+	Object3dCommon* object3dCommon_ = nullptr;
+	Camera* camera_ = nullptr;
+	std::unordered_map<DamagePart, PartNode> partNodes_;
+
+	float propellerAngle_ = 0.0f;
+	float propellerRpm_ = 2000.0f; // デフォルトRPM
+};

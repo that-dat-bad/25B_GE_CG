@@ -94,6 +94,24 @@ void StageScene::Initialize() {
 	aircraftObject_->GetModel()->SetSpecularIntensity(2.5f);     // 鏡面反射強度を大幅に引き上げ
 	aircraftObject_->GetModel()->SetShininess(120.0f);            // シャープな光沢
 
+	// --- 部位破壊対応マルチパーツビジュアルモデル初期化 ---
+	aircraftVisualModel_.Initialize(Object3dCommon::GetInstance(), CameraManager::GetInstance()->GetActiveCamera());
+	DebrisManager::GetInstance()->Initialize(Object3dCommon::GetInstance(), CameraManager::GetInstance()->GetActiveCamera());
+
+	// 各パーツに基本モデルをロード（分割モデルがない場合は planeplane.obj を配置し、ローカルオフセットを設定）
+	std::vector<DamagePart> parts = {
+		DamagePart::Fuse, DamagePart::Engine1, DamagePart::Wing_L, DamagePart::Wing_R,
+		DamagePart::Wing1_L, DamagePart::Wing1_R, DamagePart::Wing2_L, DamagePart::Wing2_R,
+		DamagePart::Tail, DamagePart::Rudder, DamagePart::Elevator0, DamagePart::Elevator1
+	};
+	for (auto p : parts) {
+		aircraftVisualModel_.SetModelForPart(p, "Resources/planeplane.obj");
+	}
+	// 左右の翼パーツに僅かなオフセットを付けて位置関係をシミュレート
+	aircraftVisualModel_.SetPartLocalTransform(DamagePart::Wing_L, { 0.45f, 0.45f, 0.45f }, { 0.0f, 0.0f, 0.0f }, { -2.5f, 0.0f, -0.5f });
+	aircraftVisualModel_.SetPartLocalTransform(DamagePart::Wing_R, { 0.45f, 0.45f, 0.45f }, { 0.0f, 0.0f, 0.0f }, {  2.5f, 0.0f, -0.5f });
+	aircraftVisualModel_.SetPartLocalTransform(DamagePart::Engine1, { 0.5f, 0.5f, 0.5f }, { 0.0f, 0.0f, 0.0f }, {  0.0f, 0.0f,  2.0f });
+
 	// 地面テクスチャ
 	TextureManager::GetInstance()->LoadTexture("assets/textures/white1x1.png");
 	groundTextureIndex_ = TextureManager::GetInstance()->GetTextureIndexByFilePath("assets/textures/white1x1.png");
@@ -499,6 +517,15 @@ void StageScene::Update() {
 	// ============================
 	flightModel_.Update(kDeltaTime);
 
+	// --- 部位破壊イベントのチェックと破片放出 ---
+	CheckPartDestructionEvents();
+
+	// ビジュアルモデルの更新（自機のワールド変換行列を親として階層合成）
+	aircraftVisualModel_.Update(flightModel_.GetWorldMatrix(), kDeltaTime);
+
+	// 破片オブジェクト群の物理シミュレーション更新
+	DebrisManager::GetInstance()->Update(kDeltaTime);
+
 	// --- 翼端ボルテックスエフェクトの発生 ---
 	float currentG = flightModel_.GetCurrentG();
 	Vector3 aircraftPos = flightModel_.GetPosition();
@@ -703,6 +730,29 @@ void StageScene::Update() {
 		if (st.HasFlag(PartStatus::Destroyed)) statusStr += " [DESTROYED]";
 
 		ImGui::TextColored(color, "%-18s: %3.0f%% HP%s", DamageModel::GetPartName(part), hpRatio * 100.0f, statusStr.c_str());
+	}
+
+	if (ImGui::TreeNode("Destruction Test (War Thunder)")) {
+		if (ImGui::Button("Break Left Wing")) {
+			flightModel_.GetDamageModel().ProcessHit(DamagePart::Wing_L, 999.0f);
+			flightModel_.GetDamageModel().ProcessHit(DamagePart::Wing1_L, 999.0f);
+			flightModel_.GetDamageModel().ProcessHit(DamagePart::Wing2_L, 999.0f);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Break Right Wing")) {
+			flightModel_.GetDamageModel().ProcessHit(DamagePart::Wing_R, 999.0f);
+			flightModel_.GetDamageModel().ProcessHit(DamagePart::Wing1_R, 999.0f);
+			flightModel_.GetDamageModel().ProcessHit(DamagePart::Wing2_R, 999.0f);
+		}
+		if (ImGui::Button("Destroy Engine")) {
+			flightModel_.GetDamageModel().ProcessHit(DamagePart::Engine1, 999.0f);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Break Rudder/Tail")) {
+			flightModel_.GetDamageModel().ProcessHit(DamagePart::Tail, 999.0f);
+			flightModel_.GetDamageModel().ProcessHit(DamagePart::Rudder, 999.0f);
+		}
+		ImGui::TreePop();
 	}
 
 	ImGui::Separator();
@@ -953,6 +1003,10 @@ void StageScene::Draw() {
 	if (aircraftObject_) {
 		aircraftObject_->Draw();
 	}
+
+	// 部位破壊対応ビジュアルモデルと飛散破片の描画
+	aircraftVisualModel_.Draw();
+	DebrisManager::GetInstance()->Draw();
 
 	// 敵描画
 	enemyManager_.Draw();
@@ -1222,6 +1276,44 @@ void StageScene::DrawGround() {
 			{ snapX + lineExtent, 0.1f, z },
 			lineColor, camera
 		);
+	}
+}
+
+void StageScene::CheckPartDestructionEvents() {
+	const auto& dm = flightModel_.GetDamageModel();
+
+	for (int i = 0; i < DamageModel::kPartCount; ++i) {
+		DamagePart part = static_cast<DamagePart>(i);
+
+		if (dm.IsPartDestroyed(part)) {
+			if (aircraftVisualModel_.IsPartVisible(part)) {
+				// 1. ビジュアル側を非表示化
+				aircraftVisualModel_.SetPartVisible(part, false);
+
+				// 2. 切断破片（Debris）を生成しワールドへ放出して物理運動
+				Matrix4x4 partWorldMatrix = aircraftVisualModel_.GetPartWorldMatrix(part);
+				Vector3 baseVelocity = flightModel_.GetVelocity();
+				Vector3 ejectForce = Multiply(6.0f, flightModel_.GetRightDirection());
+				if (part == DamagePart::Wing_L || part == DamagePart::Wing1_L || part == DamagePart::Wing2_L) {
+					ejectForce = Multiply(-6.0f, flightModel_.GetRightDirection());
+				}
+
+				Model* partModel = ModelManager::GetInstance()->FindModel("Resources/planeplane.obj");
+				DebrisManager::GetInstance()->SpawnDebris(partModel, partWorldMatrix, baseVelocity, ejectForce);
+
+				// 3. 切断面からの破片発煙エフェクト
+				Vector3 partPos = aircraftVisualModel_.GetPartWorldPosition(part);
+				if (EffectManager::GetInstance()) {
+					EffectManager::GetInstance()->EmitDestroyEffect(partPos);
+				}
+			}
+		}
+	}
+
+	// エンジン損傷時のプロペラ回転制御
+	if (dm.IsPartDestroyed(DamagePart::Engine1) || dm.GetPartState(DamagePart::Engine1).HasFlag(PartStatus::Damaged)) {
+		float powerFactor = dm.GetEnginePowerFactor();
+		aircraftVisualModel_.SetPropellerRpm(2000.0f * powerFactor);
 	}
 }
 

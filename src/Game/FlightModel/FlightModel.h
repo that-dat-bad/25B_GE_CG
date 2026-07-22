@@ -86,6 +86,9 @@ public:
 	MyMath::Vector3 GetUpDirection() const;
 	MyMath::Vector3 GetRightDirection() const;
 
+	// 機体のワールド変換行列を取得
+	MyMath::Matrix4x4 GetWorldMatrix() const;
+
 
 private:
 	// コンポーネント
